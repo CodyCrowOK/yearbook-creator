@@ -8,12 +8,16 @@ public class Creator {
 	public static final String COMPANY_NAME = "Digital Express";
 	public static final String SOFTWARE_NAME = "Yearbook Creator";
 
+	//General SWT
 	private Display display;
 	private Shell shell;
+	
+	//Menubar-related
 	private Menu menubar;
 	private MenuItem fileMenuItem;
 	private Menu fileMenu;
 	private MenuItem fileNewItem;
+	private MenuItem fileNewPageItem;
 	private MenuItem fileOpenItem;
 	private MenuItem fileSaveAsItem;
 	private MenuItem fileExportItem;
@@ -29,6 +33,10 @@ public class Creator {
 	private MenuItem helpMenuItem;
 	private Menu helpMenu;
 	private MenuItem helpAboutItem;
+	
+	//Canvas
+	//private YearbookPage activePage;
+	
 	
 	public Creator() {
 		display = new Display();
@@ -48,8 +56,12 @@ public class Creator {
 		fileMenuItem.setMenu(fileMenu);
 
 		fileNewItem = new MenuItem(fileMenu, SWT.PUSH);
-		fileNewItem.setText("&New\tCtrl+N");
-		fileNewItem.setAccelerator(SWT.MOD1 + 'N');
+		fileNewItem.setText("New &Yearbook\tCtrl+Shift+N");
+		fileNewItem.setAccelerator(SWT.MOD1 | SWT.MOD2 | 'N');
+
+		fileNewPageItem = new MenuItem(fileMenu, SWT.PUSH);
+		fileNewPageItem.setText("&New Page\tCtrl+N");
+		fileNewPageItem.setAccelerator(SWT.MOD1 | 'N');
 
 		fileOpenItem = new MenuItem(fileMenu, SWT.PUSH);
 		fileOpenItem.setText("&Open\tCtrl+O");
@@ -136,6 +148,16 @@ public class Creator {
 			@Override
 			public void handleEvent(Event event) {
 				fileNew();
+				
+			}
+			
+		});
+		
+		fileNewPageItem.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				System.out.println("File >> New Page not implemented.");
 				
 			}
 			
@@ -258,7 +280,7 @@ public class Creator {
 	}
 	
 	private void fileNew() {
-		System.out.println("File >> New not implemented.");
+		System.out.println("File >> New Yearbook not implemented.");
 	}
 	
 	public static void main(String[] args) {
