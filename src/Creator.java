@@ -4,6 +4,7 @@ import org.eclipse.swt.widgets.*;
 
 public class Creator {
 	
+	public static final String VERSION = "0.01";
 	public static final String COMPANY_NAME = "Digital Express";
 	public static final String SOFTWARE_NAME = "Yearbook Creator";
 
@@ -134,7 +135,7 @@ public class Creator {
 
 			@Override
 			public void handleEvent(Event event) {
-				System.out.println("File >> New not implemented.");
+				fileNew();
 				
 			}
 			
@@ -244,12 +245,20 @@ public class Creator {
 
 			@Override
 			public void handleEvent(Event event) {
-				System.out.println("Help >> About not implemented.");
+				MessageBox helpBox = new MessageBox(shell, SWT.ICON_INFORMATION | SWT.OK);
+				helpBox.setText("About " + Creator.SOFTWARE_NAME);
+				helpBox.setMessage("Version " + Creator.VERSION + "\n"
+						+ "Copyright © 2015 " + Creator.COMPANY_NAME);
+				helpBox.open();
 				
 			}
 			
 		});
 		
+	}
+	
+	private void fileNew() {
+		System.out.println("File >> New not implemented.");
 	}
 	
 	public static void main(String[] args) {
