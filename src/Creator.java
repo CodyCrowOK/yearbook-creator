@@ -1,9 +1,12 @@
+import org.eclipse.draw2d.FigureCanvas;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.layout.*;
 import org.eclipse.swt.widgets.*;
 
 public class Creator {
+	
+	//Use the file extension .ctc for yearbook saves.
 	
 	public static final String VERSION = "0.01";
 	public static final String COMPANY_NAME = "Digital Express";
@@ -37,11 +40,13 @@ public class Creator {
 	
 	private GridLayout gridLayout;
 	private GridData listGridData;
+	private GridData canvasGridData;
 	
 	private List pagesList;
 	
-	//Canvas
 	private Yearbook yearbook;
+	
+	private FigureCanvas canvas;
 	
 	public Creator() {
 		display = new Display();
@@ -62,7 +67,11 @@ public class Creator {
 		listGridData.horizontalSpan = 1;
 		pagesList.setLayoutData(listGridData);
 		
-		
+		canvas = new FigureCanvas(shell, SWT.BORDER);
+		canvas.setScrollBarVisibility(FigureCanvas.AUTOMATIC);
+		canvasGridData = new GridData(SWT.FILL, SWT.FILL, true, true);
+		canvasGridData.horizontalSpan = 3;
+		canvas.setLayoutData(canvasGridData);
 		
 		/*
 		
