@@ -1,6 +1,7 @@
 import org.eclipse.swt.*;
+import org.eclipse.swt.events.*;
+import org.eclipse.swt.layout.*;
 import org.eclipse.swt.widgets.*;
-
 
 public class Creator {
 	
@@ -34,17 +35,60 @@ public class Creator {
 	private Menu helpMenu;
 	private MenuItem helpAboutItem;
 	
-	//Canvas
-	//private YearbookPage activePage;
+	private GridLayout gridLayout;
+	private GridData listGridData;
 	
+	private List pagesList;
+	
+	//Canvas
+	private Yearbook yearbook;
 	
 	public Creator() {
 		display = new Display();
 		shell = new Shell(display);
 		shell.setText(Creator.COMPANY_NAME + " " + Creator.SOFTWARE_NAME);
-		
+
 		shell.setSize(800, 600);
 		
+		this.buildMenu();
+		this.setMenuListeners();
+		
+		//Create the layout.
+		gridLayout = new GridLayout(5, true);
+		shell.setLayout(gridLayout);
+		
+		pagesList = new List(shell, SWT.BORDER | SWT.V_SCROLL);
+		listGridData = new GridData(SWT.FILL, SWT.FILL, true, true);
+		listGridData.horizontalSpan = 1;
+		pagesList.setLayoutData(listGridData);
+		
+		
+		
+		/*
+		
+		Button button = new Button(shell, SWT.PUSH);
+		button.setText("Browse...");
+		GridData data = new GridData(SWT.FILL, SWT.BEGINNING, true, true);
+		data.horizontalSpan = 3;
+		button.setLayoutData(data);
+		
+		Button button2 = new Button(shell, SWT.PUSH);
+		button2.setText("Browse...");
+		GridData data2 = new GridData(SWT.FILL, SWT.BEGINNING, true, true);
+		data2.horizontalSpan = 1;
+		button2.setLayoutData(data2);
+		
+		*/
+		
+		shell.setMaximized(true);
+		shell.open();
+		while (!shell.isDisposed()) {
+			if (!display.readAndDispatch())	display.sleep();
+		}
+		display.dispose();
+	}
+	
+	private void buildMenu() {
 		//Create the menu bar.
 		menubar = new Menu(shell, SWT.BAR);
 		shell.setMenuBar(menubar);
@@ -127,16 +171,6 @@ public class Creator {
 		helpAboutItem = new MenuItem(helpMenu, SWT.PUSH);
 		helpAboutItem.setText("&About " + Creator.SOFTWARE_NAME);
 		helpAboutItem.setAccelerator(SWT.MOD1 + 'Z');
-		
-		this.setMenuListeners();
-		
-		
-		shell.setMaximized(true);
-		shell.open();
-		while (!shell.isDisposed()) {
-			if (!display.readAndDispatch())	display.sleep();
-		}
-		display.dispose();
 	}
 	
 	/**
@@ -147,7 +181,65 @@ public class Creator {
 
 			@Override
 			public void handleEvent(Event event) {
-				fileNew();
+				final Shell dialog = new Shell(shell, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
+				dialog.setText("Enter Yearbook Name");
+				dialog.setSize(400, 300);
+				FormLayout formLayout = new FormLayout();
+				formLayout.marginWidth = 10;
+				formLayout.marginHeight = 10;
+				formLayout.spacing = 10;
+				dialog.setLayout(formLayout);
+				
+				Label label = new Label(dialog, SWT.NONE);
+				label.setText("New yearbook name:");
+				FormData data = new FormData();
+				label.setLayoutData(data);
+				
+				Button cancel = new Button(dialog, SWT.PUSH);
+				cancel.setText("Cancel");
+				data = new FormData();
+				data.width = 60;
+				data.right = new FormAttachment(100, 0);
+				data.bottom = new FormAttachment(100, 0);
+				cancel.setLayoutData(data);
+				cancel.addSelectionListener(new SelectionAdapter () {
+					@Override
+					public void widgetSelected(SelectionEvent e) {
+						dialog.close();
+					}
+				});
+
+				final Text text = new Text(dialog, SWT.BORDER);
+				data = new FormData();
+				data.width = 200;
+				data.left = new FormAttachment(label, 0, SWT.DEFAULT);
+				data.right = new FormAttachment(100, 0);
+				data.top = new FormAttachment(label, 0, SWT.CENTER);
+				data.bottom = new FormAttachment(cancel, 0, SWT.DEFAULT);
+				text.setLayoutData(data);
+
+				Button ok = new Button(dialog, SWT.PUSH);
+				ok.setText("OK");
+				data = new FormData();
+				data.width = 60;
+				data.right = new FormAttachment(cancel, 0, SWT.DEFAULT);
+				data.bottom = new FormAttachment(100, 0);
+				ok.setLayoutData(data);
+				ok.addSelectionListener(new SelectionAdapter() {
+					@Override
+					public void widgetSelected (SelectionEvent e) {
+						yearbook = new Yearbook(text.getText());
+						dialog.close();
+
+						for (int i = 0; i < yearbook.pages.size(); i++) {
+							pagesList.add("Page " + (i + 1) + ": " + yearbook.pages.get(i).name);
+						}
+					}
+				});
+
+				dialog.setDefaultButton (ok);
+				dialog.pack();
+				dialog.open();
 				
 			}
 			
@@ -277,10 +369,6 @@ public class Creator {
 			
 		});
 		
-	}
-	
-	private void fileNew() {
-		System.out.println("File >> New Yearbook not implemented.");
 	}
 	
 	public static void main(String[] args) {

@@ -7,5 +7,7 @@ public class Yearbook {
 	
 	public Yearbook(String name) {
 		this.name = name;
+		pages = new ArrayList<YearbookPage>();
+		pages.add(new YearbookPage(name));
 	}
 }
