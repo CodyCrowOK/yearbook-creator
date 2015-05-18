@@ -1,10 +1,4 @@
-import java.awt.Color;
 
-import org.eclipse.draw2d.ColorConstants;
-import org.eclipse.draw2d.FigureCanvas;
-import org.eclipse.draw2d.LightweightSystem;
-import org.eclipse.draw2d.ScrollPane;
-import org.eclipse.draw2d.Viewport;
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.GC;
@@ -49,14 +43,12 @@ public class Creator {
 	private GridLayout gridLayout;
 	private GridData listGridData;
 	private GridData canvasGridData;
-	private Composite canvasWrapper;
 	
 	private List pagesList;
 	
 	private Yearbook yearbook;
 	
-	private FigureCanvas canvas;
-	private Viewport canvasViewport;
+	private Canvas canvas;
 	
 	public Creator() {
 		display = new Display();
@@ -79,31 +71,11 @@ public class Creator {
 		listGridData.horizontalSpan = 1;
 		pagesList.setLayoutData(listGridData);
 
-		/*
-		canvasWrapper = new Composite(shell, SWT.NONE);
-		canvas = new FigureCanvas(canvasWrapper, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
-		canvas.setScrollBarVisibility(FigureCanvas.AUTOMATIC);
-		canvasGridData = new GridData(SWT.FILL, SWT.FILL, true, true);
-		canvasGridData.horizontalSpan = 3;
-		canvasWrapper.setLayoutData(canvasGridData);
-		*/
-		
-		canvas = new FigureCanvas(shell, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
-		LightweightSystem lws = new LightweightSystem(canvas);
-		canvas.setViewport(new Viewport(true));
-		canvas.setScrollBarVisibility(FigureCanvas.ALWAYS);
-		
-		
-		
-
+		canvas = new Canvas(shell, SWT.BORDER);
 		canvasGridData = new GridData(SWT.FILL, SWT.FILL, true, true);
 		canvasGridData.horizontalSpan = 3;
 		canvas.setLayoutData(canvasGridData);
 		
-		
-		
-		
-		this.setCanvasListeners();
 		
 		
 		/*
@@ -419,31 +391,11 @@ public class Creator {
 		
 	}
 	
-	private void setCanvasListeners() {
-		this.canvas.addPaintListener(new PaintListener() {
-
-			@Override
-			public void paintControl(PaintEvent e) {
-				Rectangle clientArea = canvas.getClientArea(); 
-				e.gc.setBackground(display.getSystemColor(SWT.COLOR_CYAN)); 
-				e.gc.fillOval(0,0,clientArea.width,clientArea.height); 
-				
-			}
-			
-		});
-	}
-	
 	private void createNewYearbook(String name) {
 		yearbook = new Yearbook(name);
-		canvas.setSize(yearbook.settings.xResolution(), yearbook.settings.yResolution());
-		System.out.println(yearbook.settings.xResolution() + "x" + yearbook.settings.yResolution());
-		//canvas.setBackground(ColorConstants.white);
-		GC gc = new GC(canvas);
-		
-	        gc.fillOval(0,0,canvas.getBounds().width,canvas.getBounds().height); 
 		
 	}
-	
+
 	private void updatePageList() {
 		pagesList.removeAll();
 		for (int i = 0; i < yearbook.pages.size(); i++) {
