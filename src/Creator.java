@@ -1,6 +1,8 @@
+import javax.swing.text.StyleConstants.ColorConstants;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.*;
@@ -45,6 +47,7 @@ public class Creator {
 	private GridData canvasGridData;
 	
 	private List pagesList;
+	private final Menu pagesListMenu;
 	
 	private Yearbook yearbook;
 	
@@ -61,6 +64,7 @@ public class Creator {
 		this.setMenuListeners();
 		
 		this.initialize();
+
 		
 		//Create the layout.
 		gridLayout = new GridLayout(5, true);
@@ -71,27 +75,104 @@ public class Creator {
 		listGridData.horizontalSpan = 1;
 		pagesList.setLayoutData(listGridData);
 
-		canvas = new Canvas(shell, SWT.BORDER);
+		Composite canvasWrapper = new Composite(shell, SWT.NONE);
+		canvas = new Canvas(canvasWrapper, SWT.BORDER);
+		canvas.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
 		canvasGridData = new GridData(SWT.FILL, SWT.FILL, true, true);
 		canvasGridData.horizontalSpan = 3;
-		canvas.setLayoutData(canvasGridData);
+		canvasWrapper.setLayoutData(canvasGridData);
 		
-		
-		
-		/*
-		
-		Button button = new Button(shell, SWT.PUSH);
-		button.setText("Browse...");
-		GridData data = new GridData(SWT.FILL, SWT.BEGINNING, true, true);
-		data.horizontalSpan = 3;
-		button.setLayoutData(data);
-		*/
+		//Replace with something useful
 		Button button2 = new Button(shell, SWT.PUSH);
 		button2.setText("Browse...");
 		GridData data2 = new GridData(SWT.FILL, SWT.BEGINNING, true, true);
 		data2.horizontalSpan = 1;
 		button2.setLayoutData(data2);
 		
+		pagesListMenu = new Menu(pagesList);
+		pagesList.setMenu(pagesListMenu);
+		pagesListMenu.addMenuListener(new MenuAdapter()
+		{
+		    public void menuShown(MenuEvent e)
+		    {
+		        MenuItem[] items = pagesListMenu.getItems();
+		        for (int i = 0; i < items.length; i++)
+		        {
+		            items[i].dispose();
+		        }
+		        MenuItem item1 = new MenuItem(pagesListMenu, SWT.NONE);
+		        int selectedPageIndex = pagesList.getSelectionIndex();
+		        item1.setText("Rename " + yearbook.pages.get(pagesList.getSelectionIndex()).name);
+		        item1.addListener(SWT.Selection, new Listener() {
+
+				@Override
+				public void handleEvent(Event event) {
+					final Shell dialog = new Shell(shell, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
+					dialog.setText("Enter Name");
+					dialog.setSize(400, 300);
+					FormLayout formLayout = new FormLayout();
+					formLayout.marginWidth = 10;
+					formLayout.marginHeight = 10;
+					formLayout.spacing = 10;
+					dialog.setLayout(formLayout);
+					
+					Label label = new Label(dialog, SWT.NONE);
+					label.setText("New name:");
+					FormData data = new FormData();
+					label.setLayoutData(data);
+					
+					Button cancel = new Button(dialog, SWT.PUSH);
+					cancel.setText("Cancel");
+					data = new FormData();
+					data.width = 60;
+					data.right = new FormAttachment(100, 0);
+					data.bottom = new FormAttachment(100, 0);
+					cancel.setLayoutData(data);
+					cancel.addSelectionListener(new SelectionAdapter () {
+						@Override
+						public void widgetSelected(SelectionEvent e) {
+							dialog.close();
+						}
+					});
+
+					final Text text = new Text(dialog, SWT.BORDER);
+					data = new FormData();
+					data.width = 200;
+					data.left = new FormAttachment(label, 0, SWT.DEFAULT);
+					data.right = new FormAttachment(100, 0);
+					data.top = new FormAttachment(label, 0, SWT.CENTER);
+					data.bottom = new FormAttachment(cancel, 0, SWT.DEFAULT);
+					text.setLayoutData(data);
+
+					Button ok = new Button(dialog, SWT.PUSH);
+					ok.setText("OK");
+					data = new FormData();
+					data.width = 60;
+					data.right = new FormAttachment(cancel, 0, SWT.DEFAULT);
+					data.bottom = new FormAttachment(100, 0);
+					ok.setLayoutData(data);
+					ok.addSelectionListener(new SelectionAdapter() {
+						@Override
+						public void widgetSelected (SelectionEvent e) {
+							//dialog.close();
+							
+							yearbook.pages.get(selectedPageIndex).name = text.getText(); 
+							
+							refresh();
+							dialog.close();
+						}
+					});
+
+					dialog.setDefaultButton (ok);
+					dialog.pack();
+					dialog.open();
+					
+				}
+		        	
+		        });
+		   
+		    }
+		});
 		
 		
 		shell.setMaximized(true);
@@ -100,6 +181,7 @@ public class Creator {
 			if (!display.readAndDispatch())	display.sleep();
 		}
 		display.dispose();
+		
 	}
 	
 	private void buildMenu() {
@@ -249,10 +331,6 @@ public class Creator {
 					public void widgetSelected (SelectionEvent e) {
 						createNewYearbook(text.getText());
 						dialog.close();
-						
-						for (int i = 0; i < yearbook.pages.size(); i++) {
-							pagesList.add("Page " + (i + 1) + ": " + yearbook.pages.get(i).name);
-						}
 						refresh();
 					}
 				});
@@ -269,7 +347,61 @@ public class Creator {
 
 			@Override
 			public void handleEvent(Event event) {
-				System.out.println("File >> New Page not implemented.");
+				final Shell dialog = new Shell(shell, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
+				dialog.setText("Enter Page Name");
+				dialog.setSize(400, 300);
+				FormLayout formLayout = new FormLayout();
+				formLayout.marginWidth = 10;
+				formLayout.marginHeight = 10;
+				formLayout.spacing = 10;
+				dialog.setLayout(formLayout);
+				
+				Label label = new Label(dialog, SWT.NONE);
+				label.setText("New page name:");
+				FormData data = new FormData();
+				label.setLayoutData(data);
+				
+				Button cancel = new Button(dialog, SWT.PUSH);
+				cancel.setText("Cancel");
+				data = new FormData();
+				data.width = 60;
+				data.right = new FormAttachment(100, 0);
+				data.bottom = new FormAttachment(100, 0);
+				cancel.setLayoutData(data);
+				cancel.addSelectionListener(new SelectionAdapter () {
+					@Override
+					public void widgetSelected(SelectionEvent e) {
+						dialog.close();
+					}
+				});
+
+				final Text text = new Text(dialog, SWT.BORDER);
+				data = new FormData();
+				data.width = 200;
+				data.left = new FormAttachment(label, 0, SWT.DEFAULT);
+				data.right = new FormAttachment(100, 0);
+				data.top = new FormAttachment(label, 0, SWT.CENTER);
+				data.bottom = new FormAttachment(cancel, 0, SWT.DEFAULT);
+				text.setLayoutData(data);
+
+				Button ok = new Button(dialog, SWT.PUSH);
+				ok.setText("OK");
+				data = new FormData();
+				data.width = 60;
+				data.right = new FormAttachment(cancel, 0, SWT.DEFAULT);
+				data.bottom = new FormAttachment(100, 0);
+				ok.setLayoutData(data);
+				ok.addSelectionListener(new SelectionAdapter() {
+					@Override
+					public void widgetSelected (SelectionEvent e) {
+						createNewPage(text.getText());
+						dialog.close();
+					}
+				});
+
+				dialog.setDefaultButton (ok);
+				dialog.pack();
+				dialog.open();
 				
 			}
 			
@@ -393,7 +525,12 @@ public class Creator {
 	
 	private void createNewYearbook(String name) {
 		yearbook = new Yearbook(name);
+
+		int canvasHeight = display.getClientArea().height - 100;
 		
+		yearbook.settings.height = canvasHeight;
+		yearbook.settings.width = (int) ((8.5 / 11.0) * canvasHeight);
+		canvas.setSize(yearbook.settings.width, yearbook.settings.height);
 	}
 
 	private void updatePageList() {
@@ -404,9 +541,19 @@ public class Creator {
 	}
 	
 	private void updateCanvas() {
+		this.loadActivePage(yearbook.activePage);
+	}
+	
+	private void loadActivePage(int activePage) {
+		// TODO Auto-generated method stub
 		
 	}
 	
+	private void createNewPage(String name) {
+		yearbook.pages.add(new YearbookPage(name));
+		refresh();
+	}
+
 	public void refresh() {
 		updatePageList();
 		updateCanvas();
