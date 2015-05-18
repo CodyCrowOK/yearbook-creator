@@ -12,4 +12,8 @@ public class YearbookPage {
 		this();
 		this.name = name;
 	}
+	
+	public String toString() {
+		return this.name;
+	}
 }

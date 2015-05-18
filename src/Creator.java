@@ -45,13 +45,15 @@ public class Creator {
 	private GridLayout gridLayout;
 	private GridData listGridData;
 	private GridData canvasGridData;
+	private GridData canvasGridData2;
 	
 	private List pagesList;
 	private final Menu pagesListMenu;
 	
 	private Yearbook yearbook;
-	
+
 	private Canvas canvas;
+	private Canvas rightCanvas;
 	
 	public Creator() {
 		display = new Display();
@@ -67,7 +69,7 @@ public class Creator {
 
 		
 		//Create the layout.
-		gridLayout = new GridLayout(5, true);
+		gridLayout = new GridLayout(7, true);
 		shell.setLayout(gridLayout);
 		
 		pagesList = new List(shell, SWT.BORDER | SWT.V_SCROLL);
@@ -75,6 +77,7 @@ public class Creator {
 		listGridData.horizontalSpan = 1;
 		pagesList.setLayoutData(listGridData);
 
+		
 		Composite canvasWrapper = new Composite(shell, SWT.NONE);
 		canvas = new Canvas(canvasWrapper, SWT.BORDER);
 		canvas.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
@@ -82,12 +85,12 @@ public class Creator {
 		canvasGridData.horizontalSpan = 3;
 		canvasWrapper.setLayoutData(canvasGridData);
 		
-		//Replace with something useful
-		Button button2 = new Button(shell, SWT.PUSH);
-		button2.setText("Browse...");
-		GridData data2 = new GridData(SWT.FILL, SWT.BEGINNING, true, true);
-		data2.horizontalSpan = 1;
-		button2.setLayoutData(data2);
+		Composite canvasWrapper2 = new Composite(shell, SWT.NONE);
+		rightCanvas = new Canvas(canvasWrapper2, SWT.BORDER);
+		rightCanvas.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
+		canvasGridData2 = new GridData(SWT.FILL, SWT.FILL, true, true);
+		canvasGridData2.horizontalSpan = 3;
+		canvasWrapper2.setLayoutData(canvasGridData2);
 		
 		pagesListMenu = new Menu(pagesList);
 		pagesList.setMenu(pagesListMenu);
@@ -100,9 +103,9 @@ public class Creator {
 		        {
 		            items[i].dispose();
 		        }
-		        MenuItem item1 = new MenuItem(pagesListMenu, SWT.NONE);
 		        int selectedPageIndex = pagesList.getSelectionIndex();
-		        item1.setText("Rename " + yearbook.pages.get(pagesList.getSelectionIndex()).name);
+		        MenuItem item1 = new MenuItem(pagesListMenu, SWT.NONE);
+		        item1.setText("Rename");
 		        item1.addListener(SWT.Selection, new Listener() {
 
 				@Override
@@ -170,7 +173,25 @@ public class Creator {
 				}
 		        	
 		        });
-		   
+		        
+		        MenuItem item2 = new MenuItem(pagesListMenu, SWT.NONE);
+		        item2.setText("Delete");
+		        item2.addListener(SWT.Selection, new Listener() {
+
+				@Override
+				public void handleEvent(Event event) {
+					MessageBox messageBox = new MessageBox(shell, SWT.ICON_WARNING | SWT.YES | SWT.NO);
+					messageBox.setText("Delete Page");
+					messageBox.setMessage("Are you sure you want to delete this page?\n\t" + yearbook.pages.get(selectedPageIndex));
+					int yesno = messageBox.open();
+					if (yesno == SWT.YES) {
+						yearbook.pages.remove(selectedPageIndex);
+						refresh();
+					}
+					
+				}
+		        	
+		        });
 		    }
 		});
 		
@@ -531,6 +552,7 @@ public class Creator {
 		yearbook.settings.height = canvasHeight;
 		yearbook.settings.width = (int) ((8.5 / 11.0) * canvasHeight);
 		canvas.setSize(yearbook.settings.width, yearbook.settings.height);
+		rightCanvas.setSize(yearbook.settings.width, yearbook.settings.height);
 	}
 
 	private void updatePageList() {
