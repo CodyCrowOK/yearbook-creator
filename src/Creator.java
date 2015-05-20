@@ -728,55 +728,8 @@ public class Creator {
 	}
 	
 	public static void main(String[] args) {
-		swtJarHack();
 		Creator creator = new Creator();
 		//creator.loadSwtJar();
-	}
-	
-	private static void swtJarHack() {
-	        String osName = System.getProperty("os.name").toLowerCase();
-	        String osArch = System.getProperty("os.arch").toLowerCase();
-		
-	        String swtFileNameOsPart = 
-	    	            osName.contains("win") ? "win" :
-	    	            osName.contains("mac") ? "osx" :
-	    	            osName.contains("linux") || osName.contains("nix") ? "linux" :
-	    	            "";
-	        String swtFileNameArchPart = osArch.contains("64") ? "64" : "32";
-	        String swtFileName = "swt-"+swtFileNameOsPart+swtFileNameArchPart+".jar";
-	        try {
-			ClassPathHack.addFile(swtFileName);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	        
-	        
-	}
-	
-	//Automatically loads appropriate SWT jars. Considered high level magic.
-	private void loadSwtJar() {
-	    try {
-	        String osName = System.getProperty("os.name").toLowerCase();
-	        String osArch = System.getProperty("os.arch").toLowerCase();
-	        URLClassLoader classLoader = (URLClassLoader) getClass().getClassLoader();
-	        Method addUrlMethod = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
-	        addUrlMethod.setAccessible(true);
-
-	        String swtFileNameOsPart = 
-	            osName.contains("win") ? "win" :
-	            osName.contains("mac") ? "osx" :
-	            osName.contains("linux") || osName.contains("nix") ? "linux" :
-	            ""; // throw new RuntimeException("Unknown OS name: "+osName)
-
-	        String swtFileNameArchPart = osArch.contains("64") ? "64" : "32";
-	        String swtFileName = "swt-"+swtFileNameOsPart+swtFileNameArchPart+".jar";
-	        URL swtFileUrl = new URL("rsrc:"+swtFileName); // I am using Jar-in-Jar class loader which understands this URL; adjust accordingly if you don't
-	        addUrlMethod.invoke(classLoader, swtFileUrl);
-	    }
-	    catch(Exception e) {
-	        System.out.println("Unable to add the swt jar to the class path.");
-	        e.printStackTrace();
-	    }
 	}
 
 }
