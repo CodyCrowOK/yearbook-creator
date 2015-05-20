@@ -4,6 +4,15 @@ import java.net.URL;
 import java.net.URLClassLoader;
 
 import org.eclipse.swt.*;
+import org.eclipse.swt.dnd.DND;
+import org.eclipse.swt.dnd.DragSource;
+import org.eclipse.swt.dnd.DragSourceAdapter;
+import org.eclipse.swt.dnd.DragSourceEvent;
+import org.eclipse.swt.dnd.DropTarget;
+import org.eclipse.swt.dnd.DropTargetAdapter;
+import org.eclipse.swt.dnd.DropTargetEvent;
+import org.eclipse.swt.dnd.TextTransfer;
+import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
@@ -223,6 +232,8 @@ public class Creator {
 		    }
 		});
 		
+		this.buildPagesListDnD();
+		
 		
 		shell.setMaximized(true);
 		shell.open();
@@ -233,6 +244,87 @@ public class Creator {
 		
 	}
 	
+	private void buildPagesListDnD() {
+		
+		Transfer[] types = new Transfer[] { TextTransfer.getInstance() };
+		    DragSource source = new DragSource(pagesList, DND.DROP_MOVE | DND.DROP_COPY);
+		    source.setTransfer(types);
+
+		    source.addDragListener(new DragSourceAdapter()
+		    {
+		        @Override
+		        public void dragSetData(DragSourceEvent event)
+		        {
+		            // Get the selected items in the drag source
+		            DragSource ds = (DragSource) event.widget;
+		            List list = (List) ds.getControl();
+		            String[] selection = list.getSelection();
+		            event.data = selection[0];
+		        }
+		    });
+		    DropTarget target = new DropTarget(pagesList, DND.DROP_MOVE | DND.DROP_COPY
+		            | DND.DROP_DEFAULT);
+		    target.setTransfer(types);
+		    target.addDropListener(new DropTargetAdapter()
+		    {
+		        @Override
+		        public void dragEnter(DropTargetEvent event)
+		        {
+		            if (event.detail == DND.DROP_DEFAULT)
+		            {
+		                event.detail = (event.operations & DND.DROP_COPY) != 0 ? DND.DROP_COPY
+		                        : DND.DROP_NONE;
+		            }
+
+		            // Allow dropping text only
+		            for (int i = 0, n = event.dataTypes.length; i < n; i++)
+		            {
+		                if (TextTransfer.getInstance().isSupportedType(event.dataTypes[i]))
+		                {
+		                    event.currentDataType = event.dataTypes[i];
+		                }
+		            }
+		        }
+
+		        @Override
+		        public void dragOver(DropTargetEvent event)
+		        {
+		            event.feedback = DND.FEEDBACK_SELECT | DND.FEEDBACK_SCROLL;
+		        }
+
+		        @Override
+		        public void drop(DropTargetEvent event)
+		        {
+		            String sourceItemIndex = (String) event.data;
+		            String targetItemIndex = null;
+		            if (TextTransfer.getInstance().isSupportedType(event.currentDataType))
+		            {
+		                int dropYCordinate = event.y
+		                        - pagesList.toDisplay(pagesList.getLocation()).y;
+		                int itemTop = 0;
+		                // Search for the item index where the drop took place
+		                for (int i = 0; i < pagesList.getItemCount(); i++)
+		                {
+
+		                    if (dropYCordinate >= itemTop
+		                            && dropYCordinate <= itemTop + pagesList.getItemHeight())
+		                    {
+		                        targetItemIndex = pagesList.getTopIndex() + i + "";
+		                    }
+		                    itemTop += pagesList.getItemHeight();
+		                }
+		            }
+		            //swapListItems(Integer.parseInt(sourceItemIndex), Integer.parseInt(targetItemIndex));
+		            sourceItemIndex = Integer.toString(Integer.parseInt(sourceItemIndex.split(":")[0].split(" ")[1]) - 1);
+		            
+		            System.out.println("Source: " + sourceItemIndex + "\nDestination: " + targetItemIndex);
+		            
+		            yearbook.movePage(Integer.parseInt(sourceItemIndex), Integer.parseInt(targetItemIndex));
+		            refresh();
+		        }
+		    });		
+	}
+
 	private void buildMenu() {
 		//Create the menu bar.
 		menubar = new Menu(shell, SWT.BAR);
@@ -652,13 +744,6 @@ public class Creator {
 		linkBtn = new Button(toolbarWrapper, SWT.PUSH);
 		linkBtn.setImage(YearbookIcons.link(display));
 		linkBtn.pack();
-
-		Label sep5 = new Label(toolbarWrapper, SWT.NONE);
-		sep5.setText("   ");
-
-		zoomBtn = new Button(toolbarWrapper, SWT.PUSH);
-		zoomBtn.setImage(YearbookIcons.zoomToFit(display));
-		zoomBtn.pack();
 		
 		newBtn.addListener(SWT.Selection, new Listener() {
 
@@ -728,8 +813,7 @@ public class Creator {
 	}
 	
 	public static void main(String[] args) {
-		Creator creator = new Creator();
-		//creator.loadSwtJar();
+		new Creator();
 	}
 
 }

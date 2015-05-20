@@ -35,4 +35,10 @@ public class Yearbook {
 	public int size() {
 		return pages.size();
 	}
+	
+	public void movePage(int source, int destination) {
+		YearbookPage page = pages.get(source);
+		pages.remove(source);
+		pages.add(destination, page);
+	}
 }
