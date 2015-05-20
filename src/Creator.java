@@ -1,10 +1,13 @@
-import javax.swing.text.StyleConstants.ColorConstants;
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.net.URL;
+import java.net.URLClassLoader;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.layout.*;
 import org.eclipse.swt.widgets.*;
 
@@ -14,7 +17,7 @@ public class Creator {
 	
 	public static final String VERSION = "0.01";
 	public static final String COMPANY_NAME = "Digital Express";
-	public static final String SOFTWARE_NAME = "Yearbook Creator";
+	public static final String SOFTWARE_NAME = "Disruptive Pivot";
 
 	//General SWT
 	private Display display;
@@ -42,10 +45,31 @@ public class Creator {
 	private Menu helpMenu;
 	private MenuItem helpAboutItem;
 	
+	//Toolbar
+	Composite toolbarWrapper;
+	RowLayout barLayout;
+	Button newBtn;
+	Button openBtn;
+	Button saveBtn;
+	Button previewBtn;
+	Button printBtn;
+	Button undoBtn;
+	Button redoBtn;
+	Button cutBtn;
+	Button copyBtn;
+	Button pasteBtn;
+	Button textBtn;
+	Button imageBtn;
+	Button videoBtn;
+	Button linkBtn;
+	Button zoomBtn;
+	
+	
+	private Composite content;
+	
 	private GridLayout gridLayout;
 	private GridData listGridData;
 	private GridData canvasGridData;
-	private GridData canvasGridData2;
 	
 	private List pagesList;
 	private final Menu pagesListMenu;
@@ -54,11 +78,12 @@ public class Creator {
 
 	private Canvas canvas;
 	private Canvas rightCanvas;
+	private Color canvasBackgroundColor;
 	
-	public Creator() {
+	private Creator() {
 		display = new Display();
 		shell = new Shell(display);
-		shell.setText(Creator.COMPANY_NAME + " " + Creator.SOFTWARE_NAME);
+		setWindowTitle(SWT.DEFAULT);
 
 		shell.setSize(800, 600);
 		
@@ -66,31 +91,34 @@ public class Creator {
 		this.setMenuListeners();
 		
 		this.initialize();
-
 		
 		//Create the layout.
-		gridLayout = new GridLayout(7, true);
-		shell.setLayout(gridLayout);
+		shell.setLayout(new ColumnLayout());
 		
-		pagesList = new List(shell, SWT.BORDER | SWT.V_SCROLL);
+		this.buildToolbar();	
+
+		gridLayout = new GridLayout(7, true);
+		content = new Composite(shell, SWT.NONE);
+		content.setLayout(gridLayout);
+		
+		pagesList = new List(content, SWT.BORDER | SWT.V_SCROLL);
 		listGridData = new GridData(SWT.FILL, SWT.FILL, true, true);
 		listGridData.horizontalSpan = 1;
 		pagesList.setLayoutData(listGridData);
 
-		
-		Composite canvasWrapper = new Composite(shell, SWT.NONE);
-		canvas = new Canvas(canvasWrapper, SWT.BORDER);
-		canvas.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
+		Composite bigCanvasWrapper = new Composite(content, SWT.NONE);
 		canvasGridData = new GridData(SWT.FILL, SWT.FILL, true, true);
-		canvasGridData.horizontalSpan = 3;
-		canvasWrapper.setLayoutData(canvasGridData);
+		canvasGridData.horizontalSpan = 6;
+		bigCanvasWrapper.setLayoutData(canvasGridData);
+		bigCanvasWrapper.setLayout(new GridLayout(2, false));
 		
-		Composite canvasWrapper2 = new Composite(shell, SWT.NONE);
+		Composite canvasWrapper = new Composite(bigCanvasWrapper, SWT.NONE);
+		canvas = new Canvas(canvasWrapper, SWT.BORDER);
+		canvas.setBackground(canvasBackgroundColor);
+		
+		Composite canvasWrapper2 = new Composite(bigCanvasWrapper, SWT.NONE);
 		rightCanvas = new Canvas(canvasWrapper2, SWT.BORDER);
-		rightCanvas.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
-		canvasGridData2 = new GridData(SWT.FILL, SWT.FILL, true, true);
-		canvasGridData2.horizontalSpan = 3;
-		canvasWrapper2.setLayoutData(canvasGridData2);
+		rightCanvas.setBackground(canvasBackgroundColor);
 		
 		pagesListMenu = new Menu(pagesList);
 		pagesList.setMenu(pagesListMenu);
@@ -159,7 +187,7 @@ public class Creator {
 						public void widgetSelected (SelectionEvent e) {
 							//dialog.close();
 							
-							yearbook.pages.get(selectedPageIndex).name = text.getText(); 
+							yearbook.page(selectedPageIndex).name = text.getText(); 
 							
 							refresh();
 							dialog.close();
@@ -182,10 +210,10 @@ public class Creator {
 				public void handleEvent(Event event) {
 					MessageBox messageBox = new MessageBox(shell, SWT.ICON_WARNING | SWT.YES | SWT.NO);
 					messageBox.setText("Delete Page");
-					messageBox.setMessage("Are you sure you want to delete this page?\n\t" + yearbook.pages.get(selectedPageIndex));
+					messageBox.setMessage("Are you sure you want to delete this page?\n\t" + yearbook.page(selectedPageIndex));
 					int yesno = messageBox.open();
 					if (yesno == SWT.YES) {
-						yearbook.pages.remove(selectedPageIndex);
+						yearbook.removePage(selectedPageIndex);
 						refresh();
 					}
 					
@@ -293,6 +321,7 @@ public class Creator {
 	private void initialize() {
 		//TODO finish initializer
 		fileNewItem.getListeners(SWT.Selection)[0].handleEvent(new Event());
+		canvasBackgroundColor = new Color(display, 252, 252, 252);
 	}
 	
 	/**
@@ -462,7 +491,7 @@ public class Creator {
 
 			@Override
 			public void handleEvent(Event event) {
-				System.out.println("File >> Close not implemented.");
+				exit();
 				
 			}
 			
@@ -544,10 +573,108 @@ public class Creator {
 		
 	}
 	
+	private void buildToolbar() {
+		toolbarWrapper = new Composite(shell, SWT.NONE);
+		barLayout = new RowLayout();
+		barLayout.pack = true;
+		barLayout.marginBottom = 0;
+		barLayout.marginRight = 0;
+		barLayout.marginLeft = 5;
+		barLayout.marginTop = 0;
+		barLayout.spacing = 0;
+		
+		toolbarWrapper.setLayout(barLayout);
+		
+		newBtn = new Button(toolbarWrapper, SWT.PUSH);
+		newBtn.setImage(YearbookIcons.newDocument(display));
+		newBtn.pack();
+
+		openBtn = new Button(toolbarWrapper, SWT.PUSH);
+		openBtn.setImage(YearbookIcons.open(display));
+		openBtn.pack();
+		
+		saveBtn = new Button(toolbarWrapper, SWT.PUSH);
+		saveBtn.setImage(YearbookIcons.save(display));
+		saveBtn.pack();
+		
+		Label sep1 = new Label(toolbarWrapper, SWT.NONE);
+		sep1.setText("   ");
+		
+		previewBtn = new Button(toolbarWrapper, SWT.PUSH);
+		previewBtn.setImage(YearbookIcons.printPreview(display));
+		previewBtn.pack();
+		
+		printBtn = new Button(toolbarWrapper, SWT.PUSH);
+		printBtn.setImage(YearbookIcons.print(display));
+		printBtn.pack();
+		
+		Label sep2 = new Label(toolbarWrapper, SWT.NONE);
+		sep2.setText("   ");
+
+		undoBtn = new Button(toolbarWrapper, SWT.PUSH);
+		undoBtn.setImage(YearbookIcons.undo(display));
+		undoBtn.pack();
+
+		redoBtn = new Button(toolbarWrapper, SWT.PUSH);
+		redoBtn.setImage(YearbookIcons.redo(display));
+		redoBtn.pack();
+
+		Label sep3 = new Label(toolbarWrapper, SWT.NONE);
+		sep3.setText("   ");
+
+		cutBtn = new Button(toolbarWrapper, SWT.PUSH);
+		cutBtn.setImage(YearbookIcons.cut(display));
+		cutBtn.pack();
+
+		copyBtn = new Button(toolbarWrapper, SWT.PUSH);
+		copyBtn.setImage(YearbookIcons.copy(display));
+		copyBtn.pack();
+
+		pasteBtn = new Button(toolbarWrapper, SWT.PUSH);
+		pasteBtn.setImage(YearbookIcons.paste(display));
+		pasteBtn.pack();
+
+		Label sep4 = new Label(toolbarWrapper, SWT.NONE);
+		sep4.setText("   ");
+
+		textBtn = new Button(toolbarWrapper, SWT.PUSH);
+		textBtn.setImage(YearbookIcons.text(display));
+		textBtn.pack();
+
+		imageBtn = new Button(toolbarWrapper, SWT.PUSH);
+		imageBtn.setImage(YearbookIcons.image(display));
+		imageBtn.pack();
+
+		videoBtn = new Button(toolbarWrapper, SWT.PUSH);
+		videoBtn.setImage(YearbookIcons.video(display));
+		videoBtn.pack();
+
+		linkBtn = new Button(toolbarWrapper, SWT.PUSH);
+		linkBtn.setImage(YearbookIcons.link(display));
+		linkBtn.pack();
+
+		Label sep5 = new Label(toolbarWrapper, SWT.NONE);
+		sep5.setText("   ");
+
+		zoomBtn = new Button(toolbarWrapper, SWT.PUSH);
+		zoomBtn.setImage(YearbookIcons.zoomToFit(display));
+		zoomBtn.pack();
+		
+		newBtn.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				fileNewPageItem.getListeners(SWT.Selection)[0].handleEvent(event);
+			}
+			
+		});
+
+	}
+	
 	private void createNewYearbook(String name) {
 		yearbook = new Yearbook(name);
 
-		int canvasHeight = display.getClientArea().height - 100;
+		int canvasHeight = display.getClientArea().height - 150;
 		
 		yearbook.settings.height = canvasHeight;
 		yearbook.settings.width = (int) ((8.5 / 11.0) * canvasHeight);
@@ -557,8 +684,8 @@ public class Creator {
 
 	private void updatePageList() {
 		pagesList.removeAll();
-		for (int i = 0; i < yearbook.pages.size(); i++) {
-			pagesList.add("Page " + (i + 1) + ": " + yearbook.pages.get(i).name);
+		for (int i = 0; i < yearbook.size(); i++) {
+			pagesList.add("Page " + (i + 1) + ": " + yearbook.page(i).name);
 		}
 	}
 	
@@ -572,17 +699,84 @@ public class Creator {
 	}
 	
 	private void createNewPage(String name) {
-		yearbook.pages.add(new YearbookPage(name));
+		yearbook.addPage(name);
 		refresh();
+	}
+	
+	private void setWindowTitle(String title) {
+		setWindowTitle(SWT.DEFAULT);
+		shell.setText(title + " - " + shell.getText());
+	}
+	
+	private void setWindowTitle(int status) {
+		if (status == SWT.DEFAULT) {
+			shell.setText(Creator.COMPANY_NAME + " " + Creator.SOFTWARE_NAME);
+		}
+	}
+	
+	public void exit() {
+		//Need to prompt for saving or whatever eventually, but for now:
+		shell.close();
+		shell.dispose();
 	}
 
 	public void refresh() {
 		updatePageList();
 		updateCanvas();
+		shell.layout();
+		if (!shell.getText().contains(yearbook.name)) setWindowTitle(yearbook.name);
 	}
 	
 	public static void main(String[] args) {
-		new Creator();
+		swtJarHack();
+		Creator creator = new Creator();
+		//creator.loadSwtJar();
+	}
+	
+	private static void swtJarHack() {
+	        String osName = System.getProperty("os.name").toLowerCase();
+	        String osArch = System.getProperty("os.arch").toLowerCase();
+		
+	        String swtFileNameOsPart = 
+	    	            osName.contains("win") ? "win" :
+	    	            osName.contains("mac") ? "osx" :
+	    	            osName.contains("linux") || osName.contains("nix") ? "linux" :
+	    	            "";
+	        String swtFileNameArchPart = osArch.contains("64") ? "64" : "32";
+	        String swtFileName = "swt-"+swtFileNameOsPart+swtFileNameArchPart+".jar";
+	        try {
+			ClassPathHack.addFile(swtFileName);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	        
+	        
+	}
+	
+	//Automatically loads appropriate SWT jars. Considered high level magic.
+	private void loadSwtJar() {
+	    try {
+	        String osName = System.getProperty("os.name").toLowerCase();
+	        String osArch = System.getProperty("os.arch").toLowerCase();
+	        URLClassLoader classLoader = (URLClassLoader) getClass().getClassLoader();
+	        Method addUrlMethod = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
+	        addUrlMethod.setAccessible(true);
+
+	        String swtFileNameOsPart = 
+	            osName.contains("win") ? "win" :
+	            osName.contains("mac") ? "osx" :
+	            osName.contains("linux") || osName.contains("nix") ? "linux" :
+	            ""; // throw new RuntimeException("Unknown OS name: "+osName)
+
+	        String swtFileNameArchPart = osArch.contains("64") ? "64" : "32";
+	        String swtFileName = "swt-"+swtFileNameOsPart+swtFileNameArchPart+".jar";
+	        URL swtFileUrl = new URL("rsrc:"+swtFileName); // I am using Jar-in-Jar class loader which understands this URL; adjust accordingly if you don't
+	        addUrlMethod.invoke(classLoader, swtFileUrl);
+	    }
+	    catch(Exception e) {
+	        System.out.println("Unable to add the swt jar to the class path.");
+	        e.printStackTrace();
+	    }
 	}
 
 }

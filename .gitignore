@@ -1,4 +1,6 @@
 bin
+builds
+lib
 .settings
 .classpath
 .project
