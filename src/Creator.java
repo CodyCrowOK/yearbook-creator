@@ -94,6 +94,8 @@ public class Creator {
 	private Canvas rightCanvas;
 	private Color canvasBackgroundColor;
 	
+	private YearbookElement selectedElement;
+	
 	//private GC leftGC;
 	//private GC rightGC;
 	
@@ -266,8 +268,8 @@ public class Creator {
 			@Override
 			public void mouseDown(MouseEvent event) {
 				if (yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y)) {
-					YearbookElement element = yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y);
-					yearbook.page(yearbook.activePage).getElements().remove(element);
+					selectElement(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y));
+					
 					refresh();
 				}
 				
@@ -282,6 +284,10 @@ public class Creator {
 		});
 		
 		
+	}
+	
+	private void selectElement(YearbookElement element) {
+		this.selectedElement = element;
 	}
 
 	private void buildPagesListDnD() {
@@ -370,6 +376,7 @@ public class Creator {
 			@Override
 			public void handleEvent(Event event) {
 				yearbook.activePage = pagesList.getSelectionIndex();
+				refresh();
 			}
 			
 		});
@@ -737,6 +744,7 @@ public class Creator {
 			public void handleEvent(Event event) {
 				FileDialog picker = new FileDialog(shell, SWT.OPEN);
 				String fileName = picker.open();
+				if (fileName == null) return;
 				YearbookImageElement element = new YearbookImageElement(display, fileName, yearbook.settings.width, yearbook.settings.height);
 				yearbook.page(yearbook.activePage).addElement(element);
 				//refresh();
@@ -904,6 +912,15 @@ public class Creator {
 		for (YearbookImageElement element : images) {
 			gc = new GC(canvas);
 			gc.drawImage(element.getImage(), 0, 0, element.getImage().getBounds().width, element.getImage().getBounds().height, 0, 0, element.getBounds().width, element.getBounds().height);
+			if (element == this.selectedElement) {
+				//Element is selected by user.
+				//Draw a border like GIMP.
+				gc.setForeground(new Color(display, 250, 255, 0));
+				gc.setLineStyle(SWT.LINE_DASH);
+				gc.setLineWidth(3);
+				gc.drawRectangle(element.getBounds().x, element.getBounds().y, element.getBounds().width, element.getBounds().height);
+				
+			}
 			gc.dispose();
 		}
 		

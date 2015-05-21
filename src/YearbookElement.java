@@ -10,8 +10,8 @@ abstract public class YearbookElement {
 	public int zIndex; //Describes how the element sits relative to other elements.
 	
 	//Percentage values
-	public double x;
-	public double y;
+	protected double x;
+	protected double y;
 	
 	public double rotation;
 	
