@@ -2,7 +2,6 @@ import java.util.ArrayList;
 
 public class YearbookPage {
 	private ArrayList<YearbookElement> elements;
-	
 	public String name;
 	
 	public YearbookElement element(int index) {
@@ -38,7 +37,8 @@ public class YearbookPage {
 	}
 	
 	public YearbookElement getElementAtPoint(int x, int y) {
-		for (YearbookElement e : elements) {
+		for (int i = elements.size() - 1; i >= 0; i--) {
+			YearbookElement e = elements.get(i);
 			if (e.isAtPoint(x, y)) return e;
 		}
 		return null;

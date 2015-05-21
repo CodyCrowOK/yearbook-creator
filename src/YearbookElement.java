@@ -1,4 +1,3 @@
-import org.eclipse.draw2d.IFigure;
 import org.eclipse.swt.graphics.Image;
 
 /**
@@ -16,13 +15,7 @@ abstract public class YearbookElement {
 	
 	public double rotation;
 	
-	protected Image image;
 	
-	/**
-	 * 
-	 * @return the representation of the element on the canvas.
-	 */
-	abstract IFigure figure();
 	
 	boolean isImage() {
 		return false;

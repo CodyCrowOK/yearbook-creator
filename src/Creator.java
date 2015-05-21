@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+
 import org.eclipse.swt.*;
 import org.eclipse.swt.dnd.DND;
 import org.eclipse.swt.dnd.DragSource;
@@ -21,7 +23,7 @@ public class Creator {
 	
 	public static final String VERSION = "0.01";
 	public static final String COMPANY_NAME = "Digital Express";
-	public static final String SOFTWARE_NAME = "Disruptive Pivot";
+	public static final String SOFTWARE_NAME = "Smartbook Pro™";
 
 	//General SWT
 	private Display display;
@@ -91,6 +93,9 @@ public class Creator {
 	private Canvas canvas;
 	private Canvas rightCanvas;
 	private Color canvasBackgroundColor;
+	
+	//private GC leftGC;
+	//private GC rightGC;
 	
 	private Creator() {
 		display = new Display();
@@ -249,6 +254,32 @@ public class Creator {
 		Composite canvasWrapper2 = new Composite(bigCanvasWrapper, SWT.NONE);
 		rightCanvas = new Canvas(canvasWrapper2, SWT.BORDER);
 		rightCanvas.setBackground(canvasBackgroundColor);
+		
+		canvas.addMouseListener(new MouseListener() {
+
+			@Override
+			public void mouseDoubleClick(MouseEvent event) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mouseDown(MouseEvent event) {
+				if (yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y)) {
+					YearbookElement element = yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y);
+					yearbook.page(yearbook.activePage).getElements().remove(element);
+					refresh();
+				}
+				
+			}
+
+			@Override
+			public void mouseUp(MouseEvent event) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+		});
 		
 		
 	}
@@ -706,10 +737,12 @@ public class Creator {
 			public void handleEvent(Event event) {
 				FileDialog picker = new FileDialog(shell, SWT.OPEN);
 				String fileName = picker.open();
-				YearbookElement element = new YearbookImageElement(display, fileName, yearbook.settings.width, yearbook.settings.height);
-				//canvas.setContents(element.figure()); HERE
+				YearbookImageElement element = new YearbookImageElement(display, fileName, yearbook.settings.width, yearbook.settings.height);
 				yearbook.page(yearbook.activePage).addElement(element);
-				refresh();
+				//refresh();
+				GC gc = new GC(canvas);
+				gc.drawImage(element.getImage(), 0, 0, element.getImage().getBounds().width, element.getImage().getBounds().height, 0, 0, element.getBounds().width, element.getBounds().height);
+				gc.dispose();
 			}
 			
 		});
@@ -853,7 +886,27 @@ public class Creator {
 	}
 	
 	private void loadActivePage(int activePage) {
-		//TODO
+		//Reset the canvas to a blank slate so we can refresh it.
+		GC gc = new GC(canvas);
+		gc.setBackground(canvasBackgroundColor);
+		gc.fillRectangle(0, 0, canvas.getBounds().width, canvas.getBounds().height);
+		gc.dispose();
+		
+		//Apparently there's no map function in Java.
+		//Map the YearbookImageElements to images...
+		ArrayList<YearbookImageElement> images = new ArrayList<YearbookImageElement>();
+		for (int i = 0; i < yearbook.page(activePage).getElements().size(); i++) {
+			if (yearbook.page(activePage).element(i).isImage()) {
+				images.add((YearbookImageElement) yearbook.page(activePage).element(i));
+			}
+		}
+		//...and display them.
+		for (YearbookImageElement element : images) {
+			gc = new GC(canvas);
+			gc.drawImage(element.getImage(), 0, 0, element.getImage().getBounds().width, element.getImage().getBounds().height, 0, 0, element.getBounds().width, element.getBounds().height);
+			gc.dispose();
+		}
+		
 		
 	}
 	
