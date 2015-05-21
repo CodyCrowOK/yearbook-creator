@@ -27,4 +27,6 @@ abstract public class YearbookElement {
 	boolean isImage() {
 		return false;
 	}
+
+	abstract boolean isAtPoint(int x, int y);
 }

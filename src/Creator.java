@@ -1,11 +1,3 @@
-import org.eclipse.draw2d.FigureCanvas;
-import org.eclipse.draw2d.Graphics;
-import org.eclipse.draw2d.GraphicsSource;
-import org.eclipse.draw2d.ImageFigure;
-import org.eclipse.draw2d.Layer;
-import org.eclipse.draw2d.LayeredPane;
-import org.eclipse.draw2d.SWTGraphics;
-import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.swt.*;
 import org.eclipse.swt.dnd.DND;
 import org.eclipse.swt.dnd.DragSource;
@@ -96,17 +88,13 @@ public class Creator {
 	
 	private Yearbook yearbook;
 
-	private FigureCanvas canvas;
-	private FigureCanvas rightCanvas;
+	private Canvas canvas;
+	private Canvas rightCanvas;
 	private Color canvasBackgroundColor;
-
-	private LayeredPane layeredPane;
-	private LayeredPane rightLayeredPane;
 	
 	private Creator() {
 		display = new Display();
 		shell = new Shell(display);
-		layeredPane = new LayeredPane();
 		setWindowTitle(SWT.DEFAULT);
 
 		shell.setSize(800, 600);
@@ -255,15 +243,12 @@ public class Creator {
 		bigCanvasWrapper.setLayout(new GridLayout(2, false));
 		
 		Composite canvasWrapper = new Composite(bigCanvasWrapper, SWT.NONE);
-		canvas = new FigureCanvas(canvasWrapper, SWT.BORDER);
+		canvas = new Canvas(canvasWrapper, SWT.BORDER);
 		canvas.setBackground(canvasBackgroundColor);
 		
 		Composite canvasWrapper2 = new Composite(bigCanvasWrapper, SWT.NONE);
-		rightCanvas = new FigureCanvas(canvasWrapper2, SWT.BORDER);
+		rightCanvas = new Canvas(canvasWrapper2, SWT.BORDER);
 		rightCanvas.setBackground(canvasBackgroundColor);
-		
-		canvas.setContents(layeredPane);
-		rightCanvas.setContents(rightLayeredPane);
 		
 		
 	}
@@ -721,8 +706,8 @@ public class Creator {
 			public void handleEvent(Event event) {
 				FileDialog picker = new FileDialog(shell, SWT.OPEN);
 				String fileName = picker.open();
-				YearbookElement element = new YearbookImageElement(display, fileName);
-				//canvas.setContents(element.figure());
+				YearbookElement element = new YearbookImageElement(display, fileName, yearbook.settings.width, yearbook.settings.height);
+				//canvas.setContents(element.figure()); HERE
 				yearbook.page(yearbook.activePage).addElement(element);
 				refresh();
 			}
@@ -868,12 +853,7 @@ public class Creator {
 	}
 	
 	private void loadActivePage(int activePage) {
-		GC gc = new GC(canvas);
-		for (YearbookElement e : yearbook.page(activePage).getElements()) {
-			Layer layer = new Layer();
-			layer.add(e.figure());
-			layeredPane.add(layer);
-		}
+		//TODO
 		
 	}
 	

@@ -29,4 +29,18 @@ public class YearbookPage {
 	public String toString() {
 		return this.name;
 	}
+	
+	public boolean isElementAtPoint(int x, int y) {
+		for (YearbookElement e : elements) {
+			if (e.isAtPoint(x, y)) return true;
+		}
+		return false;
+	}
+	
+	public YearbookElement getElementAtPoint(int x, int y) {
+		for (YearbookElement e : elements) {
+			if (e.isAtPoint(x, y)) return e;
+		}
+		return null;
+	}
 }
