@@ -1,3 +1,6 @@
+import org.eclipse.draw2d.IFigure;
+import org.eclipse.swt.graphics.Image;
+
 /**
  * Abstract class that represents a single item on a yearbook page.
  * Items could be images, text, or whatever else.
@@ -12,4 +15,16 @@ abstract public class YearbookElement {
 	public double y;
 	
 	public double rotation;
+	
+	protected Image image;
+	
+	/**
+	 * 
+	 * @return the representation of the element on the canvas.
+	 */
+	abstract IFigure figure();
+	
+	boolean isImage() {
+		return false;
+	}
 }

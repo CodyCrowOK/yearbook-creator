@@ -37,6 +37,7 @@ public class Yearbook {
 	}
 	
 	public void movePage(int source, int destination) {
+		if (destination > size()) return;
 		YearbookPage page = pages.get(source);
 		pages.remove(source);
 		pages.add(destination, page);

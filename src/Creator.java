@@ -1,8 +1,11 @@
-import java.io.IOException;
-import java.lang.reflect.Method;
-import java.net.URL;
-import java.net.URLClassLoader;
-
+import org.eclipse.draw2d.FigureCanvas;
+import org.eclipse.draw2d.Graphics;
+import org.eclipse.draw2d.GraphicsSource;
+import org.eclipse.draw2d.ImageFigure;
+import org.eclipse.draw2d.Layer;
+import org.eclipse.draw2d.LayeredPane;
+import org.eclipse.draw2d.SWTGraphics;
+import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.swt.*;
 import org.eclipse.swt.dnd.DND;
 import org.eclipse.swt.dnd.DragSource;
@@ -15,8 +18,8 @@ import org.eclipse.swt.dnd.TextTransfer;
 import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.Font;
-import org.eclipse.swt.graphics.FontData;
+import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.*;
 import org.eclipse.swt.widgets.*;
 
@@ -50,6 +53,14 @@ public class Creator {
 	private MenuItem editCopyItem;
 	private MenuItem editPasteItem;
 	private MenuItem editPreferencesItem;
+	private MenuItem insertMenuItem;
+	private Menu insertMenu;
+	private MenuItem insertTextItem;
+	private MenuItem insertImageItem;
+	private MenuItem insertVideoItem;
+	private MenuItem insertLinkItem;
+	private MenuItem insertPageNumbersItem;
+	private MenuItem insertToCItem;
 	private MenuItem helpMenuItem;
 	private Menu helpMenu;
 	private MenuItem helpAboutItem;
@@ -85,13 +96,17 @@ public class Creator {
 	
 	private Yearbook yearbook;
 
-	private Canvas canvas;
-	private Canvas rightCanvas;
+	private FigureCanvas canvas;
+	private FigureCanvas rightCanvas;
 	private Color canvasBackgroundColor;
+
+	private LayeredPane layeredPane;
+	private LayeredPane rightLayeredPane;
 	
 	private Creator() {
 		display = new Display();
 		shell = new Shell(display);
+		layeredPane = new LayeredPane();
 		setWindowTitle(SWT.DEFAULT);
 
 		shell.setSize(800, 600);
@@ -115,19 +130,7 @@ public class Creator {
 		listGridData.horizontalSpan = 1;
 		pagesList.setLayoutData(listGridData);
 
-		Composite bigCanvasWrapper = new Composite(content, SWT.NONE);
-		canvasGridData = new GridData(SWT.FILL, SWT.FILL, true, true);
-		canvasGridData.horizontalSpan = 6;
-		bigCanvasWrapper.setLayoutData(canvasGridData);
-		bigCanvasWrapper.setLayout(new GridLayout(2, false));
-		
-		Composite canvasWrapper = new Composite(bigCanvasWrapper, SWT.NONE);
-		canvas = new Canvas(canvasWrapper, SWT.BORDER);
-		canvas.setBackground(canvasBackgroundColor);
-		
-		Composite canvasWrapper2 = new Composite(bigCanvasWrapper, SWT.NONE);
-		rightCanvas = new Canvas(canvasWrapper2, SWT.BORDER);
-		rightCanvas.setBackground(canvasBackgroundColor);
+		this.initializeCanvas();
 		
 		pagesListMenu = new Menu(pagesList);
 		pagesList.setMenu(pagesListMenu);
@@ -234,7 +237,6 @@ public class Creator {
 		
 		this.buildPagesListDnD();
 		
-		
 		shell.setMaximized(true);
 		shell.open();
 		while (!shell.isDisposed()) {
@@ -244,85 +246,119 @@ public class Creator {
 		
 	}
 	
+	private void initializeCanvas() {
+
+		Composite bigCanvasWrapper = new Composite(content, SWT.NONE);
+		canvasGridData = new GridData(SWT.FILL, SWT.FILL, true, true);
+		canvasGridData.horizontalSpan = 6;
+		bigCanvasWrapper.setLayoutData(canvasGridData);
+		bigCanvasWrapper.setLayout(new GridLayout(2, false));
+		
+		Composite canvasWrapper = new Composite(bigCanvasWrapper, SWT.NONE);
+		canvas = new FigureCanvas(canvasWrapper, SWT.BORDER);
+		canvas.setBackground(canvasBackgroundColor);
+		
+		Composite canvasWrapper2 = new Composite(bigCanvasWrapper, SWT.NONE);
+		rightCanvas = new FigureCanvas(canvasWrapper2, SWT.BORDER);
+		rightCanvas.setBackground(canvasBackgroundColor);
+		
+		canvas.setContents(layeredPane);
+		rightCanvas.setContents(rightLayeredPane);
+		
+		
+	}
+
 	private void buildPagesListDnD() {
 		
 		Transfer[] types = new Transfer[] { TextTransfer.getInstance() };
-		    DragSource source = new DragSource(pagesList, DND.DROP_MOVE | DND.DROP_COPY);
-		    source.setTransfer(types);
+		DragSource source = new DragSource(pagesList, DND.DROP_MOVE | DND.DROP_COPY);
+		source.setTransfer(types);
 
-		    source.addDragListener(new DragSourceAdapter()
-		    {
-		        @Override
-		        public void dragSetData(DragSourceEvent event)
-		        {
-		            // Get the selected items in the drag source
-		            DragSource ds = (DragSource) event.widget;
-		            List list = (List) ds.getControl();
-		            String[] selection = list.getSelection();
-		            event.data = selection[0];
-		        }
-		    });
-		    DropTarget target = new DropTarget(pagesList, DND.DROP_MOVE | DND.DROP_COPY
-		            | DND.DROP_DEFAULT);
-		    target.setTransfer(types);
-		    target.addDropListener(new DropTargetAdapter()
-		    {
-		        @Override
-		        public void dragEnter(DropTargetEvent event)
-		        {
-		            if (event.detail == DND.DROP_DEFAULT)
-		            {
-		                event.detail = (event.operations & DND.DROP_COPY) != 0 ? DND.DROP_COPY
-		                        : DND.DROP_NONE;
-		            }
+		source.addDragListener(new DragSourceAdapter()
+		{
+			@Override
+			public void dragSetData(DragSourceEvent event)
+			{
+			    // Get the selected items in the drag source
+			    DragSource ds = (DragSource) event.widget;
+			    List list = (List) ds.getControl();
+			    String[] selection = list.getSelection();
+			    event.data = selection[0];
+			}
+		});
+		DropTarget target = new DropTarget(pagesList, DND.DROP_MOVE | DND.DROP_COPY
+		        | DND.DROP_DEFAULT);
+		target.setTransfer(types);
+		target.addDropListener(new DropTargetAdapter()
+		{
+			@Override
+			public void dragEnter(DropTargetEvent event)
+			{
+				if (event.detail == DND.DROP_DEFAULT)
+				{
+				    event.detail = (event.operations & DND.DROP_COPY) != 0 ? DND.DROP_COPY
+				            : DND.DROP_NONE;
+				}
+		
+				// Allow dropping text only
+				for (int i = 0, n = event.dataTypes.length; i < n; i++)
+				{
+				    if (TextTransfer.getInstance().isSupportedType(event.dataTypes[i]))
+				    {
+				        event.currentDataType = event.dataTypes[i];
+				    }
+				}
+			}
+	
+			@Override
+			public void dragOver(DropTargetEvent event)
+			{
+			    event.feedback = DND.FEEDBACK_SELECT | DND.FEEDBACK_SCROLL;
+			}
+	
+			@Override
+			public void drop(DropTargetEvent event)
+			{
+				String sourceItemIndex = (String) event.data;
+				String targetItemIndex = null;
+				if (TextTransfer.getInstance().isSupportedType(event.currentDataType))
+				{
+				    int dropYCordinate = event.y
+				            - pagesList.toDisplay(pagesList.getLocation()).y;
+				    int itemTop = 0;
+				    // Search for the item index where the drop took place
+				    for (int i = 0; i < pagesList.getItemCount(); i++)
+				    {
+		
+				        if (dropYCordinate >= itemTop
+				                && dropYCordinate <= itemTop + pagesList.getItemHeight())
+				        {
+				            targetItemIndex = pagesList.getTopIndex() + i + "";
+				        }
+				        itemTop += pagesList.getItemHeight();
+				    }
+				}
+				sourceItemIndex = Integer.toString(Integer.parseInt(sourceItemIndex.split(":")[0].split(" ")[1]) - 1);
+				
+				try {
+					yearbook.movePage(Integer.parseInt(sourceItemIndex), Integer.parseInt(targetItemIndex));
+				} catch (NumberFormatException e) {
+				    //ignore
+				}
+				refresh();
+			}
+		});	
+	
+		pagesList.addListener(SWT.Selection, new Listener() {
 
-		            // Allow dropping text only
-		            for (int i = 0, n = event.dataTypes.length; i < n; i++)
-		            {
-		                if (TextTransfer.getInstance().isSupportedType(event.dataTypes[i]))
-		                {
-		                    event.currentDataType = event.dataTypes[i];
-		                }
-		            }
-		        }
-
-		        @Override
-		        public void dragOver(DropTargetEvent event)
-		        {
-		            event.feedback = DND.FEEDBACK_SELECT | DND.FEEDBACK_SCROLL;
-		        }
-
-		        @Override
-		        public void drop(DropTargetEvent event)
-		        {
-		            String sourceItemIndex = (String) event.data;
-		            String targetItemIndex = null;
-		            if (TextTransfer.getInstance().isSupportedType(event.currentDataType))
-		            {
-		                int dropYCordinate = event.y
-		                        - pagesList.toDisplay(pagesList.getLocation()).y;
-		                int itemTop = 0;
-		                // Search for the item index where the drop took place
-		                for (int i = 0; i < pagesList.getItemCount(); i++)
-		                {
-
-		                    if (dropYCordinate >= itemTop
-		                            && dropYCordinate <= itemTop + pagesList.getItemHeight())
-		                    {
-		                        targetItemIndex = pagesList.getTopIndex() + i + "";
-		                    }
-		                    itemTop += pagesList.getItemHeight();
-		                }
-		            }
-		            //swapListItems(Integer.parseInt(sourceItemIndex), Integer.parseInt(targetItemIndex));
-		            sourceItemIndex = Integer.toString(Integer.parseInt(sourceItemIndex.split(":")[0].split(" ")[1]) - 1);
-		            
-		            System.out.println("Source: " + sourceItemIndex + "\nDestination: " + targetItemIndex);
-		            
-		            yearbook.movePage(Integer.parseInt(sourceItemIndex), Integer.parseInt(targetItemIndex));
-		            refresh();
-		        }
-		    });		
+			@Override
+			public void handleEvent(Event event) {
+				yearbook.activePage = pagesList.getSelectionIndex();
+			}
+			
+		});
+		
+		
 	}
 
 	private void buildMenu() {
@@ -397,6 +433,36 @@ public class Creator {
 
 		editPreferencesItem = new MenuItem(editMenu, SWT.PUSH);
 		editPreferencesItem.setText("Preferences");
+		
+		
+		//Create the insert menu.
+		insertMenuItem = new MenuItem(menubar, SWT.CASCADE);
+		insertMenuItem.setText("&Insert");
+		Menu insertMenu = new Menu(shell, SWT.DROP_DOWN);
+		insertMenuItem.setMenu(insertMenu);
+
+		insertTextItem = new MenuItem(insertMenu, SWT.PUSH);
+		insertTextItem.setText("&Text");
+
+		insertImageItem = new MenuItem(insertMenu, SWT.PUSH);
+		insertImageItem.setText("&Image");
+
+		insertVideoItem = new MenuItem(insertMenu, SWT.PUSH);
+		insertVideoItem.setText("&Video");
+
+		insertLinkItem = new MenuItem(insertMenu, SWT.PUSH);
+		insertLinkItem.setText("&Link");
+		
+		new MenuItem(insertMenu, SWT.SEPARATOR);
+		
+		insertPageNumbersItem = new MenuItem(insertMenu, SWT.PUSH);
+		insertPageNumbersItem.setText("Page Numbers...");
+		
+		insertToCItem = new MenuItem(insertMenu, SWT.PUSH);
+		insertToCItem.setText("Table of Contents...");
+		
+		
+		
 		
 		
 		//Create the help menu.
@@ -649,6 +715,20 @@ public class Creator {
 			
 		});
 		
+		insertImageItem.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				FileDialog picker = new FileDialog(shell, SWT.OPEN);
+				String fileName = picker.open();
+				YearbookElement element = new YearbookImageElement(display, fileName);
+				//canvas.setContents(element.figure());
+				yearbook.page(yearbook.activePage).addElement(element);
+				refresh();
+			}
+			
+		});
+		
 		helpAboutItem.addListener(SWT.Selection, new Listener() {
 
 			@Override
@@ -753,6 +833,15 @@ public class Creator {
 			}
 			
 		});
+		
+		imageBtn.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				insertImageItem.getListeners(SWT.Selection)[0].handleEvent(event);
+			}
+			
+		});
 
 	}
 	
@@ -779,7 +868,12 @@ public class Creator {
 	}
 	
 	private void loadActivePage(int activePage) {
-		// TODO Auto-generated method stub
+		GC gc = new GC(canvas);
+		for (YearbookElement e : yearbook.page(activePage).getElements()) {
+			Layer layer = new Layer();
+			layer.add(e.figure());
+			layeredPane.add(layer);
+		}
 		
 	}
 	
@@ -810,6 +904,7 @@ public class Creator {
 		updateCanvas();
 		shell.layout();
 		if (!shell.getText().contains(yearbook.name)) setWindowTitle(yearbook.name);
+		else if (yearbook.name.isEmpty()) setWindowTitle(SWT.DEFAULT);
 	}
 	
 	public static void main(String[] args) {
