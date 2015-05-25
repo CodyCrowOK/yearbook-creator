@@ -71,4 +71,20 @@ public class YearbookIcons {
 	static Image zoomToFit(Display display) {
 		return new Image(display, "icons/zoom-fit-best.png");
 	}
+	
+	static Image select(Display display) {
+		return new Image(display, "icons/select.png");
+	}
+	
+	static Image move(Display display) {
+		return new Image(display, "icons/move.png");
+	}
+	
+	static Image resize(Display display) {
+		return new Image(display, "icons/zoom-fit-best.png");
+	}
+	
+	static Image erase(Display display) {
+		return new Image(display, "icons/delete.png");
+	}
 }

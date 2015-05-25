@@ -12,8 +12,9 @@ import org.eclipse.swt.dnd.TextTransfer;
 import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.*;
 import org.eclipse.swt.widgets.*;
 
@@ -76,7 +77,10 @@ public class Creator {
 	Button imageBtn;
 	Button videoBtn;
 	Button linkBtn;
-	Button zoomBtn;
+	Button moveBtn;
+	Button resizeBtn;
+	Button selectBtn;
+	Button eraseBtn;
 	
 	
 	private Composite content;
@@ -95,13 +99,12 @@ public class Creator {
 	private Color canvasBackgroundColor;
 	
 	private YearbookElement selectedElement;
-	
-	//private GC leftGC;
-	//private GC rightGC;
+	private UserSettings settings;
 	
 	private Creator() {
 		display = new Display();
 		shell = new Shell(display);
+		settings = new UserSettings();
 		setWindowTitle(SWT.DEFAULT);
 
 		shell.setSize(800, 600);
@@ -139,6 +142,7 @@ public class Creator {
 		            items[i].dispose();
 		        }
 		        int selectedPageIndex = pagesList.getSelectionIndex();
+		        if (selectedPageIndex < 0 || selectedPageIndex > pagesList.getItemCount()) return;
 		        MenuItem item1 = new MenuItem(pagesListMenu, SWT.NONE);
 		        item1.setText("Rename");
 		        item1.addListener(SWT.Selection, new Listener() {
@@ -233,7 +237,7 @@ public class Creator {
 		this.buildPagesListDnD();
 		
 		shell.setMaximized(true);
-		shell.open();
+		//shell.open();
 		while (!shell.isDisposed()) {
 			if (!display.readAndDispatch())	display.sleep();
 		}
@@ -258,26 +262,59 @@ public class Creator {
 		rightCanvas.setBackground(canvasBackgroundColor);
 		
 		canvas.addMouseListener(new MouseListener() {
+			
+			int xDiff = 0;
+			int yDiff = 0;
 
 			@Override
 			public void mouseDoubleClick(MouseEvent event) {
-				// TODO Auto-generated method stub
-				
+				if (settings.cursorMode == CursorMode.MOVE) {
+					//Bring element to front.
+					if (selectedElement != null) {
+						int index = yearbook.page(yearbook.activePage).findElementIndex(selectedElement);
+						if (index == -1) {
+							selectedElement = null;
+						} else {
+							yearbook.page(yearbook.activePage).getElements().remove(index);
+							yearbook.page(yearbook.activePage).addElement(selectedElement);
+						}
+					}
+				}
 			}
 
 			@Override
 			public void mouseDown(MouseEvent event) {
-				if (yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y)) {
-					selectElement(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y));
-					
-					refresh();
+				if (settings.cursorMode == CursorMode.MOVE) {
+					if (yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y)) {
+						selectElement(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y));
+						refresh();
+					} else {
+						selectElement(null);
+					}
+					xDiff -= event.x;
+					yDiff -= event.y;
 				}
-				
 			}
 
 			@Override
 			public void mouseUp(MouseEvent event) {
-				// TODO Auto-generated method stub
+				if (settings.cursorMode == CursorMode.MOVE) {
+					xDiff += event.x;
+					yDiff += event.y;
+					
+					if (xDiff < 15 && yDiff < 15) xDiff = yDiff = 0;
+									
+					if (yearbook.page(yearbook.activePage).findElement(selectedElement) != null && event.button == 1) {
+						int newX, newY;
+						newX = selectedElement.getBounds().x + xDiff;
+						newY = selectedElement.getBounds().y + yDiff;
+						yearbook.page(yearbook.activePage).findElement(selectedElement).setLocationRelative(newX, newY);
+					}
+					refresh();
+					
+					xDiff = 0;
+					yDiff = 0;
+				}
 				
 			}
 			
@@ -500,9 +537,79 @@ public class Creator {
 	}
 	
 	private void initialize() {
-		//TODO finish initializer
-		fileNewItem.getListeners(SWT.Selection)[0].handleEvent(new Event());
-		canvasBackgroundColor = new Color(display, 252, 252, 252);
+		//fileNewItem.getListeners(SWT.Selection)[0].handleEvent(new Event());
+		canvasBackgroundColor = new Color(display, 254, 254, 254);
+		
+		/*
+		 * Let's create a splash screen.
+		 */
+		Shell splash = new Shell(display);
+		splash.setLayout(new FillLayout());
+		splash.setText(COMPANY_NAME + " " + SOFTWARE_NAME);
+		
+		Button newYearbookBtn = new Button(splash, SWT.PUSH);
+		newYearbookBtn.setImage(YearbookImages.newDocument(display));
+		newYearbookBtn.setText("New Yearbook");
+		FontData fd = newYearbookBtn.getFont().getFontData()[0];
+		fd.setHeight(24);
+		newYearbookBtn.setFont(new Font(display, fd));
+		
+		Button importPDFBtn = new Button(splash, SWT.PUSH);
+		importPDFBtn.setImage(YearbookImages.openDocument(display));
+		importPDFBtn.setText("Import PDF...");
+		fd = importPDFBtn.getFont().getFontData()[0];
+		fd.setHeight(24);
+		importPDFBtn.setFont(new Font(display, fd));
+		
+		newYearbookBtn.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				splash.close();
+				splash.dispose();
+				shell.open();
+				fileNewItem.getListeners(SWT.Selection)[0].handleEvent(new Event());
+			}
+			
+		});
+		
+		importPDFBtn.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				FileDialog dialog = new FileDialog(splash, SWT.OPEN);
+				String[] allowedExtensions = {"*.pdf", "*.*"};
+				dialog.setFilterExtensions(allowedExtensions);
+				String fileName = dialog.open();
+				if (!fileName.split("\\.")[fileName.split("\\.").length - 1].equalsIgnoreCase("pdf")) {
+					MessageBox box = new MessageBox(splash, SWT.ICON_ERROR | SWT.OK);
+					box.setText("Import PDF...");
+					box.setMessage("File " + fileName + " is not a PDF file.");
+					box.open();
+				} else {
+					Yearbook newYearbook = Yearbook.importFromPDF(display, fileName);
+					if (newYearbook != null) {
+						yearbook = newYearbook;
+						createNewYearbook();
+						splash.close();
+						splash.dispose();
+						shell.open();
+						refresh();
+					} else {
+						MessageBox box = new MessageBox(splash, SWT.ICON_ERROR | SWT.OK);
+						box.setText("Import PDF...");
+						box.setMessage("Something went wrong while creating a new yearbook from PDF.");
+						box.open();
+					}
+					
+				}
+				
+			}
+			
+		});
+		
+		splash.pack();
+		splash.open();
 	}
 	
 	/**
@@ -850,6 +957,30 @@ public class Creator {
 		linkBtn = new Button(toolbarWrapper, SWT.PUSH);
 		linkBtn.setImage(YearbookIcons.link(display));
 		linkBtn.pack();
+
+		Label sep5 = new Label(toolbarWrapper, SWT.NONE);
+		sep5.setText("   ");
+
+		moveBtn = new Button(toolbarWrapper, SWT.TOGGLE);
+		moveBtn.setImage(YearbookIcons.move(display));
+		moveBtn.pack();
+
+		resizeBtn = new Button(toolbarWrapper, SWT.TOGGLE);
+		resizeBtn.setImage(YearbookIcons.resize(display));
+		resizeBtn.pack();
+
+		selectBtn = new Button(toolbarWrapper, SWT.TOGGLE);
+		selectBtn.setImage(YearbookIcons.select(display));
+		selectBtn.pack();
+
+		eraseBtn = new Button(toolbarWrapper, SWT.TOGGLE);
+		eraseBtn.setImage(YearbookIcons.erase(display));
+		eraseBtn.pack();
+		
+		
+		
+		
+		
 		
 		newBtn.addListener(SWT.Selection, new Listener() {
 
@@ -868,11 +999,66 @@ public class Creator {
 			}
 			
 		});
+		
+		moveBtn.addListener(SWT.Selection, new Listener() {
+			public void handleEvent(Event e) {
+				Control[] children = toolbarWrapper.getChildren();
+				for (int i = 0; i < children.length; i++) {
+					Control child = children[i];
+					if (e.widget != child && child instanceof Button
+							&& (child.getStyle() & SWT.TOGGLE) != 0) {
+						((Button) child).setSelection(false);
+					}
+				}
+				((Button) e.widget).setSelection(true);
+			}
+		});
+		
+		selectBtn.addListener(SWT.Selection, new Listener() {
+			public void handleEvent(Event e) {
+				Control[] children = toolbarWrapper.getChildren();
+				for (int i = 0; i < children.length; i++) {
+					Control child = children[i];
+					if (e.widget != child && child instanceof Button
+							&& (child.getStyle() & SWT.TOGGLE) != 0) {
+						((Button) child).setSelection(false);
+					}
+				}
+				((Button) e.widget).setSelection(true);
+			}
+		});
+		
+		resizeBtn.addListener(SWT.Selection, new Listener() {
+			public void handleEvent(Event e) {
+				Control[] children = toolbarWrapper.getChildren();
+				for (int i = 0; i < children.length; i++) {
+					Control child = children[i];
+					if (e.widget != child && child instanceof Button
+							&& (child.getStyle() & SWT.TOGGLE) != 0) {
+						((Button) child).setSelection(false);
+					}
+				}
+				((Button) e.widget).setSelection(true);
+			}
+		});
+		
+		eraseBtn.addListener(SWT.Selection, new Listener() {
+			public void handleEvent(Event e) {
+				Control[] children = toolbarWrapper.getChildren();
+				for (int i = 0; i < children.length; i++) {
+					Control child = children[i];
+					if (e.widget != child && child instanceof Button
+							&& (child.getStyle() & SWT.TOGGLE) != 0) {
+						((Button) child).setSelection(false);
+					}
+				}
+				((Button) e.widget).setSelection(true);
+			}
+		});
 
 	}
 	
-	private void createNewYearbook(String name) {
-		yearbook = new Yearbook(name);
+	private void createNewYearbook() {
 
 		int canvasHeight = display.getClientArea().height - 150;
 		
@@ -880,6 +1066,12 @@ public class Creator {
 		yearbook.settings.width = (int) ((8.5 / 11.0) * canvasHeight);
 		canvas.setSize(yearbook.settings.width, yearbook.settings.height);
 		rightCanvas.setSize(yearbook.settings.width, yearbook.settings.height);
+		
+	}
+	
+	private void createNewYearbook(String name) {
+		yearbook = new Yearbook(name);
+		createNewYearbook();
 	}
 
 	private void updatePageList() {
@@ -894,11 +1086,19 @@ public class Creator {
 	}
 	
 	private void loadActivePage(int activePage) {
+		
 		//Reset the canvas to a blank slate so we can refresh it.
 		GC gc = new GC(canvas);
 		gc.setBackground(canvasBackgroundColor);
 		gc.fillRectangle(0, 0, canvas.getBounds().width, canvas.getBounds().height);
 		gc.dispose();
+		
+		if (yearbook.page(yearbook.activePage).backgroundImage != null) {
+			//canvas.setBackgroundImage(yearbook.page(yearbook.activePage).backgroundImage);
+			gc = new GC(canvas);
+			gc.drawImage(yearbook.page(yearbook.activePage).backgroundImage, 0, 0, yearbook.page(yearbook.activePage).backgroundImage.getBounds().width, yearbook.page(yearbook.activePage).backgroundImage.getBounds().height, 0, 0, canvas.getBounds().width, canvas.getBounds().height);
+			gc.dispose();
+		}
 		
 		//Apparently there's no map function in Java.
 		//Map the YearbookImageElements to images...
@@ -911,7 +1111,7 @@ public class Creator {
 		//...and display them.
 		for (YearbookImageElement element : images) {
 			gc = new GC(canvas);
-			gc.drawImage(element.getImage(), 0, 0, element.getImage().getBounds().width, element.getImage().getBounds().height, 0, 0, element.getBounds().width, element.getBounds().height);
+			gc.drawImage(element.getImage(), 0, 0, element.getImage().getBounds().width, element.getImage().getBounds().height, element.getBounds().x, element.getBounds().y, element.getBounds().width, element.getBounds().height);
 			if (element == this.selectedElement) {
 				//Element is selected by user.
 				//Draw a border like GIMP.

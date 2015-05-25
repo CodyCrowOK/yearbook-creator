@@ -21,6 +21,7 @@ public class YearbookImageElement extends YearbookElement {
 	public String fileName;
 	
 	public YearbookImageElement(Display display, String fileName, int pageWidth, int pageHeight) {
+		generateRandomElementId();
 		scale = 1;
 		image = new Image(display, fileName);
 		clientWidth = display.getClientArea().width;
@@ -55,6 +56,20 @@ public class YearbookImageElement extends YearbookElement {
 		int width = (int) (this.image.getBounds().width * this.scale);
 		int height = (int) (this.image.getBounds().height * this.scale);
 		Rectangle bounds = new Rectangle(xc, yc, width, height);
+		System.out.println("x y " + bounds.x + "," + bounds.y);
 		return bounds;
+	}
+	
+	/**
+	 * Sets the image scale relative to the current scale.
+	 * @param scale the amount to multiply the current scale by
+	 */
+	public void setScaleRelative(double scale) {
+		this.scale *= scale;
+	}
+	
+	public void setLocationRelative(int x, int y) {
+		this.x = (double) x / this.pageWidth;
+		this.y = (double) y / this.pageHeight;
 	}
 }

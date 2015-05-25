@@ -1,9 +1,18 @@
 import java.util.ArrayList;
 
+import org.eclipse.swt.graphics.Image;
+
 public class YearbookPage {
 	private ArrayList<YearbookElement> elements;
 	public String name;
+	public Image backgroundImage;
 	
+	public YearbookPage(Image backgroundImage) {
+		this();
+		this.name = "";
+		this.backgroundImage = backgroundImage;
+	}
+
 	public YearbookElement element(int index) {
 		return elements.get(index);
 	}
@@ -42,5 +51,33 @@ public class YearbookPage {
 			if (e.isAtPoint(x, y)) return e;
 		}
 		return null;
+	}
+
+	/**
+	 * Finds the element on the page which is equal to e
+	 * @param e the YearbookElement to compare to
+	 * @return the found YearbookElement on the page
+	 */
+	public YearbookElement findElement(YearbookElement e) {
+		for (int i = 0; i < this.elements.size(); i++) {
+			if (this.elements.get(i) == e) {
+				return this.elements.get(i);
+			}
+		}
+		return null;
+	}
+	
+	/**
+	 * Finds the element on the page which is equal to e
+	 * @param e the YearbookElement to compare to
+	 * @return the found YearbookElement on the page
+	 */
+	public int findElementIndex(YearbookElement e) {
+		for (int i = 0; i < this.elements.size(); i++) {
+			if (this.elements.get(i) == e) {
+				return i;
+			}
+		}
+		return -1;
 	}
 }
