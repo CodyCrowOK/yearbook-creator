@@ -15,6 +15,7 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.*;
 import org.eclipse.swt.widgets.*;
 
@@ -100,6 +101,7 @@ public class Creator {
 	
 	private YearbookElement selectedElement;
 	private UserSettings settings;
+	private Rectangle selectionRectangle;
 	
 	private Creator() {
 		display = new Display();
@@ -261,14 +263,22 @@ public class Creator {
 		rightCanvas = new Canvas(canvasWrapper2, SWT.BORDER);
 		rightCanvas.setBackground(canvasBackgroundColor);
 		
+		/**
+		 * Handles all of the mouse interactions on the canvas.
+		 * This just compiles all of the relevant information, drawing
+		 * should _NEVER_ happen here.
+		 */
 		canvas.addMouseListener(new MouseListener() {
 			
 			int xDiff = 0;
 			int yDiff = 0;
+			int startX = 0;
+			int startY = 0;
 
 			@Override
 			public void mouseDoubleClick(MouseEvent event) {
-				if (settings.cursorMode == CursorMode.MOVE) {
+				switch (settings.cursorMode) {
+				case MOVE:
 					//Bring element to front.
 					if (selectedElement != null) {
 						int index = yearbook.page(yearbook.activePage).findElementIndex(selectedElement);
@@ -279,12 +289,22 @@ public class Creator {
 							yearbook.page(yearbook.activePage).addElement(selectedElement);
 						}
 					}
+					break;
+				case ERASE:
+					break;
+				case RESIZE:
+					break;
+				case SELECT:
+					break;
+				default:
+					break;
 				}
 			}
 
 			@Override
 			public void mouseDown(MouseEvent event) {
-				if (settings.cursorMode == CursorMode.MOVE) {
+				switch (settings.cursorMode) {
+				case MOVE:
 					if (yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y)) {
 						selectElement(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y));
 						refresh();
@@ -293,16 +313,33 @@ public class Creator {
 					}
 					xDiff -= event.x;
 					yDiff -= event.y;
+					break;
+				case ERASE:
+					break;
+				case RESIZE:
+					break;
+				case SELECT:
+					startX = event.x;
+					startY = event.y;
+					xDiff -= event.x;
+					yDiff -= event.y;					
+					break;
+				default:
+					break;
+					
+					
 				}
 			}
 
 			@Override
 			public void mouseUp(MouseEvent event) {
-				if (settings.cursorMode == CursorMode.MOVE) {
+				switch (settings.cursorMode) {
+				case MOVE:
 					xDiff += event.x;
 					yDiff += event.y;
 					
-					if (xDiff < 15 && yDiff < 15) xDiff = yDiff = 0;
+					//Prevents accidental movement.
+					if (Math.abs(xDiff) < 15 && Math.abs(yDiff) < 15) xDiff = yDiff = 0;
 									
 					if (yearbook.page(yearbook.activePage).findElement(selectedElement) != null && event.button == 1) {
 						int newX, newY;
@@ -314,6 +351,30 @@ public class Creator {
 					
 					xDiff = 0;
 					yDiff = 0;
+					break;
+				case ERASE:
+					break;
+				case RESIZE:
+					break;
+				case SELECT:
+					xDiff += event.x;
+					yDiff += event.y;
+					
+					//Prevents accidental movement and
+					//helps users select from the edges.
+					if (Math.abs(startX) <= 5) startX = 0;
+					if (Math.abs(startY) <= 5) startY = 0;
+					if (Math.abs(canvas.getBounds().width - event.x) <= 5) 
+					if (Math.abs(xDiff) < 15 && Math.abs(yDiff) < 15) xDiff = yDiff = 0;
+					
+					selectionRectangle = new Rectangle(startX, startY, xDiff, yDiff);
+					startX = startY = xDiff = yDiff = 0;
+					
+					refresh();
+					
+					break;
+				default:
+					break;
 				}
 				
 			}
@@ -544,7 +605,7 @@ public class Creator {
 		 * Let's create a splash screen.
 		 */
 		Shell splash = new Shell(display);
-		splash.setLayout(new FillLayout());
+		splash.setLayout(new FillLayout(SWT.VERTICAL));
 		splash.setText(COMPANY_NAME + " " + SOFTWARE_NAME);
 		
 		Button newYearbookBtn = new Button(splash, SWT.PUSH);
@@ -581,6 +642,7 @@ public class Creator {
 				String[] allowedExtensions = {"*.pdf", "*.*"};
 				dialog.setFilterExtensions(allowedExtensions);
 				String fileName = dialog.open();
+				if (fileName == null) return;
 				if (!fileName.split("\\.")[fileName.split("\\.").length - 1].equalsIgnoreCase("pdf")) {
 					MessageBox box = new MessageBox(splash, SWT.ICON_ERROR | SWT.OK);
 					box.setText("Import PDF...");
@@ -963,6 +1025,7 @@ public class Creator {
 
 		moveBtn = new Button(toolbarWrapper, SWT.TOGGLE);
 		moveBtn.setImage(YearbookIcons.move(display));
+		moveBtn.setSelection(true);
 		moveBtn.pack();
 
 		resizeBtn = new Button(toolbarWrapper, SWT.TOGGLE);
@@ -1011,6 +1074,8 @@ public class Creator {
 					}
 				}
 				((Button) e.widget).setSelection(true);
+				settings.cursorMode = CursorMode.MOVE;
+				modeReset();
 			}
 		});
 		
@@ -1025,6 +1090,8 @@ public class Creator {
 					}
 				}
 				((Button) e.widget).setSelection(true);
+				settings.cursorMode = CursorMode.SELECT;
+				modeReset();
 			}
 		});
 		
@@ -1039,6 +1106,8 @@ public class Creator {
 					}
 				}
 				((Button) e.widget).setSelection(true);
+				settings.cursorMode = CursorMode.RESIZE;
+				modeReset();
 			}
 		});
 		
@@ -1053,11 +1122,22 @@ public class Creator {
 					}
 				}
 				((Button) e.widget).setSelection(true);
+				settings.cursorMode = CursorMode.ERASE;
+				modeReset();
 			}
 		});
 
 	}
 	
+	/**
+	 * Resets all of the global selection variables.
+	 */
+	protected void modeReset() {
+		this.selectionRectangle = null;
+		selectElement(null);
+		
+	}
+
 	private void createNewYearbook() {
 
 		int canvasHeight = display.getClientArea().height - 150;
@@ -1085,10 +1165,18 @@ public class Creator {
 		this.loadActivePage(yearbook.activePage);
 	}
 	
+	/**
+	 * This function handles the painting of the canvas for the currently
+	 * selected yearbook page.
+	 * @param activePage The page to draw on the canvas.
+	 */
 	private void loadActivePage(int activePage) {
+		GC gc;
+		Color uglyYellowColor = new Color(display, 250, 255, 0);
+		
 		
 		//Reset the canvas to a blank slate so we can refresh it.
-		GC gc = new GC(canvas);
+		gc = new GC(canvas);
 		gc.setBackground(canvasBackgroundColor);
 		gc.fillRectangle(0, 0, canvas.getBounds().width, canvas.getBounds().height);
 		gc.dispose();
@@ -1112,15 +1200,28 @@ public class Creator {
 		for (YearbookImageElement element : images) {
 			gc = new GC(canvas);
 			gc.drawImage(element.getImage(), 0, 0, element.getImage().getBounds().width, element.getImage().getBounds().height, element.getBounds().x, element.getBounds().y, element.getBounds().width, element.getBounds().height);
-			if (element == this.selectedElement) {
+			if (element == this.selectedElement && this.selectedElement != null) {
 				//Element is selected by user.
 				//Draw a border like GIMP.
-				gc.setForeground(new Color(display, 250, 255, 0));
+				gc.setForeground(uglyYellowColor);
 				gc.setLineStyle(SWT.LINE_DASH);
 				gc.setLineWidth(3);
 				gc.drawRectangle(element.getBounds().x, element.getBounds().y, element.getBounds().width, element.getBounds().height);
 				
 			}
+			gc.dispose();
+		}
+		
+		//If the user has selected an area, we should do something about that.
+		if (this.selectionRectangle != null && this.settings.cursorMode == CursorMode.SELECT) {
+			gc = new GC(canvas);
+			gc.setLineStyle(SWT.LINE_DASHDOTDOT);
+			gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
+			gc.setLineWidth(2);
+			gc.drawRectangle(selectionRectangle);
+			gc.setForeground(display.getSystemColor(SWT.COLOR_BLUE));
+			gc.setAlpha(20);
+			gc.fillRectangle(selectionRectangle);
 			gc.dispose();
 		}
 		

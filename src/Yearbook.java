@@ -55,6 +55,7 @@ public class Yearbook {
 		pages.add(destination, page);
 	}
 	
+	@SuppressWarnings("unchecked")
 	public static Yearbook importFromPDF(Display display, String fileName) {
 
 		PDDocument document;

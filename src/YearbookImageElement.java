@@ -56,7 +56,7 @@ public class YearbookImageElement extends YearbookElement {
 		int width = (int) (this.image.getBounds().width * this.scale);
 		int height = (int) (this.image.getBounds().height * this.scale);
 		Rectangle bounds = new Rectangle(xc, yc, width, height);
-		System.out.println("x y " + bounds.x + "," + bounds.y);
+		//System.out.println("x y " + bounds.x + "," + bounds.y);
 		return bounds;
 	}
 	
