@@ -1,3 +1,5 @@
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import org.eclipse.swt.*;
@@ -598,7 +600,6 @@ public class Creator {
 	}
 	
 	private void initialize() {
-		//fileNewItem.getListeners(SWT.Selection)[0].handleEvent(new Event());
 		canvasBackgroundColor = new Color(display, 254, 254, 254);
 		
 		/*
@@ -629,7 +630,7 @@ public class Creator {
 				splash.close();
 				splash.dispose();
 				shell.open();
-				fileNewItem.getListeners(SWT.Selection)[0].handleEvent(new Event());
+				fileNewItem.getListeners(SWT.Selection)[0].handleEvent(event);
 			}
 			
 		});
@@ -924,6 +925,45 @@ public class Creator {
 			
 		});
 		
+		insertVideoItem.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				if (settings.cursorMode != CursorMode.SELECT || selectionRectangle == null) {
+					MessageBox box = new MessageBox(shell, SWT.ICON_INFORMATION);
+					box.setText("Insert Video");
+					box.setMessage("Please select an area of the page to link to the video.");
+					box.open();
+					return;
+				}
+				
+
+				FileDialog dialog = new FileDialog(shell, SWT.OPEN);
+				String[] allowedExtensions = {"*.webm;*.mkv;*.flv;*.vob;*.ogv;*.ogg;*.drc;*.avi;*.mov;*.qt;*.wmv;*.rm;*.mp4;*.m4p;*.m4v;*.mpg;*.3gp;*.3g2", "*.*"};
+				dialog.setFilterExtensions(allowedExtensions);
+				String fileName = dialog.open();
+				if (fileName == null) return;
+				
+				//Need to make sure the video exists.
+				File testFile = new File(fileName);
+				if (!testFile.exists()) return;
+				
+				try {
+					YearbookClickableElement e = new YearbookClickableElement(new Video(fileName), selectionRectangle, canvas.getBounds().height, canvas.getBounds().width);
+					yearbook.page(yearbook.activePage).addElement(e);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+				modeReset();
+				refresh();
+				
+				
+			}
+			
+		});
+		
 		helpAboutItem.addListener(SWT.Selection, new Listener() {
 
 			@Override
@@ -1059,6 +1099,15 @@ public class Creator {
 			@Override
 			public void handleEvent(Event event) {
 				insertImageItem.getListeners(SWT.Selection)[0].handleEvent(event);
+			}
+			
+		});
+		
+		videoBtn.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				insertVideoItem.getListeners(SWT.Selection)[0].handleEvent(event);
 			}
 			
 		});
@@ -1222,6 +1271,25 @@ public class Creator {
 			gc.setForeground(display.getSystemColor(SWT.COLOR_BLUE));
 			gc.setAlpha(20);
 			gc.fillRectangle(selectionRectangle);
+			gc.dispose();
+		}
+		
+		//We should also show the areas that are clickable.
+		//Map them like we did before...
+		ArrayList<YearbookElement> clickables = new ArrayList<YearbookElement>();
+		for (YearbookElement e : yearbook.page(yearbook.activePage).getElements()) {
+			if (e.isClickable()) clickables.add(e);
+		}
+		//...and display those in some manner.
+		for (YearbookElement e : clickables) {
+			gc = new GC(canvas);
+			gc.setLineWidth(1);
+			gc.setLineStyle(SWT.LINE_DASH);
+			gc.drawRectangle(e.getBounds());
+			
+			gc.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
+			gc.setAlpha(50);
+			gc.fillRectangle(e.getBounds());
 			gc.dispose();
 		}
 		

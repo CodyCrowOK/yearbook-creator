@@ -42,4 +42,8 @@ abstract public class YearbookElement {
 	protected void generateRandomElementId() {
 		elementId = (long) (Math.random() * (Math.pow(2, 63) - 1));
 	}
+	
+	public boolean isClickable() {
+		return false;
+	}
 }
