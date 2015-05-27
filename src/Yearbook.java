@@ -1,6 +1,9 @@
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -93,5 +96,41 @@ public class Yearbook {
 			e.printStackTrace();
 		}
 		return null;
+	}
+	
+	/**
+	 * Saves a yearbook to a file readable by the digital yearbook software
+	 * (i.e. what the end user sees).
+	 * @param yearbook The Yearbook to export
+	 * @param fileName The name of the file to export to.
+	 * @throws IOException
+	 */
+	public static void export(String fileName, Creator creator) throws IOException {
+		/*
+		 * First, prepare the yearbook for writing.
+		 */
+		/*
+                Image drawable = new Image(e.display, canvas.getBounds());
+		GC gc = new GC(drawable);
+		canvas.print(gc);
+		ImageLoader loader = new ImageLoader();
+		loader.data = new ImageData[] {drawable.getImageData()};
+		loader.save("c:\\swt.png", SWT.IMAGE_PNG);
+		drawable.dispose();
+		gc.dispose();
+		*/
+		
+		
+		
+		File file = new File(fileName);
+		if (!file.exists()) {
+			file.createNewFile();
+			return;
+		}
+		FileOutputStream fos = new FileOutputStream(file);
+		ObjectOutputStream oos = new ObjectOutputStream(fos);
+		
+		
+		
 	}
 }

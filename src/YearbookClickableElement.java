@@ -53,6 +53,21 @@ public class YearbookClickableElement extends YearbookElement implements Clickab
 		return false;
 	}
 
+	public void setPageWidth(int pageWidth) {
+		this.pageWidth = pageWidth;
+	}
+
+
+	public void setPageHeight(int pageHeight) {
+		this.pageHeight = pageHeight;
+	}
+
+
+	public void setVideo(Video video) {
+		this.video = video;
+	}
+
+
 	@Override
 	/**
 	 * Currently unimplemented for this element.

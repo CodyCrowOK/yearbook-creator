@@ -2,8 +2,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.channels.FileChannel;
-import java.nio.file.Files;
 import java.util.Date;
 
 /**
@@ -11,7 +11,9 @@ import java.util.Date;
  * @author Cody Crow
  *
  */
-public class Video {
+public class Video implements Serializable {
+	private static final long serialVersionUID = 5104869062313246983L;
+	
 	private String src; //Where the video is stored by this program
 	public String name;
 	

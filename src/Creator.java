@@ -832,7 +832,12 @@ public class Creator {
 
 			@Override
 			public void handleEvent(Event event) {
-				System.out.println("File >> Export... not implemented.");
+				FileDialog picker = new FileDialog(shell, SWT.SAVE);
+				picker.setText("Export to Digital Yearbook");
+				String fileName = picker.open();
+				if (fileName == null) return;
+				
+				
 				
 			}
 			
