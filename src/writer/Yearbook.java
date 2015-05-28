@@ -1,10 +1,15 @@
 package writer;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -13,12 +18,17 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
+import org.eclipse.swt.graphics.ImageLoader;
+import org.eclipse.swt.graphics.PaletteData;
+import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.Display;
 
 
-public class Yearbook {
+public class Yearbook implements Serializable {
+	private static final long serialVersionUID = 4099869425438846538L;
 	private ArrayList<YearbookPage> pages;
-	public Image defaultBackground;
+	transient private Image defaultBackground;
+	private ImageData defaultBackgroundData;
 	
 	String name;
 	YearbookSettings settings;
@@ -29,7 +39,6 @@ public class Yearbook {
 		settings = new YearbookSettings();
 		activePage = 0;
 		name = "Untitled";
-		defaultBackground = null;
 	}
 	
 	public Yearbook(String name) {
@@ -108,6 +117,7 @@ public class Yearbook {
 	 * @param yearbook The Yearbook to export
 	 * @throws IOException
 	 */
+	
 	public static void export(String fileName, Yearbook yearbook, Display display) throws IOException {
 		/*
 		 * First, prepare the yearbook for writing.
@@ -123,8 +133,8 @@ public class Yearbook {
 			GC gc = new GC(image);
 			
 			//Set the background image.
-			if (page.backgroundImage != null) {
-				gc.drawImage(page.backgroundImage, 0, 0, page.backgroundImage.getBounds().width, page.backgroundImage.getBounds().height, 0, 0, image.getBounds().width, image.getBounds().height);
+			if (page.backgroundImage(display) != null) {
+				gc.drawImage(page.backgroundImage(display), 0, 0, page.backgroundImage(display).getBounds().width, page.backgroundImage(display).getBounds().height, 0, 0, image.getBounds().width, image.getBounds().height);
 			}
 			
 			//Map the YearbookImageElements to images...
@@ -136,7 +146,7 @@ public class Yearbook {
 			}
 			//...and display them.
 			for (YearbookImageElement element : images) {
-				gc.drawImage(element.getImage(), 0, 0, element.getImage().getBounds().width, element.getImage().getBounds().height, element.getBounds(pageWidth, pageHeight).x, element.getBounds(pageWidth, pageHeight).y, element.getBounds(pageWidth, pageHeight).width, element.getBounds(pageWidth, pageHeight).height);
+				gc.drawImage(element.getImage(display), 0, 0, element.getImage(display).getBounds().width, element.getImage(display).getBounds().height, element.getBounds(pageWidth, pageHeight).x, element.getBounds(pageWidth, pageHeight).y, element.getBounds(pageWidth, pageHeight).width, element.getBounds(pageWidth, pageHeight).height);
 			}
 			
 			gc.dispose();
@@ -178,5 +188,58 @@ public class Yearbook {
 		oos.close();
 		
 		
+	}
+	
+	public static Yearbook readFromDisk(String fileName) throws IOException, ClassNotFoundException {
+		FileInputStream fis = new FileInputStream(fileName);
+		ObjectInputStream ois = new ObjectInputStream(fis);
+		
+		Yearbook yearbook = (Yearbook) ois.readObject();
+		ois.close();
+		return yearbook;
+	}
+
+	public static void saveToDisk(Yearbook yearbook, String fileName) throws IOException {
+		File file = new File(fileName);
+		if (!file.exists()) {
+			file.createNewFile();
+			return;
+		}
+		FileOutputStream fos = new FileOutputStream(file);
+		ObjectOutputStream oos = new ObjectOutputStream(fos);
+		
+		oos.writeObject(yearbook);
+		oos.flush();
+		oos.close();
+	}
+	
+	/*
+	 * Serialization methods
+	 */
+	
+	private void writeObject(ObjectOutputStream out) throws IOException {
+		out.defaultWriteObject();
+		if (this.defaultBackgroundData == null) {
+			this.defaultBackgroundData = YearbookImages.bogusBackgroundData();
+		}
+		ImageLoader imageLoader = new ImageLoader();
+		imageLoader.data = new ImageData[] { this.defaultBackgroundData };
+		ByteArrayOutputStream stream = new ByteArrayOutputStream();
+		imageLoader.save(stream, SWT.IMAGE_PNG);
+		byte[] bytes = stream.toByteArray();
+		out.writeInt(bytes.length);
+		out.write(bytes);
+	}
+
+	private void readObject(ObjectInputStream in) throws IOException,
+			ClassNotFoundException {
+		in.defaultReadObject();
+		int length = in.readInt();
+		byte[] buffer = new byte[length];
+		in.readFully(buffer);
+		ImageLoader imageLoader = new ImageLoader();
+		ByteArrayInputStream stream = new ByteArrayInputStream(buffer);
+		ImageData[] data = imageLoader.load(stream);
+		this.defaultBackgroundData = data[0];
 	}
 }

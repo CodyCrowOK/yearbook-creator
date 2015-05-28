@@ -1,4 +1,6 @@
 package writer;
+import java.io.Serializable;
+
 import org.eclipse.swt.graphics.*;
 
 /**
@@ -7,8 +9,9 @@ import org.eclipse.swt.graphics.*;
  * @author Cody Crow
  *
  */
-abstract public class YearbookElement {
-	
+abstract public class YearbookElement implements Serializable {
+	private static final long serialVersionUID = -8472886681905623636L;
+
 	/**
 	 * A unique element id which is used to make comparisons correct. This
 	 * prevents two elements with the same image from being perceived as

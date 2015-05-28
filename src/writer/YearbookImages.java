@@ -1,5 +1,8 @@
 package writer;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.ImageData;
+import org.eclipse.swt.graphics.PaletteData;
+import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.Display;
 
 
@@ -11,5 +14,18 @@ public class YearbookImages {
 	
 	static Image openDocument(Display display) {
 		return new Image(display, "icons/large/document-open.png");
+	}
+	
+	/**
+	 * This is bogus ImageData that is written to disk whenever ImageData
+	 * would otherwise be null. This is a necessary implication of the way
+	 * Java does serialization. It is not rendered to the screen.
+	 * @return ImageData
+	 */
+	static ImageData bogusBackgroundData() {
+		PaletteData paletteData = new PaletteData(new RGB[] {new RGB(151,245,76), new RGB(9,70,121)});
+		ImageData tmp = new ImageData(1,1,1,paletteData);
+		tmp.alpha = 17;
+		return tmp;
 	}
 }

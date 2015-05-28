@@ -9,6 +9,7 @@ import org.eclipse.swt.graphics.Rectangle;
  *
  */
 public class YearbookClickableElement extends YearbookElement implements Clickable, Serializable {
+	private static final long serialVersionUID = -2564949080465016227L;
 	//Percentages
 	private double x;
 	private double y;

@@ -1,6 +1,9 @@
 package writer;
 
-public class YearbookSettings {
+import java.io.Serializable;
+
+public class YearbookSettings implements Serializable {
+	private static final long serialVersionUID = 3913393088336859492L;
 	public int width;
 	public int height;
 	

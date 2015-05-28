@@ -1,17 +1,32 @@
 package writer;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.ImageData;
+import org.eclipse.swt.graphics.ImageLoader;
+import org.eclipse.swt.graphics.PaletteData;
+import org.eclipse.swt.graphics.RGB;
+import org.eclipse.swt.widgets.Display;
 
-public class YearbookPage {
+public class YearbookPage implements Serializable {
+	private static final long serialVersionUID = -5090460491486388571L;
 	private ArrayList<YearbookElement> elements;
 	public String name;
-	public Image backgroundImage;
+	transient private ImageData backgroundImageData;
+	transient private Image backgroundImage;
+	boolean noBackground;
 	
 	public YearbookPage(Image backgroundImage) {
 		this();
 		this.name = "";
-		this.backgroundImage = backgroundImage;
+		this.backgroundImageData = backgroundImage.getImageData();
 	}
 
 	public YearbookElement element(int index) {
@@ -33,6 +48,15 @@ public class YearbookPage {
 	
 	public void addElement(YearbookElement e) {
 		elements.add(e);
+	}
+	
+	public Image backgroundImage(Display display) {
+		//Try not to leak too many resources...
+		if (display == null || this.backgroundImageData == null) return null; 
+		if (this.backgroundImage == null) {
+			this.backgroundImage = new Image(display, this.backgroundImageData);
+		}
+		return this.backgroundImage;
 	}
 	
 	public String toString() {
@@ -80,5 +104,41 @@ public class YearbookPage {
 			}
 		}
 		return -1;
+	}
+	
+	/*
+	 * Serialization methods
+	 */
+	
+	private void writeObject(ObjectOutputStream out) throws IOException {
+		if (this.backgroundImageData == null) {
+			this.noBackground = true;
+			this.backgroundImageData = YearbookImages.bogusBackgroundData();
+		} else {
+			this.noBackground = false;
+		}
+		out.defaultWriteObject();
+		ImageLoader imageLoader = new ImageLoader();
+		imageLoader.data = new ImageData[] { this.backgroundImageData };
+		ByteArrayOutputStream stream = new ByteArrayOutputStream();
+		imageLoader.save(stream, SWT.IMAGE_PNG);
+		byte[] bytes = stream.toByteArray();
+		out.writeInt(bytes.length);
+		out.write(bytes);
+	}
+
+	private void readObject(ObjectInputStream in) throws IOException,
+			ClassNotFoundException {
+		in.defaultReadObject();
+		int length = in.readInt();
+		byte[] buffer = new byte[length];
+		in.readFully(buffer);
+		ImageLoader imageLoader = new ImageLoader();
+		ByteArrayInputStream stream = new ByteArrayInputStream(buffer);
+		ImageData[] data = imageLoader.load(stream);
+		this.backgroundImageData = data[0];
+		if (this.noBackground == true) {
+			this.backgroundImageData = null;
+		}
 	}
 }

@@ -1,30 +1,47 @@
 package writer;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+
+import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.Display;
 
 
-public class YearbookImageElement extends YearbookElement {
+public class YearbookImageElement extends YearbookElement implements Serializable {
+	private static final long serialVersionUID = 8808543926557894799L;
+
 	//Percentage values
 	public double scale;
 	
-	public Image getImage() {
+	public Image getImage(Display display) {
+		if (image == null) {
+			image = new Image(display, imageData);
+		}
 		return image;
 	}
 
 	private int clientWidth;
 	
-	private Display display;
+	transient private Display display;
 	
 	private int pageWidth;
 	private int pageHeight;
-	private Image image;
+	transient ImageData imageData;
+	transient private Image image;
 	public String fileName;
 	
 	public YearbookImageElement(Display display, String fileName, int pageWidth, int pageHeight) {
 		generateRandomElementId();
 		scale = 1;
-		image = new Image(display, fileName);
+		Image tmp = new Image(display, fileName);
+		imageData = tmp.getImageData();
+		tmp.dispose();
+		image = new Image(display, imageData);
 		clientWidth = display.getClientArea().width;
 		this.display = display;
 		
@@ -89,5 +106,35 @@ public class YearbookImageElement extends YearbookElement {
 	public void setLocationRelative(int x, int y) {
 		this.x = (double) x / this.pageWidth;
 		this.y = (double) y / this.pageHeight;
+	}
+	
+	/*
+	 * Serialization methods
+	 */
+	
+	private void writeObject(ObjectOutputStream out) throws IOException {
+		out.defaultWriteObject();
+		if (this.imageData == null) {
+			this.imageData = YearbookImages.bogusBackgroundData();
+		}
+		ImageLoader imageLoader = new ImageLoader();
+		imageLoader.data = new ImageData[] { this.imageData };
+		ByteArrayOutputStream stream = new ByteArrayOutputStream();
+		imageLoader.save(stream, SWT.IMAGE_PNG);
+		byte[] bytes = stream.toByteArray();
+		out.writeInt(bytes.length);
+		out.write(bytes);
+	}
+
+	private void readObject(ObjectInputStream in) throws IOException,
+			ClassNotFoundException {
+		in.defaultReadObject();
+		int length = in.readInt();
+		byte[] buffer = new byte[length];
+		in.readFully(buffer);
+		ImageLoader imageLoader = new ImageLoader();
+		ByteArrayInputStream stream = new ByteArrayInputStream(buffer);
+		ImageData[] data = imageLoader.load(stream);
+		this.imageData = data[0];
 	}
 }

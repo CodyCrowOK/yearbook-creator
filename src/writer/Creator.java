@@ -24,8 +24,6 @@ import org.eclipse.swt.widgets.*;
 
 public class Creator {
 	
-	//Use the file extension .ctc for yearbook saves.
-	
 	public static final String VERSION = "0.01";
 	public static final String COMPANY_NAME = "Digital Express";
 	public static final String SOFTWARE_NAME = "Smartbook Pro™";
@@ -813,8 +811,20 @@ public class Creator {
 
 			@Override
 			public void handleEvent(Event event) {
-				System.out.println("File >> Open not implemented.");
-				
+				FileDialog picker = new FileDialog(shell, SWT.OPEN);
+				picker.setText("Open Yearbook");
+				String fileName = picker.open();
+				if (fileName == null) return;
+				try {
+					yearbook = Yearbook.readFromDisk(fileName);
+					refresh();
+				} catch (Exception e) {
+					MessageBox box = new MessageBox(shell, SWT.ERROR);
+					box.setText("Open Yearbook");
+					box.setMessage("Something went wrong while trying to open your file.\n\t" + e.getMessage());
+					box.open();
+					e.printStackTrace();
+				}
 			}
 			
 		});
@@ -823,7 +833,19 @@ public class Creator {
 
 			@Override
 			public void handleEvent(Event event) {
-				System.out.println("File >> Save As... not implemented.");
+				FileDialog picker = new FileDialog(shell, SWT.SAVE);
+				picker.setText("Save As...");
+				String fileName = picker.open();
+				if (fileName == null) return;
+				try {
+					Yearbook.saveToDisk(yearbook, fileName);
+				} catch (IOException e) {
+					MessageBox box = new MessageBox(shell, SWT.ERROR);
+					box.setText("Save Yearbook");
+					box.setMessage("Something went wrong while trying to save your file.\n\t" + e.getMessage());
+					box.open();
+					e.printStackTrace();
+				}
 				
 			}
 			
@@ -933,7 +955,7 @@ public class Creator {
 				yearbook.page(yearbook.activePage).addElement(element);
 				//refresh();
 				GC gc = new GC(canvas);
-				gc.drawImage(element.getImage(), 0, 0, element.getImage().getBounds().width, element.getImage().getBounds().height, 0, 0, element.getBounds().width, element.getBounds().height);
+				gc.drawImage(element.getImage(display), 0, 0, element.getImage(display).getBounds().width, element.getImage(display).getBounds().height, 0, 0, element.getBounds().width, element.getBounds().height);
 				gc.dispose();
 			}
 			
@@ -1244,9 +1266,9 @@ public class Creator {
 		gc.fillRectangle(0, 0, canvas.getBounds().width, canvas.getBounds().height);
 		gc.dispose();
 		
-		if (yearbook.page(yearbook.activePage).backgroundImage != null) {
+		if (yearbook.page(activePage).backgroundImage(display) != null) {
 			gc = new GC(canvas);
-			gc.drawImage(yearbook.page(yearbook.activePage).backgroundImage, 0, 0, yearbook.page(yearbook.activePage).backgroundImage.getBounds().width, yearbook.page(yearbook.activePage).backgroundImage.getBounds().height, 0, 0, canvas.getBounds().width, canvas.getBounds().height);
+			gc.drawImage(yearbook.page(activePage).backgroundImage(display), 0, 0, yearbook.page(activePage).backgroundImage(display).getBounds().width, yearbook.page(activePage).backgroundImage(display).getBounds().height, 0, 0, canvas.getBounds().width, canvas.getBounds().height);
 			gc.dispose();
 		}
 		
@@ -1261,7 +1283,7 @@ public class Creator {
 		//...and display them.
 		for (YearbookImageElement element : images) {
 			gc = new GC(canvas);
-			gc.drawImage(element.getImage(), 0, 0, element.getImage().getBounds().width, element.getImage().getBounds().height, element.getBounds().x, element.getBounds().y, element.getBounds().width, element.getBounds().height);
+			gc.drawImage(element.getImage(display), 0, 0, element.getImage(display).getBounds().width, element.getImage(display).getBounds().height, element.getBounds().x, element.getBounds().y, element.getBounds().width, element.getBounds().height);
 			if (element == this.selectedElement && this.selectedElement != null) {
 				//Element is selected by user.
 				//Draw a border like GIMP.
@@ -1290,7 +1312,7 @@ public class Creator {
 		//We should also show the areas that are clickable.
 		//Map them like we did before...
 		ArrayList<YearbookElement> clickables = new ArrayList<YearbookElement>();
-		for (YearbookElement e : yearbook.page(yearbook.activePage).getElements()) {
+		for (YearbookElement e : yearbook.page(activePage).getElements()) {
 			if (e.isClickable()) clickables.add(e);
 		}
 		//...and display those in some manner.
