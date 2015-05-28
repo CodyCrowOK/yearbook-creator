@@ -63,5 +63,6 @@ public class DigitalYearbookPage implements Serializable {
 		ImageData data = SWTUtils.convertToSWT(ImageIO.read(in));
 		Display display = new Display();
 		this.image = new Image(display, data);
+		display.dispose();
 	}
 }
