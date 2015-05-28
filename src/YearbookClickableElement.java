@@ -1,3 +1,5 @@
+import java.io.Serializable;
+
 import org.eclipse.swt.graphics.Rectangle;
 
 /**
@@ -5,7 +7,7 @@ import org.eclipse.swt.graphics.Rectangle;
  * @author Cody Crow
  *
  */
-public class YearbookClickableElement extends YearbookElement implements Clickable {
+public class YearbookClickableElement extends YearbookElement implements Clickable, Serializable {
 	//Percentages
 	private double x;
 	private double y;

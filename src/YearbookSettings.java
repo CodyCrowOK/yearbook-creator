@@ -11,4 +11,12 @@ public class YearbookSettings {
 	
 	public YearbookSettings() {}
 	
+	public int publishWidth() {
+		return (int) (8.5 * 300);
+	}
+	
+	public int publishHeight() {
+		return 11 * 300;
+	}
+	
 }

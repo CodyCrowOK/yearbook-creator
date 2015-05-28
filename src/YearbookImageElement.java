@@ -59,6 +59,23 @@ public class YearbookImageElement extends YearbookElement {
 		//System.out.println("x y " + bounds.x + "," + bounds.y);
 		return bounds;
 	}
+
+	/**
+	 * The bounds of the image as it is displayed on a canvas of given
+	 * dimensions.
+	 * @param pageWidth The given page width
+	 * @param pageHeight The given page height
+	 * @return The new image bounds
+	 */
+	public Rectangle getBounds(int pageWidth, int pageHeight) {
+		int xc = (int) (this.x * pageWidth);
+		int yc = (int) (this.y * pageHeight);
+		int width = (int) ((this.image.getBounds().width * this.scale) * ((double) pageWidth / this.pageWidth));
+		int height = (int) ((this.image.getBounds().height * this.scale) * ((double) pageHeight / this.pageHeight));
+		Rectangle bounds = new Rectangle(xc, yc, width, height);
+		//System.out.println("x y " + bounds.x + "," + bounds.y);
+		return bounds;
+	}
 	
 	/**
 	 * Sets the image scale relative to the current scale.

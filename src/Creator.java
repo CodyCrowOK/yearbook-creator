@@ -837,7 +837,15 @@ public class Creator {
 				String fileName = picker.open();
 				if (fileName == null) return;
 				
-				
+				try {
+					Yearbook.export(fileName, yearbook, display);
+				} catch (IOException e) {
+					MessageBox box = new MessageBox(shell, SWT.ERROR);
+					box.setMessage("Could not write yearbook to disk.");
+					box.setText("Write Error");
+					box.open();
+					e.printStackTrace();
+				}
 				
 			}
 			
@@ -1236,7 +1244,6 @@ public class Creator {
 		gc.dispose();
 		
 		if (yearbook.page(yearbook.activePage).backgroundImage != null) {
-			//canvas.setBackgroundImage(yearbook.page(yearbook.activePage).backgroundImage);
 			gc = new GC(canvas);
 			gc.drawImage(yearbook.page(yearbook.activePage).backgroundImage, 0, 0, yearbook.page(yearbook.activePage).backgroundImage.getBounds().width, yearbook.page(yearbook.activePage).backgroundImage.getBounds().height, 0, 0, canvas.getBounds().width, canvas.getBounds().height);
 			gc.dispose();

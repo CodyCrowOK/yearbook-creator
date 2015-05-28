@@ -8,6 +8,8 @@ import java.util.ArrayList;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.widgets.Display;
@@ -101,14 +103,54 @@ public class Yearbook {
 	/**
 	 * Saves a yearbook to a file readable by the digital yearbook software
 	 * (i.e. what the end user sees).
-	 * @param yearbook The Yearbook to export
 	 * @param fileName The name of the file to export to.
+	 * @param yearbook The Yearbook to export
 	 * @throws IOException
 	 */
-	public static void export(String fileName, Creator creator) throws IOException {
+	public static void export(String fileName, Yearbook yearbook, Display display) throws IOException {
 		/*
 		 * First, prepare the yearbook for writing.
 		 */
+		DigitalYearbook digitalYearbook = new DigitalYearbook(yearbook.name);
+		int pageHeight = yearbook.settings.publishHeight();
+		int pageWidth = yearbook.settings.publishWidth();
+		ArrayList<Image> generatedImages = new ArrayList<Image>();
+		ArrayList<YearbookClickableElement> clickables = new ArrayList<YearbookClickableElement>();
+		
+		for (YearbookPage page : yearbook.pages) {
+			Image image = new Image(display, pageWidth, pageHeight);
+			GC gc = new GC(image);
+			
+			//Set the background image.
+			if (page.backgroundImage != null) {
+				gc.drawImage(page.backgroundImage, 0, 0, page.backgroundImage.getBounds().width, page.backgroundImage.getBounds().height, 0, 0, image.getBounds().width, image.getBounds().height);
+			}
+			
+			//Map the YearbookImageElements to images...
+			ArrayList<YearbookImageElement> images = new ArrayList<YearbookImageElement>();
+			for (int i = 0; i < page.getElements().size(); i++) {
+				if (page.element(i).isImage()) {
+					images.add((YearbookImageElement) page.element(i));
+				}
+			}
+			//...and display them.
+			for (YearbookImageElement element : images) {
+				gc.drawImage(element.getImage(), 0, 0, element.getImage().getBounds().width, element.getImage().getBounds().height, element.getBounds(pageWidth, pageHeight).x, element.getBounds(pageWidth, pageHeight).y, element.getBounds(pageWidth, pageHeight).width, element.getBounds(pageWidth, pageHeight).height);
+			}
+			
+			gc.dispose();
+			generatedImages.add(image);
+			
+			//Map them like we did before...
+			for (YearbookElement e : page.getElements()) {
+				if (e.isClickable()) clickables.add((YearbookClickableElement) e);
+			}
+			
+			digitalYearbook.pages.add(new DigitalYearbookPage(image, clickables));
+		}
+		
+		
+		
 		/*
                 Image drawable = new Image(e.display, canvas.getBounds());
 		GC gc = new GC(drawable);
@@ -130,6 +172,9 @@ public class Yearbook {
 		FileOutputStream fos = new FileOutputStream(file);
 		ObjectOutputStream oos = new ObjectOutputStream(fos);
 		
+		oos.writeObject(digitalYearbook);
+		oos.flush();
+		oos.close();
 		
 		
 	}

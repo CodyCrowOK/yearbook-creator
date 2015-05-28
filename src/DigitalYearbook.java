@@ -13,4 +13,11 @@ public class DigitalYearbook implements Serializable {
 
 	ArrayList<DigitalYearbookPage> pages;
 	String name;
+	
+	public DigitalYearbook(String name) {
+		this.name = name;
+		this.pages = new ArrayList<DigitalYearbookPage>();
+	}
+	
+	
 }
