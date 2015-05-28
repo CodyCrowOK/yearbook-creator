@@ -1,3 +1,4 @@
+package Creator;
 
 public class YearbookSettings {
 	public int width;

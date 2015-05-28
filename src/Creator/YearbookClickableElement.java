@@ -1,3 +1,4 @@
+package Creator;
 import java.io.Serializable;
 
 import org.eclipse.swt.graphics.Rectangle;

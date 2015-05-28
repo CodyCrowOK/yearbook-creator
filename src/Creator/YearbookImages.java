@@ -1,3 +1,4 @@
+package Creator;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Display;
 

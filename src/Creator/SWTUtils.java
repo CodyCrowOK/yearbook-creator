@@ -1,3 +1,4 @@
+package Creator;
 /* 
  * JFreeChart : a free chart library for the Java(tm) platform
  * 
