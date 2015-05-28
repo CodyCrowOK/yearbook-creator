@@ -1,4 +1,4 @@
-package Creator;
+package writer;
 import java.util.ArrayList;
 
 import org.eclipse.swt.graphics.Image;

@@ -1,4 +1,4 @@
-package Creator;
+package writer;
 
 public class UserSettings {
 	public CursorMode cursorMode;

@@ -1,4 +1,4 @@
-package Creator;
+package writer;
 import org.eclipse.draw2d.IFigure;
 import org.eclipse.swt.graphics.*;
 

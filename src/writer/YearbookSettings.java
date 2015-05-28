@@ -1,4 +1,4 @@
-package Creator;
+package writer;
 
 public class YearbookSettings {
 	public int width;
