@@ -11,10 +11,13 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.ImageLoader;
-import org.eclipse.swt.graphics.PaletteData;
-import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.Display;
 
+/**
+ * Represents a single page in a yearbook.
+ * @author Cody Crow
+ *
+ */
 public class YearbookPage implements Serializable {
 	private static final long serialVersionUID = -5090460491486388571L;
 	private ArrayList<YearbookElement> elements;
@@ -63,6 +66,12 @@ public class YearbookPage implements Serializable {
 		return this.name;
 	}
 	
+	/**
+	 * 
+	 * @param x
+	 * @param y
+	 * @return true if exists an element on the working canvas at (x, y)
+	 */
 	public boolean isElementAtPoint(int x, int y) {
 		for (YearbookElement e : elements) {
 			if (e.isAtPoint(x, y)) return true;
@@ -70,6 +79,12 @@ public class YearbookPage implements Serializable {
 		return false;
 	}
 	
+	/**
+	 * Finds the element at a given point on the working canvas (x, y)
+	 * @param x
+	 * @param y
+	 * @return the found element, or null if no element found
+	 */
 	public YearbookElement getElementAtPoint(int x, int y) {
 		for (int i = elements.size() - 1; i >= 0; i--) {
 			YearbookElement e = elements.get(i);
@@ -140,5 +155,9 @@ public class YearbookPage implements Serializable {
 		if (this.noBackground == true) {
 			this.backgroundImageData = null;
 		}
+	}
+
+	public void removeElement(YearbookElement selectedElement) {
+		if (this.findElementIndex(selectedElement) >= 0) this.elements.remove(this.findElementIndex(selectedElement));
 	}
 }

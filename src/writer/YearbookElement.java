@@ -33,7 +33,18 @@ abstract public class YearbookElement implements Serializable {
 		return false;
 	}
 
+	/**
+	 * 
+	 * @return the bounds of the given element
+	 */
 	abstract public Rectangle getBounds();
+	
+	/**
+	 * 
+	 * @param x
+	 * @param y
+	 * @return true if the point (x, y) is within the bounds of the element.
+	 */
 	abstract boolean isAtPoint(int x, int y);
 	
 	/**
@@ -47,6 +58,10 @@ abstract public class YearbookElement implements Serializable {
 		elementId = (long) (Math.random() * (Math.pow(2, 63) - 1));
 	}
 	
+	/**
+	 * 
+	 * @return false unless overridden by a clickable subclass
+	 */
 	public boolean isClickable() {
 		return false;
 	}

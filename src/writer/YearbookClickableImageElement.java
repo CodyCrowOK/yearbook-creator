@@ -1,7 +1,11 @@
 package writer;
 import org.eclipse.swt.widgets.Display;
 
-
+/**
+ * Represents an image which can be clicked to open a video.
+ * @author Cody Crow
+ *
+ */
 public class YearbookClickableImageElement extends YearbookImageElement implements Clickable {
 
 	private Video video;

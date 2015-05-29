@@ -2,7 +2,11 @@ package writer;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Display;
 
-
+/**
+ * Contains static methods which return the icons used in the GUI.
+ * @author Cody Crow
+ *
+ */
 public class YearbookIcons {
 
 	static Image newDocument(Display display) {

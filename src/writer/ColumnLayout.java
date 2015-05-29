@@ -3,6 +3,12 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
 
+/**
+ * A custom layout which stacks children vertically. Used shamelessly in place
+ * of a properly configured RowLayout.
+ * @author Cody Crow
+ *
+ */
 public class ColumnLayout extends Layout {
     // fixed margin and spacing
     public static final int MARGIN = 4;

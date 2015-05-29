@@ -2,6 +2,7 @@ bin
 builds
 lib
 media
+doc
 .settings
 .classpath
 .project

@@ -24,6 +24,11 @@ import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.*;
 import org.eclipse.swt.widgets.*;
 
+/**
+ * The yearbook editor
+ * @author Cody Crow
+ *
+ */
 public class Creator {
 	
 	public static final String VERSION = "0.02";
@@ -318,6 +323,16 @@ public class Creator {
 					yDiff -= event.y;
 					break;
 				case ERASE:
+					if (yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y)) {
+						selectElement(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y));
+						refresh();
+						MessageBox box = new MessageBox(shell, SWT.ICON_WARNING | SWT.YES | SWT.NO);
+						box.setText("Delete Element");
+						box.setMessage("Are you sure you want to erase this element?");
+						int result = box.open();
+						if (result == SWT.YES) yearbook.page(yearbook.activePage).removeElement(selectedElement);
+						refresh();
+					}
 					break;
 				case RESIZE:
 					break;
@@ -881,7 +896,7 @@ public class Creator {
 		fileExportItem.addListener(SWT.Selection, new Listener() {
 
 			@Override
-			public void handleEvent(Event event) {
+			public void handleEvent(Event event) {/*
 				FileDialog picker = new FileDialog(shell, SWT.SAVE);
 				picker.setText("Export to Digital Yearbook");
 				String fileName = picker.open();
@@ -895,8 +910,8 @@ public class Creator {
 					box.setText("Write Error");
 					box.open();
 					e.printStackTrace();
-				}
-				
+				}*/
+				System.out.println("Export unimplemented.");
 			}
 			
 		});

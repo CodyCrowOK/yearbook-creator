@@ -11,7 +11,11 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.Display;
 
-
+/**
+ * Represents an image inserted into the canvas.
+ * @author Cody Crow
+ *
+ */
 public class YearbookImageElement extends YearbookElement implements Serializable {
 	private static final long serialVersionUID = 8808543926557894799L;
 

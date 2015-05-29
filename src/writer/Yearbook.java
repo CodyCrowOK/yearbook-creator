@@ -110,18 +110,18 @@ public class Yearbook implements Serializable {
 		return null;
 	}
 	
-	/**
+	/*
 	 * Saves a yearbook to a file readable by the digital yearbook software
 	 * (i.e. what the end user sees).
 	 * @param fileName The name of the file to export to.
 	 * @param yearbook The Yearbook to export
 	 * @throws IOException
-	 */
+	 *
 	
 	public static void export(String fileName, Yearbook yearbook, Display display) throws IOException {
 		/*
 		 * First, prepare the yearbook for writing.
-		 */
+		 *
 		DigitalYearbook digitalYearbook = new DigitalYearbook(yearbook.name);
 		int pageHeight = yearbook.settings.publishHeight();
 		int pageWidth = yearbook.settings.publishWidth();
@@ -171,7 +171,7 @@ public class Yearbook implements Serializable {
 		loader.save("c:\\swt.png", SWT.IMAGE_PNG);
 		drawable.dispose();
 		gc.dispose();
-		*/
+		*
 		
 		
 		
@@ -188,8 +188,15 @@ public class Yearbook implements Serializable {
 		oos.close();
 		
 		
-	}
+	}*/
 	
+	/**
+	 * Reads in a yearbook file from disk.
+	 * @param fileName The yearbook file to be read in
+	 * @return The yearbook written to disk
+	 * @throws IOException
+	 * @throws ClassNotFoundException
+	 */
 	public static Yearbook readFromDisk(String fileName) throws IOException, ClassNotFoundException {
 		FileInputStream fis = new FileInputStream(fileName);
 		ObjectInputStream ois = new ObjectInputStream(fis);
@@ -199,6 +206,12 @@ public class Yearbook implements Serializable {
 		return yearbook;
 	}
 
+	/**
+	 * Saves the given yearbook to disk.
+	 * @param yearbook The yearbook to be persisted
+	 * @param fileName The file name of the saved yearbook
+	 * @throws IOException
+	 */
 	public static void saveToDisk(Yearbook yearbook, String fileName) throws IOException {
 		File file = new File(fileName);
 		if (!file.exists()) {

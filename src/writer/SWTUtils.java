@@ -75,6 +75,7 @@ import org.eclipse.swt.graphics.RGB;
  */
 public class SWTUtils {
 
+    @SuppressWarnings("unused")
     private final static String Az = "ABCpqr";
 
     /** A dummy JPanel used to provide font metrics. */

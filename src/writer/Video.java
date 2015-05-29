@@ -30,6 +30,12 @@ public class Video implements Serializable {
 		this.name = name;
 	}
 	
+	/**
+	 * Copies a file from one location to another
+	 * @param sourceFile source location
+	 * @param destFile destination location
+	 * @throws IOException
+	 */
 	public static void copyFile(File sourceFile, File destFile) throws IOException {
 		destFile.createNewFile();
 

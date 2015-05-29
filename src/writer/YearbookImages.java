@@ -5,7 +5,11 @@ import org.eclipse.swt.graphics.PaletteData;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.Display;
 
-
+/**
+ * Contains static methods which return Images used in the GUI.
+ * @author Cody Crow
+ *
+ */
 public class YearbookImages {
 
 	static Image newDocument(Display display) {
