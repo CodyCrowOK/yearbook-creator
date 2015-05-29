@@ -1,6 +1,8 @@
 package writer;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 
 import org.eclipse.swt.*;
@@ -475,7 +477,7 @@ public class Creator {
 			@Override
 			public void handleEvent(Event event) {
 				yearbook.activePage = pagesList.getSelectionIndex();
-				refresh();
+				refreshNoPageList();
 			}
 			
 		});
@@ -610,16 +612,23 @@ public class Creator {
 		
 		Button newYearbookBtn = new Button(splash, SWT.PUSH);
 		newYearbookBtn.setImage(YearbookImages.newDocument(display));
-		newYearbookBtn.setText("New Yearbook");
+		newYearbookBtn.setText("\tNew Yearbook\t");
 		FontData fd = newYearbookBtn.getFont().getFontData()[0];
-		fd.setHeight(24);
+		fd.setHeight(18);
 		newYearbookBtn.setFont(new Font(display, fd));
 		
+		Button openYearbookBtn = new Button(splash, SWT.PUSH);
+		openYearbookBtn.setImage(YearbookImages.openDocument(display));
+		openYearbookBtn.setText("\tOpen Yearbook\t");
+		fd = openYearbookBtn.getFont().getFontData()[0];
+		fd.setHeight(18);
+		openYearbookBtn.setFont(new Font(display, fd));
+		
 		Button importPDFBtn = new Button(splash, SWT.PUSH);
-		importPDFBtn.setImage(YearbookImages.openDocument(display));
-		importPDFBtn.setText("Import PDF...");
+		importPDFBtn.setImage(YearbookImages.importPDF(display));
+		importPDFBtn.setText("\tImport PDF...\t");
 		fd = importPDFBtn.getFont().getFontData()[0];
-		fd.setHeight(24);
+		fd.setHeight(18);
 		importPDFBtn.setFont(new Font(display, fd));
 		
 		newYearbookBtn.addListener(SWT.Selection, new Listener() {
@@ -630,6 +639,21 @@ public class Creator {
 				splash.dispose();
 				shell.open();
 				fileNewItem.getListeners(SWT.Selection)[0].handleEvent(event);
+			}
+			
+		});
+		
+		openYearbookBtn.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				fileOpenItem.getListeners(SWT.Selection)[0].handleEvent(event);
+				if (yearbook != null) {
+					splash.close();
+					splash.dispose();
+					shell.open();
+					refresh();
+				}
 			}
 			
 		});
@@ -813,10 +837,13 @@ public class Creator {
 			public void handleEvent(Event event) {
 				FileDialog picker = new FileDialog(shell, SWT.OPEN);
 				picker.setText("Open Yearbook");
+				picker.setFilterExtensions(new String[] {"*.ctc"});
 				String fileName = picker.open();
 				if (fileName == null) return;
 				try {
 					yearbook = Yearbook.readFromDisk(fileName);
+					createNewYearbook();
+					
 					refresh();
 				} catch (Exception e) {
 					MessageBox box = new MessageBox(shell, SWT.ERROR);
@@ -1130,6 +1157,24 @@ public class Creator {
 			
 		});
 		
+		openBtn.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				fileOpenItem.getListeners(SWT.Selection)[0].handleEvent(event);
+			}
+			
+		});
+		
+		saveBtn.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				fileSaveAsItem.getListeners(SWT.Selection)[0].handleEvent(event);
+			}
+			
+		});
+		
 		imageBtn.addListener(SWT.Selection, new Listener() {
 
 			@Override
@@ -1352,13 +1397,17 @@ public class Creator {
 		shell.close();
 		shell.dispose();
 	}
-
-	public void refresh() {
-		updatePageList();
+	
+	public void refreshNoPageList() {
 		updateCanvas();
 		shell.layout();
 		if (!shell.getText().contains(yearbook.name)) setWindowTitle(yearbook.name);
 		else if (yearbook.name.isEmpty()) setWindowTitle(SWT.DEFAULT);
+	}
+
+	public void refresh() {
+		updatePageList();
+		refreshNoPageList();
 	}
 	
 	public static void main(String[] args) {

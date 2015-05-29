@@ -16,10 +16,15 @@ public class YearbookImages {
 		return new Image(display, "icons/large/document-open.png");
 	}
 	
+	static Image importPDF(Display display) {
+		return new Image(display, "icons/large/pdf.png");
+	}
+	
 	/**
 	 * This is bogus ImageData that is written to disk whenever ImageData
 	 * would otherwise be null. This is a necessary implication of the way
-	 * Java does serialization. It is not rendered to the screen.
+	 * Java does serialization. It is not rendered to the screen, and is
+	 * removed upon opening the file.
 	 * @return ImageData
 	 */
 	static ImageData bogusBackgroundData() {
