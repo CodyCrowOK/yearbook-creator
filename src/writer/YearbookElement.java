@@ -2,6 +2,7 @@ package writer;
 import java.io.Serializable;
 
 import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.widgets.Display;
 
 /**
  * Abstract class that represents a single item on a yearbook page.
@@ -53,6 +54,13 @@ abstract public class YearbookElement implements Serializable {
 	 * @param y the y-coordinate on the canvas
 	 */
 	abstract public void setLocationRelative(int x, int y);
+	
+	/**
+	 * Resizes an element using relative x and y values
+	 * @param x the x-value on the canvas
+	 * @param y the y-value on the canvas
+	 */
+	abstract public void resize(Display display, int x, int y);
 	
 	protected void generateRandomElementId() {
 		elementId = (long) (Math.random() * (Math.pow(2, 63) - 1));

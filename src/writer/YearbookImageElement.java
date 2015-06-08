@@ -78,7 +78,6 @@ public class YearbookImageElement extends YearbookElement implements Serializabl
 		int width = (int) (this.image.getBounds().width * this.scale);
 		int height = (int) (this.image.getBounds().height * this.scale);
 		Rectangle bounds = new Rectangle(xc, yc, width, height);
-		//System.out.println("x y " + bounds.x + "," + bounds.y);
 		return bounds;
 	}
 
@@ -140,5 +139,18 @@ public class YearbookImageElement extends YearbookElement implements Serializabl
 		ByteArrayInputStream stream = new ByteArrayInputStream(buffer);
 		ImageData[] data = imageLoader.load(stream);
 		this.imageData = data[0];
+	}
+
+	@Override
+	public void resize(Display display, int x, int y) {
+		//Use the larger of the two values.
+		if (Math.abs(x) > Math.abs(y)) {
+			int newWidth = this.getBounds().width + x;
+			this.scale = ((double) newWidth / this.getImage(display).getBounds().width);
+		} else {
+			int newHeight = this.getBounds().height + y;
+			this.scale = ((double) newHeight / this.getImage(display).getBounds().height);
+		}
+		
 	}
 }

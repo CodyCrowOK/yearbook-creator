@@ -335,7 +335,12 @@ public class Creator {
 					}
 					break;
 				case RESIZE:
-					break;
+					if (yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y)) {
+						selectElement(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y));
+						refresh();
+					} else {
+						selectElement(null);
+					}
 				case SELECT:
 					startX = event.x;
 					startY = event.y;
@@ -373,6 +378,15 @@ public class Creator {
 				case ERASE:
 					break;
 				case RESIZE:
+					xDiff += event.x;
+					yDiff += event.y;
+					
+					if (yearbook.page(yearbook.activePage).findElement(selectedElement) != null) {
+						yearbook.page(yearbook.activePage).findElement(selectedElement).resize(display, xDiff, yDiff);
+						refresh();
+					}
+					startX = startY = xDiff = yDiff = 0;
+					
 					break;
 				case SELECT:
 					xDiff += event.x;
