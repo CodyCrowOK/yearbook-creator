@@ -2,6 +2,7 @@ package writer;
 import java.io.Serializable;
 
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.widgets.Display;
 
 /**
  * A transparent box which can be clicked.
@@ -49,11 +50,8 @@ public class YearbookClickableElement extends YearbookElement implements Clickab
 	}
 
 	@Override
-	/**
-	 * Can never be selected.
-	 * @return false
-	 */
 	boolean isAtPoint(int x, int y) {
+		if (this.getBounds().contains(x, y)) return true;
 		return false;
 	}
 
@@ -84,6 +82,13 @@ public class YearbookClickableElement extends YearbookElement implements Clickab
 	@Override
 	public boolean isClickable() {
 		return true;
+	}
+
+
+	@Override
+	public void resize(Display display, int x, int y) {
+		// TODO Auto-generated method stub
+		
 	}
 
 }

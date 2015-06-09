@@ -30,7 +30,7 @@ abstract public class YearbookElement implements Serializable {
 	
 	
 	
-	boolean isImage() {
+	public boolean isImage() {
 		return false;
 	}
 

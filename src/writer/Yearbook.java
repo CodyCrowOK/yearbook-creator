@@ -4,7 +4,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -15,12 +14,9 @@ import java.util.ArrayList;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.ImageLoader;
-import org.eclipse.swt.graphics.PaletteData;
-import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.Display;
 
 
@@ -28,11 +24,12 @@ public class Yearbook implements Serializable {
 	private static final long serialVersionUID = 4099869425438846538L;
 	private ArrayList<YearbookPage> pages;
 	transient private Image defaultBackground;
-	private ImageData defaultBackgroundData;
+	transient private ImageData defaultBackgroundData;
+	boolean noBackground;
 	
 	String name;
-	YearbookSettings settings;
-	int activePage;
+	public YearbookSettings settings;
+	public int activePage;
 	
 	public Yearbook() {
 		pages = new ArrayList<YearbookPage>();
@@ -216,7 +213,6 @@ public class Yearbook implements Serializable {
 		File file = new File(fileName);
 		if (!file.exists()) {
 			file.createNewFile();
-			return;
 		}
 		FileOutputStream fos = new FileOutputStream(file);
 		ObjectOutputStream oos = new ObjectOutputStream(fos);
@@ -234,6 +230,7 @@ public class Yearbook implements Serializable {
 		out.defaultWriteObject();
 		if (this.defaultBackgroundData == null) {
 			this.defaultBackgroundData = YearbookImages.bogusBackgroundData();
+			this.noBackground = true;
 		}
 		ImageLoader imageLoader = new ImageLoader();
 		imageLoader.data = new ImageData[] { this.defaultBackgroundData };
@@ -254,5 +251,8 @@ public class Yearbook implements Serializable {
 		ByteArrayInputStream stream = new ByteArrayInputStream(buffer);
 		ImageData[] data = imageLoader.load(stream);
 		this.defaultBackgroundData = data[0];
+		if (this.noBackground) {
+			this.defaultBackgroundData = null;
+		}
 	}
 }

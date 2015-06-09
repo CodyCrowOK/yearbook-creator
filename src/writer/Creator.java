@@ -247,7 +247,6 @@ public class Creator {
 		this.buildPagesListDnD();
 		
 		shell.setMaximized(true);
-		//shell.open();
 		while (!shell.isDisposed()) {
 			if (!display.readAndDispatch())	display.sleep();
 		}
@@ -891,6 +890,7 @@ public class Creator {
 			public void handleEvent(Event event) {
 				FileDialog picker = new FileDialog(shell, SWT.SAVE);
 				picker.setText("Save As...");
+				picker.setFilterExtensions(new String[] {"*.ctc"});
 				String fileName = picker.open();
 				if (fileName == null) return;
 				try {
@@ -1442,5 +1442,5 @@ public class Creator {
 	public static void main(String[] args) {
 		new Creator();
 	}
-
+	
 }
