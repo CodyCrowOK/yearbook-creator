@@ -110,6 +110,7 @@ public class Creator {
 	private YearbookElement selectedElement;
 	private UserSettings settings;
 	private Rectangle selectionRectangle;
+	private boolean copyFlag;
 	
 	private Creator() {
 		display = new Display();
@@ -413,6 +414,12 @@ public class Creator {
 		});
 		
 		
+	}
+	
+	//TODO
+	private void copy(YearbookElement element) {
+		this.selectElement(element);
+		copyFlag = true;
 	}
 	
 	private void selectElement(YearbookElement element) {
@@ -1021,11 +1028,19 @@ public class Creator {
 
 			@Override
 			public void handleEvent(Event event) {
-				if (settings.cursorMode != CursorMode.SELECT || selectionRectangle == null) {
+				if ((settings.cursorMode != CursorMode.SELECT || selectionRectangle == null) && selectedElement == null) {
 					MessageBox box = new MessageBox(shell, SWT.ICON_INFORMATION);
 					box.setText("Insert Video");
 					box.setMessage("Please select an area of the page to link to the video.");
 					box.open();
+					return;
+				} else if (selectedElement != null && selectionRectangle == null && selectedElement.isImage()) {
+					try {
+						attachVideoToImage((YearbookImageElement) selectedElement);
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 					return;
 				}
 				
@@ -1072,6 +1087,29 @@ public class Creator {
 		
 	}
 	
+	protected void attachVideoToImage(YearbookImageElement element) throws IOException {
+		YearbookClickableImageElement e = new YearbookClickableImageElement(display, element.getImage(display).getImageData(), element.getPageWidth(), element.getPageHeight());
+		
+		e.x = element.x;
+		e.y = element.y;
+		e.scale = element.scale;
+		e.rotation = element.rotation;
+		e.imageData = element.imageData;
+		
+		FileDialog dialog = new FileDialog(shell, SWT.OPEN);
+		String[] allowedExtensions = {"*.webm;*.mkv;*.flv;*.vob;*.ogv;*.ogg;*.drc;*.avi;*.mov;*.qt;*.wmv;*.rm;*.mp4;*.m4p;*.m4v;*.mpg;*.3gp;*.3g2", "*.*"};
+		dialog.setFilterExtensions(allowedExtensions);
+		String fileName = dialog.open();
+		if (fileName == null) return;
+		
+		Video video = new Video(fileName);
+		e.video = video;
+		int position = yearbook.page(yearbook.activePage).findElementIndex(element);
+		yearbook.page(yearbook.activePage).removeElement(element);
+		yearbook.page(yearbook.activePage).getElements().add(position, e);
+		refresh();
+	}
+
 	private void buildToolbar() {
 		toolbarWrapper = new Composite(shell, SWT.NONE);
 		barLayout = new RowLayout();
@@ -1430,6 +1468,7 @@ public class Creator {
 	public void refreshNoPageList() {
 		updateCanvas();
 		shell.layout();
+		
 		if (!shell.getText().contains(yearbook.name)) setWindowTitle(yearbook.name);
 		else if (yearbook.name.isEmpty()) setWindowTitle(SWT.DEFAULT);
 	}
@@ -1440,7 +1479,8 @@ public class Creator {
 	}
 	
 	public static void main(String[] args) {
-		new Creator();
+		//new Creator();
+		reader.Reader.main(null);
 	}
 	
 }

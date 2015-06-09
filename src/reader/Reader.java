@@ -19,11 +19,14 @@ import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.FileDialog;
+import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 
 import writer.Creator;
 import writer.CursorMode;
 import writer.Yearbook;
+import writer.YearbookClickableElement;
+import writer.YearbookClickableImageElement;
 import writer.YearbookElement;
 import writer.YearbookImageElement;
 
@@ -62,6 +65,7 @@ public class Reader {
 		//Magic number, chosen for being near center.
 		shell.setLocation((int) (.09375 * display.getClientArea().width), 0);
 		shell.open();
+		
 		while (!shell.isDisposed()) {
 			if (!display.readAndDispatch())	display.sleep();
 		}
@@ -97,13 +101,24 @@ public class Reader {
 				if (yearbook.page(yearbook.activePage).isClickableAtPoint(e.x, e.y)) {
 					//Show their video.
 					//Using the system player for now.
-					File file = new File("media/test.mp4");
+					File file;
+					if (yearbook.page(yearbook.activePage).getElementAtPoint(e.x, e.y).isImage()) {
+						file = new File(((YearbookClickableImageElement) yearbook.page(yearbook.activePage).getElementAtPoint(e.x, e.y)).getVideo().getSrc());
+					} else {
+						file = new File(((YearbookClickableElement) yearbook.page(yearbook.activePage).getElementAtPoint(e.x, e.y)).getVideo().getSrc());
+					}
+					
 					Desktop dt = Desktop.getDesktop();
+					
 					try {
 						dt.open(file);
 					} catch (IOException e1) {
-						// TODO Auto-generated catch block
 						e1.printStackTrace();
+					} catch (Exception e1) {
+						MessageBox box = new MessageBox(shell, SWT.ERROR);
+						box.setText("Error");
+						box.setMessage("The video was not loaded successfully.");
+						box.open();
 					}
 				}
 				
@@ -168,11 +183,13 @@ public class Reader {
 
 			@Override
 			public void mouseMove(MouseEvent e) {
-				if (!yearbook.page(activePage).isElementAtPoint(e.x, e.y)) return;
+				if (!yearbook.page(activePage).isElementAtPoint(e.x, e.y)) {
+					shell.setCursor(display.getSystemCursor(SWT.CURSOR_ARROW));
+					return;
+				}
+				
 				if (yearbook.page(activePage).isClickableAtPoint(e.x, e.y)) {
 					shell.setCursor(display.getSystemCursor(SWT.CURSOR_HAND));
-				} else {
-					shell.setCursor(display.getSystemCursor(SWT.CURSOR_ARROW));
 				}
 			}
 			

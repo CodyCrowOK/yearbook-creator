@@ -34,17 +34,25 @@ public class YearbookImageElement extends YearbookElement implements Serializabl
 	transient private Display display;
 	
 	private int pageWidth;
+
 	private int pageHeight;
 	transient ImageData imageData;
 	transient private Image image;
-	public String fileName;
 	
 	public YearbookImageElement(Display display, String fileName, int pageWidth, int pageHeight) {
-		generateRandomElementId();
-		scale = 1;
 		Image tmp = new Image(display, fileName);
 		imageData = tmp.getImageData();
 		tmp.dispose();
+		this.construct(display, imageData, pageWidth, pageHeight);
+	}
+	
+	public YearbookImageElement(Display display, ImageData imageData, int pageWidth, int pageHeight) {
+		this.construct(display, imageData, pageWidth, pageHeight);
+	}
+	
+	private void construct(Display display, ImageData imageData, int pageWidth, int pageHeight) {
+		generateRandomElementId();
+		scale = 1;
 		image = new Image(display, imageData);
 		clientWidth = display.getClientArea().width;
 		this.display = display;
@@ -54,8 +62,7 @@ public class YearbookImageElement extends YearbookElement implements Serializabl
 		this.rotation = 0;
 		
 		this.pageWidth = pageWidth;
-		this.pageHeight = pageHeight;
-		this.fileName = fileName;
+		this.pageHeight = pageHeight;	
 	}
 	
 	@Override
@@ -152,5 +159,14 @@ public class YearbookImageElement extends YearbookElement implements Serializabl
 			this.scale = ((double) newHeight / this.getImage(display).getBounds().height);
 		}
 		
+	}
+	
+
+	public int getPageWidth() {
+		return pageWidth;
+	}
+
+	public int getPageHeight() {
+		return pageHeight;
 	}
 }

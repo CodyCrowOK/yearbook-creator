@@ -1,4 +1,7 @@
 package writer;
+import java.io.Serializable;
+
+import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.widgets.Display;
 
 /**
@@ -6,13 +9,19 @@ import org.eclipse.swt.widgets.Display;
  * @author Cody Crow
  *
  */
-public class YearbookClickableImageElement extends YearbookImageElement implements Clickable {
+public class YearbookClickableImageElement extends YearbookImageElement implements Clickable, Serializable {
 
-	private Video video;
+	private static final long serialVersionUID = -2109379287205311724L;
+	public Video video;
 	
 	public YearbookClickableImageElement(Display display, String fileName,
 			int pageWidth, int pageHeight) {
 		super(display, fileName, pageWidth, pageHeight);
+	}
+
+	public YearbookClickableImageElement(Display display,
+			ImageData imageData, int pageWidth, int pageHeight) {
+		super(display, imageData, pageWidth, pageHeight);
 	}
 
 	@Override
@@ -25,4 +34,5 @@ public class YearbookClickableImageElement extends YearbookImageElement implemen
 		return true;
 	}
 
+	
 }
