@@ -83,11 +83,43 @@ public class YearbookPage implements Serializable {
 	 * 
 	 * @param x
 	 * @param y
+	 * @param pageWidth
+	 * @param pageHeight
+	 * @return true if element exists at (x, y) on canvas of given dimensions
+	 */
+	public boolean isElementAtPoint(int x, int y, int pageWidth, int pageHeight) {
+		for (YearbookElement e : elements) {
+			if (e.isAtPoint(x, y, pageWidth, pageHeight)) return true;
+		}
+		return false;
+	}
+	
+	/**
+	 * 
+	 * @param x
+	 * @param y
 	 * @return true if there is a clickable region containing (x, y)
 	 */
 	public boolean isClickableAtPoint(int x, int y) {
 		for (YearbookElement e : elements) {
 			if (e.isAtPoint(x, y) && e.isClickable()) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * 
+	 * @param x
+	 * @param y
+	 * @param pageWidth
+	 * @param pageHeight
+	 * @return true if there is a clickable region containing (x, y) in the given page size
+	 */
+	public boolean isClickableAtPoint(int x, int y, int pageWidth, int pageHeight) {
+		for (YearbookElement e : elements) {
+			if (e.isAtPoint(x, y, pageWidth, pageHeight) && e.isClickable()) {
 				return true;
 			}
 		}

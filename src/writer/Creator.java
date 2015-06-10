@@ -1,8 +1,6 @@
 package writer;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 
 import org.eclipse.swt.*;
@@ -34,6 +32,9 @@ public class Creator {
 	public static final String VERSION = "0.03";
 	public static final String COMPANY_NAME = "Digital Express";
 	public static final String SOFTWARE_NAME = "Smartbook Pro™";
+	
+	//Used so we don't "Save As..." every time.
+	public String saveFileName;
 
 	//General SWT
 	private Display display;
@@ -46,6 +47,7 @@ public class Creator {
 	private MenuItem fileNewItem;
 	private MenuItem fileNewPageItem;
 	private MenuItem fileOpenItem;
+	private MenuItem fileSaveItem;
 	private MenuItem fileSaveAsItem;
 	private MenuItem fileExportItem;
 	private MenuItem fileCloseItem;
@@ -110,7 +112,6 @@ public class Creator {
 	private YearbookElement selectedElement;
 	private UserSettings settings;
 	private Rectangle selectionRectangle;
-	private boolean copyFlag;
 	
 	private Creator() {
 		display = new Display();
@@ -416,12 +417,6 @@ public class Creator {
 		
 	}
 	
-	//TODO
-	private void copy(YearbookElement element) {
-		this.selectElement(element);
-		copyFlag = true;
-	}
-	
 	private void selectElement(YearbookElement element) {
 		this.selectedElement = element;
 	}
@@ -544,6 +539,10 @@ public class Creator {
 		fileOpenItem.setAccelerator(SWT.MOD1 + 'O');
 		
 		new MenuItem(fileMenu, SWT.SEPARATOR);
+
+		fileSaveItem = new MenuItem(fileMenu, SWT.PUSH);
+		fileSaveItem.setText("&Save\tCtrl+S");
+		fileSaveItem.setAccelerator(SWT.MOD1 | 'S');
 
 		fileSaveAsItem = new MenuItem(fileMenu, SWT.PUSH);
 		fileSaveAsItem.setText("Save &As...\tCtrl+Shift+S");
@@ -788,6 +787,7 @@ public class Creator {
 				ok.addSelectionListener(new SelectionAdapter() {
 					@Override
 					public void widgetSelected (SelectionEvent e) {
+						saveFileName = null;
 						createNewYearbook(text.getText());
 						dialog.close();
 						refresh();
@@ -876,6 +876,7 @@ public class Creator {
 				String fileName = picker.open();
 				if (fileName == null) return;
 				try {
+					saveFileName = fileName;
 					yearbook = Yearbook.readFromDisk(fileName);
 					createNewYearbook();
 					
@@ -891,6 +892,21 @@ public class Creator {
 			
 		});
 		
+		fileSaveItem.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				if (saveFileName != null)
+					try {
+						Yearbook.saveToDisk(yearbook, saveFileName);
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				else fileSaveAsItem.getListeners(SWT.Selection)[0].handleEvent(event);				
+			}
+			
+		});
+		
 		fileSaveAsItem.addListener(SWT.Selection, new Listener() {
 
 			@Override
@@ -901,6 +917,7 @@ public class Creator {
 				String fileName = picker.open();
 				if (fileName == null) return;
 				try {
+					saveFileName = fileName;
 					Yearbook.saveToDisk(yearbook, fileName);
 				} catch (IOException e) {
 					MessageBox box = new MessageBox(shell, SWT.ERROR);
@@ -1038,7 +1055,6 @@ public class Creator {
 					try {
 						attachVideoToImage((YearbookImageElement) selectedElement);
 					} catch (IOException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 					return;
@@ -1059,7 +1075,6 @@ public class Creator {
 					YearbookClickableElement e = new YearbookClickableElement(new Video(fileName), selectionRectangle, canvas.getBounds().height, canvas.getBounds().width);
 					yearbook.page(yearbook.activePage).addElement(e);
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				
@@ -1237,7 +1252,7 @@ public class Creator {
 
 			@Override
 			public void handleEvent(Event event) {
-				fileSaveAsItem.getListeners(SWT.Selection)[0].handleEvent(event);
+				fileSaveItem.getListeners(SWT.Selection)[0].handleEvent(event);
 			}
 			
 		});
@@ -1479,8 +1494,8 @@ public class Creator {
 	}
 	
 	public static void main(String[] args) {
-		//new Creator();
-		reader.Reader.main(null);
+		new Creator();
+		//reader.Reader.main(null);
 	}
 	
 }

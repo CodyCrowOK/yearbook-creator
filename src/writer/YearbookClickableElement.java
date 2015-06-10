@@ -50,9 +50,23 @@ public class YearbookClickableElement extends YearbookElement implements Clickab
 	}
 
 	@Override
+	public Rectangle getBounds(int pageWidth, int pageHeight) {
+		int xc = (int) (this.x * this.pageWidth);
+		int yc = (int) (this.y * this.pageHeight);
+		int width = (int) (this.width * pageWidth);
+		int height = (int) (this.height * pageHeight);
+		Rectangle bounds = new Rectangle(xc, yc, width, height);
+		return bounds;
+	}
+
+	@Override
 	boolean isAtPoint(int x, int y) {
-		if (this.getBounds().contains(x, y)) return true;
-		return false;
+		return this.getBounds().contains(x, y);
+	}
+
+	@Override
+	boolean isAtPoint(int x, int y, int pageWidth, int pageHeight) {
+		return this.getBounds(pageWidth, pageHeight).contains(x, y);
 	}
 
 	public void setPageWidth(int pageWidth) {

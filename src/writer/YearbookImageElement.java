@@ -74,6 +74,11 @@ public class YearbookImageElement extends YearbookElement implements Serializabl
 	boolean isAtPoint(int x, int y) {
 		return this.getBounds().contains(x, y);
 	}
+
+	@Override
+	boolean isAtPoint(int x, int y, int pageWidth, int pageHeight) {
+		return this.getBounds(pageWidth, pageHeight).contains(x, y);
+	}
 	
 	/**
 	 * The bounds of the image as it is displayed *on the canvas*.

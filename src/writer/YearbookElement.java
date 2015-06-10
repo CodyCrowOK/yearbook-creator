@@ -42,11 +42,30 @@ abstract public class YearbookElement implements Serializable {
 	
 	/**
 	 * 
+	 * @param pageWidth
+	 * @param pageHeight
+	 * @return the bounds of the element dependent on the page dimensions
+	 */
+	abstract public Rectangle getBounds(int pageWidth, int pageHeight);
+	
+	/**
+	 * 
 	 * @param x
 	 * @param y
 	 * @return true if the point (x, y) is within the bounds of the element.
 	 */
 	abstract boolean isAtPoint(int x, int y);
+	
+	/**
+	 * 
+	 * @param x
+	 * @param y
+	 * @param pageWidth
+	 * @param pageHeight
+	 * @return true if the point (x, y) is within the bounds of the element
+	 * on a page with the given dimensions.
+	 */
+	abstract boolean isAtPoint(int x, int y, int pageWidth, int pageHeight);
 	
 	/**
 	 * Sets the location relative to the current page (i.e. in pixels)
