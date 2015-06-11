@@ -20,8 +20,6 @@ abstract public class YearbookElement implements Serializable {
 	 */
 	long elementId;
 	
-	public int zIndex; //Describes how the element sits relative to other elements.
-	
 	//Percentage values
 	protected double x;
 	protected double y;
@@ -90,6 +88,14 @@ abstract public class YearbookElement implements Serializable {
 	 * @return false unless overridden by a clickable subclass
 	 */
 	public boolean isClickable() {
+		return false;
+	}
+	
+	/**
+	 * 
+	 * @return false unless overridden by a text-based subclass
+	 */
+	public boolean isText() {
 		return false;
 	}
 }

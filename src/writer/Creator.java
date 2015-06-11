@@ -1,4 +1,6 @@
 package writer;
+import java.awt.Frame;
+import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -18,6 +20,7 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.*;
 import org.eclipse.swt.widgets.*;
@@ -112,6 +115,9 @@ public class Creator {
 	private YearbookElement selectedElement;
 	private UserSettings settings;
 	private Rectangle selectionRectangle;
+	
+	private boolean isInsertingText;
+	protected String comboValue;
 	
 	private Creator() {
 		display = new Display();
@@ -286,7 +292,7 @@ public class Creator {
 
 			@Override
 			public void mouseDoubleClick(MouseEvent event) {
-				switch (settings.cursorMode) {
+				if (!isInsertingText) switch (settings.cursorMode) {
 				case MOVE:
 					//Bring element to front.
 					if (selectedElement != null) {
@@ -312,7 +318,7 @@ public class Creator {
 
 			@Override
 			public void mouseDown(MouseEvent event) {
-				switch (settings.cursorMode) {
+				if (!isInsertingText) switch (settings.cursorMode) {
 				case MOVE:
 					if (yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y)) {
 						selectElement(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y));
@@ -353,11 +359,19 @@ public class Creator {
 					
 					
 				}
+				
+				if (isInsertingText) {
+					YearbookTextElement element = new YearbookTextElement(event.x, event.y, yearbook.settings.width, yearbook.settings.height);
+					yearbook.page(yearbook.activePage).addElement(element);
+					refresh();
+					openTextDialog(element);
+				}
+				
 			}
 
 			@Override
 			public void mouseUp(MouseEvent event) {
-				switch (settings.cursorMode) {
+				if (!isInsertingText) switch (settings.cursorMode) {
 				case MOVE:
 					xDiff += event.x;
 					yDiff += event.y;
@@ -417,6 +431,178 @@ public class Creator {
 		
 	}
 	
+	protected void openTextDialog(YearbookTextElement element) {
+		
+		/*
+		 * Create layout for text tool.
+		 */
+		Shell textTool = new Shell(display, SWT.DIALOG_TRIM);
+		GridLayout layout = new GridLayout();
+		layout.numColumns = 10;
+		layout.makeColumnsEqualWidth = true;
+		textTool.setLayout(layout);
+		
+		Text textbox = new Text(textTool, SWT.BORDER | SWT.MULTI);
+		GridData textboxData = new GridData(SWT.FILL, SWT.FILL, true, true);
+		textboxData.horizontalSpan = 10;
+		textbox.setLayoutData(textboxData);
+		
+		ColorDialog colorDialog = new ColorDialog(textTool, SWT.APPLICATION_MODAL | SWT.DIALOG_TRIM);
+		colorDialog.setText("Color Picker");
+		Button colorButton = new Button(textTool, SWT.PUSH);
+		colorButton.setText("Pick color...");
+		GridData buttonData = new GridData(SWT.FILL, SWT.FILL, true, false);
+		buttonData.horizontalSpan = 3;
+		colorButton.setLayoutData(buttonData);
+		
+		Combo sizeCombo = new Combo(textTool, SWT.DROP_DOWN);
+		GridData sizeData = new GridData(SWT.FILL, SWT.FILL, true, false);
+		sizeData.horizontalSpan = 2;
+		sizeCombo.setLayoutData(sizeData);
+		String[] fontSizes = {
+				"8",
+				"9",
+				"10",
+				"11",
+				"12",
+				"14",
+				"16",
+				"18",
+				"20",
+				"22",
+				"24",
+				"26",
+				"28",
+				"36",
+				"48",
+				"72"
+		};
+		for (String size : fontSizes) {
+			sizeCombo.add(size);
+		}
+		sizeCombo.select(4);
+		
+		String[] fontNames = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
+		Combo fontCombo = new Combo(textTool, SWT.DROP_DOWN);
+		GridData fontData  = new GridData(SWT.FILL, SWT.FILL, true, false);
+		fontData.horizontalSpan = 3;
+		fontCombo.setLayoutData(fontData);
+		for (String fontName : fontNames) {
+			fontCombo.add(fontName);
+		}
+		
+		Composite styleWrapper = new Composite(textTool, SWT.NONE);
+		styleWrapper.setLayout(new FillLayout());
+		GridData styleData = new GridData(SWT.FILL, SWT.FILL, true, false);
+		styleData.horizontalSpan = 2;
+		styleWrapper.setLayoutData(styleData);
+		
+		Button bold = new Button(styleWrapper, SWT.PUSH);
+		bold.setText("B");
+		FontData fd = bold.getFont().getFontData()[0];
+		fd.setStyle(SWT.BOLD);
+		Font f = new Font(display, fd);
+		bold.setFont(f);
+		f.dispose();
+		
+		Button italic = new Button(styleWrapper, SWT.PUSH);
+		italic.setText("I");
+		fd = italic.getFont().getFontData()[0];
+		fd.setStyle(SWT.ITALIC);
+		f = new Font(display, fd);
+		italic.setFont(f);
+		f.dispose();
+		
+		Button underline = new Button(styleWrapper, SWT.PUSH);
+		underline.setText("U");
+		
+		/*
+		 * Add listeners to each component.
+		 */
+		textbox.addKeyListener(new KeyListener() {
+
+			@Override
+			public void keyPressed(KeyEvent e) {
+				
+			}
+
+			@Override
+			public void keyReleased(KeyEvent e) {
+				element.text = textbox.getText();
+				refresh();
+				
+			}
+			
+		});
+		
+		colorButton.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				element.setRGB(colorDialog.open());
+				refresh();
+				
+			}
+			
+		});
+
+		
+		sizeCombo.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				element.size = Integer.parseInt(sizeCombo.getItem(sizeCombo.getSelectionIndex()));
+				refresh();
+				
+			}
+			
+		});
+		
+		fontCombo.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				element.fontFamily = fontNames[fontCombo.getSelectionIndex()];
+				refresh();
+			}
+			
+		});
+		
+		bold.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				element.toggleBold();
+				refresh();
+			}
+			
+		});
+		
+		italic.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				element.toggleItalic();
+				refresh();
+			}
+			
+		});
+		
+		underline.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				element.toggleUnderline();
+				refresh();
+			}
+			
+		});
+		
+		
+		textTool.setSize(400, 200);
+		textTool.open();
+	}
+
 	private void selectElement(YearbookElement element) {
 		this.selectedElement = element;
 	}
@@ -635,12 +821,14 @@ public class Creator {
 	}
 	
 	private void initialize() {
+		isInsertingText = false;
+		
 		canvasBackgroundColor = new Color(display, 254, 254, 254);
 		
 		/*
 		 * Let's create a splash screen.
 		 */
-		Shell splash = new Shell(display);
+		Shell splash = new Shell(display, SWT.DIALOG_TRIM);
 		splash.setLayout(new FillLayout(SWT.VERTICAL));
 		splash.setText(COMPANY_NAME + " " + SOFTWARE_NAME);
 		
@@ -1024,6 +1212,22 @@ public class Creator {
 			
 		});
 		
+		insertTextItem.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				isInsertingText = !isInsertingText;
+				
+				if (isInsertingText) shell.setCursor(display.getSystemCursor(SWT.CURSOR_IBEAM));
+				else modeReset();
+				
+				
+				
+				
+			}
+			
+		});
+		
 		insertImageItem.addListener(SWT.Selection, new Listener() {
 
 			@Override
@@ -1257,6 +1461,16 @@ public class Creator {
 			
 		});
 		
+		textBtn.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				insertTextItem.getListeners(SWT.Selection)[0].handleEvent(event);
+				
+			}
+			
+		});
+		
 		imageBtn.addListener(SWT.Selection, new Listener() {
 
 			@Override
@@ -1304,6 +1518,7 @@ public class Creator {
 				((Button) e.widget).setSelection(true);
 				settings.cursorMode = CursorMode.SELECT;
 				modeReset();
+				shell.setCursor(display.getSystemCursor(SWT.CURSOR_CROSS));
 			}
 		});
 		
@@ -1320,6 +1535,7 @@ public class Creator {
 				((Button) e.widget).setSelection(true);
 				settings.cursorMode = CursorMode.RESIZE;
 				modeReset();
+				shell.setCursor(display.getSystemCursor(SWT.CURSOR_SIZESE));
 			}
 		});
 		
@@ -1347,6 +1563,8 @@ public class Creator {
 	protected void modeReset() {
 		this.selectionRectangle = null;
 		selectElement(null);
+		
+		shell.setCursor(display.getSystemCursor(SWT.CURSOR_ARROW));
 		
 	}
 
@@ -1454,6 +1672,47 @@ public class Creator {
 			gc.fillRectangle(e.getBounds());
 			gc.dispose();
 		}
+		
+		//Next, draw the text elements.
+		ArrayList<YearbookTextElement> texts = new ArrayList<YearbookTextElement>();
+		for (YearbookElement e : yearbook.page(activePage).getElements()) {
+			if (e.isText()) texts.add((YearbookTextElement) e);
+		}
+		
+		//...and display those in some manner.
+		for (YearbookTextElement e : texts) {
+			gc = new GC(canvas);
+			gc.setTextAntialias(SWT.ON);
+			gc.setForeground(e.getColor(display));
+			gc.setFont(e.getFont(display));
+			gc.drawText(e.text, e.getBounds().x, e.getBounds().y, true);
+			
+			/*
+			 * Handle underlining (SWT has no native GC underlining)
+			 * All magic numbers were chosen for their looks.
+			 */
+			if (e.underline) {
+				/*
+				 * Inform the text element of its bounds.
+				 * This must be done here, regrettably.
+				 */
+				e.setBounds(new Rectangle(e.getBounds().x, e.getBounds().y, gc.stringExtent(e.text).x, gc.stringExtent(e.text).y));
+				
+				//Determine the line width
+				int width;
+				width = e.size / 9;
+				if (width <= 0) width = 1;
+				
+				if (e.bold) width *= 1.8;
+				gc.setLineWidth(width);
+				gc.drawLine(e.getBounds().x + 1, e.getBounds().y + e.getBounds().height - (int) (e.getBounds().height * .1), e.getBounds().x + e.getBounds().width - 1, e.getBounds().y + e.getBounds().height - (int) (e.getBounds().height * .1));
+				
+			}
+			
+			gc.dispose();
+			
+		}
+		
 		
 		
 	}

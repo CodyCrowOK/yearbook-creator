@@ -24,6 +24,7 @@ public class YearbookClickableElement extends YearbookElement implements Clickab
 	private Video video;
 	
 	public YearbookClickableElement(Video v, Rectangle rect, int pageHeight, int pageWidth) {
+		generateRandomElementId();
 		this.video = v;
 		this.x = ((double) rect.x / pageWidth);
 		this.y = ((double) rect.y / pageHeight);

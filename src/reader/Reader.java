@@ -21,6 +21,7 @@ import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 
 import writer.Creator;
+import writer.SWTUtils;
 import writer.Yearbook;
 import writer.YearbookClickableElement;
 import writer.YearbookClickableImageElement;
@@ -195,12 +196,7 @@ public class Reader {
 		
 	}
 	
-	//TODO: make this not be fragile.
 	private void loadPages(int pageIndex) {
-		//loadLeftCanvas(pageIndex);
-		//loadRightCanvas(pageIndex + 1);
-		
-		System.out.println(pageIndex);
 		
 		//Back cover
 		if (pageIndex + 1 == yearbook.size() && leftIsActive()) {
