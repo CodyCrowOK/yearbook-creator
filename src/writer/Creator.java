@@ -4,6 +4,7 @@ import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.dnd.DND;
@@ -361,8 +362,22 @@ public class Creator {
 				}
 				
 				if (isInsertingText) {
-					YearbookTextElement element = new YearbookTextElement(event.x, event.y, yearbook.settings.width, yearbook.settings.height);
-					yearbook.page(yearbook.activePage).addElement(element);
+					YearbookTextElement element;
+					if (yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y)){
+						if (yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y).isText()) {
+							element = (YearbookTextElement) yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y);
+							System.out.println("a");
+						} else {
+							element = new YearbookTextElement(event.x, event.y, yearbook.settings.width, yearbook.settings.height);
+							yearbook.page(yearbook.activePage).addElement(element);
+							System.out.println("b");
+						}
+					} else {
+						element = new YearbookTextElement(event.x, event.y, yearbook.settings.width, yearbook.settings.height);
+						yearbook.page(yearbook.activePage).addElement(element);
+						System.out.println(event.x + " " + event.y);
+					}
+					
 					refresh();
 					openTextDialog(element);
 				}
@@ -437,12 +452,14 @@ public class Creator {
 		 * Create layout for text tool.
 		 */
 		Shell textTool = new Shell(display, SWT.DIALOG_TRIM);
+		textTool.setText("Text Tool");
 		GridLayout layout = new GridLayout();
 		layout.numColumns = 10;
 		layout.makeColumnsEqualWidth = true;
 		textTool.setLayout(layout);
 		
 		Text textbox = new Text(textTool, SWT.BORDER | SWT.MULTI);
+		textbox.setText(element.text);
 		GridData textboxData = new GridData(SWT.FILL, SWT.FILL, true, true);
 		textboxData.horizontalSpan = 10;
 		textbox.setLayoutData(textboxData);
@@ -480,7 +497,10 @@ public class Creator {
 		for (String size : fontSizes) {
 			sizeCombo.add(size);
 		}
-		sizeCombo.select(4);
+		int index = Arrays.binarySearch(fontSizes, Integer.toString(element.size));
+		if (index >= 0) sizeCombo.select(index);
+		else sizeCombo.select(4);
+		
 		
 		String[] fontNames = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
 		Combo fontCombo = new Combo(textTool, SWT.DROP_DOWN);
@@ -490,6 +510,8 @@ public class Creator {
 		for (String fontName : fontNames) {
 			fontCombo.add(fontName);
 		}
+		index = Arrays.binarySearch(fontNames, element.fontFamily);
+		if (index >= 0) fontCombo.select(index);
 		
 		Composite styleWrapper = new Composite(textTool, SWT.NONE);
 		styleWrapper.setLayout(new FillLayout());
@@ -539,7 +561,8 @@ public class Creator {
 
 			@Override
 			public void handleEvent(Event event) {
-				element.setRGB(colorDialog.open());
+				RGB rgb = colorDialog.open();
+				if (rgb != null) element.setRGB(rgb);
 				refresh();
 				
 			}
@@ -598,6 +621,14 @@ public class Creator {
 			
 		});
 		
+		textTool.addListener(SWT.Close, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				modeReset();
+			}
+			
+		});
 		
 		textTool.setSize(400, 200);
 		textTool.open();
@@ -1561,6 +1592,7 @@ public class Creator {
 	 * Resets all of the global selection variables.
 	 */
 	protected void modeReset() {
+		this.isInsertingText = false;
 		this.selectionRectangle = null;
 		selectElement(null);
 		
@@ -1686,21 +1718,21 @@ public class Creator {
 			gc.setForeground(e.getColor(display));
 			gc.setFont(e.getFont(display));
 			gc.drawText(e.text, e.getBounds().x, e.getBounds().y, true);
+
+			/*
+			 * Inform the text element of its bounds.
+			 * This must be done here, regrettably.
+			 */
+			e.setBounds(new Rectangle(e.getBounds().x, e.getBounds().y, gc.stringExtent(e.text).x, gc.stringExtent(e.text).y));
 			
 			/*
 			 * Handle underlining (SWT has no native GC underlining)
 			 * All magic numbers were chosen for their looks.
 			 */
 			if (e.underline) {
-				/*
-				 * Inform the text element of its bounds.
-				 * This must be done here, regrettably.
-				 */
-				e.setBounds(new Rectangle(e.getBounds().x, e.getBounds().y, gc.stringExtent(e.text).x, gc.stringExtent(e.text).y));
-				
 				//Determine the line width
 				int width;
-				width = e.size / 9;
+				width = e.size / 12;
 				if (width <= 0) width = 1;
 				
 				if (e.bold) width *= 1.8;

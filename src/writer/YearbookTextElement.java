@@ -21,8 +21,8 @@ public class YearbookTextElement extends YearbookElement implements Serializable
 	public boolean underline;
 	
 	private RGB rgb;
-	private Font font;
-	private Color color;
+	transient private Font font;
+	transient private Color color;
 	private int pageWidth;
 	private int pageHeight;
 	
@@ -79,17 +79,16 @@ public class YearbookTextElement extends YearbookElement implements Serializable
 	
 	@Override
 	boolean isAtPoint(int x, int y) {
-		// TODO Auto-generated method stub
-		return false;
+		return this.getBounds().contains(x, y);
 	}
 	@Override
 	boolean isAtPoint(int x, int y, int pageWidth, int pageHeight) {
-		// TODO Auto-generated method stub
-		return false;
+		return this.getBounds(pageWidth, pageHeight).contains(x, y);
 	}
 	@Override
 	public void setLocationRelative(int x, int y) {
-		// TODO Auto-generated method stub
+		this.x = (double) x / this.pageWidth;
+		this.y = (double) y / this.pageHeight;
 		
 	}
 	@Override
