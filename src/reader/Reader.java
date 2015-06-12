@@ -11,6 +11,7 @@ import org.eclipse.swt.events.MouseListener;
 import org.eclipse.swt.events.MouseMoveListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Canvas;
@@ -25,7 +26,9 @@ import writer.SWTUtils;
 import writer.Yearbook;
 import writer.YearbookClickableElement;
 import writer.YearbookClickableImageElement;
+import writer.YearbookElement;
 import writer.YearbookImageElement;
+import writer.YearbookTextElement;
 
 /**
  * Displays a yearbook to the end user.
@@ -278,6 +281,47 @@ public class Reader {
 			gc.dispose();
 		}
 		
+
+		//Next, draw the text elements.
+		ArrayList<YearbookTextElement> texts = new ArrayList<YearbookTextElement>();
+		for (YearbookElement e : yearbook.page(activePage).getElements()) {
+			if (e.isText()) texts.add((YearbookTextElement) e);
+		}
+		
+		//...and display those in some manner.
+		for (YearbookTextElement e : texts) {
+			gc = new GC(canvas);
+			gc.setTextAntialias(SWT.ON);
+			gc.setForeground(e.getColor(display));
+			gc.setFont(e.getFont(display));
+			gc.drawText(e.text, e.getBounds(yearbook.settings.width, yearbook.settings.height).x, e.getBounds(yearbook.settings.width, yearbook.settings.height).y, true);
+
+			/*
+			 * Inform the text element of its bounds.
+			 * This must be done here, regrettably.
+			 */
+			//e.setBounds(new Rectangle(e.getBounds(yearbook.settings.width, yearbook.settings.height).x, e.getBounds(yearbook.settings.width, yearbook.settings.height).y, gc.stringExtent(e.text).x, gc.stringExtent(e.text).y));
+			
+			/*
+			 * Handle underlining (SWT has no native GC underlining)
+			 * All magic numbers were chosen for their looks.
+			 */
+			if (e.underline) {
+				//Determine the line width
+				int width;
+				width = e.size / 12;
+				if (width <= 0) width = 1;
+				
+				if (e.bold) width *= 1.8;
+				gc.setLineWidth(width);
+				gc.drawLine(e.getBounds(yearbook.settings.width, yearbook.settings.height).x + 1, e.getBounds(yearbook.settings.width, yearbook.settings.height).y + e.getBounds(yearbook.settings.width, yearbook.settings.height).height - (int) (e.getBounds(yearbook.settings.width, yearbook.settings.height).height * .1), e.getBounds(yearbook.settings.width, yearbook.settings.height).x + e.getBounds(yearbook.settings.width, yearbook.settings.height).width - 1, e.getBounds(yearbook.settings.width, yearbook.settings.height).y + e.getBounds(yearbook.settings.width, yearbook.settings.height).height - (int) (e.getBounds(yearbook.settings.width, yearbook.settings.height).height * .1));
+				
+			}
+			
+			gc.dispose();
+			
+		}
+		
 		canvas.addMouseMoveListener(new MouseMoveListener() {
 
 			@Override
@@ -321,6 +365,46 @@ public class Reader {
 			gc = new GC(rightCanvas);
 			gc.drawImage(element.getImage(display), 0, 0, element.getImage(display).getBounds().width, element.getImage(display).getBounds().height, element.getBounds(yearbook.settings.width, yearbook.settings.height).x, element.getBounds(yearbook.settings.width, yearbook.settings.height).y, element.getBounds(yearbook.settings.width, yearbook.settings.height).width, element.getBounds(yearbook.settings.width, yearbook.settings.height).height);
 			gc.dispose();
+		}
+		
+		//Next, draw the text elements.
+		ArrayList<YearbookTextElement> texts = new ArrayList<YearbookTextElement>();
+		for (YearbookElement e : yearbook.page(activePage).getElements()) {
+			if (e.isText()) texts.add((YearbookTextElement) e);
+		}
+		
+		//...and display those in some manner.
+		for (YearbookTextElement e : texts) {
+			gc = new GC(rightCanvas);
+			gc.setTextAntialias(SWT.ON);
+			gc.setForeground(e.getColor(display));
+			gc.setFont(e.getFont(display));
+			gc.drawText(e.text, e.getBounds(yearbook.settings.width, yearbook.settings.height).x, e.getBounds(yearbook.settings.width, yearbook.settings.height).y, true);
+
+			/*
+			 * Inform the text element of its bounds.
+			 * This must be done here, regrettably.
+			 */
+			//e.setBounds(new Rectangle(e.getBounds(yearbook.settings.width, yearbook.settings.height).x, e.getBounds(yearbook.settings.width, yearbook.settings.height).y, gc.stringExtent(e.text).x, gc.stringExtent(e.text).y));
+			
+			/*
+			 * Handle underlining (SWT has no native GC underlining)
+			 * All magic numbers were chosen for their looks.
+			 */
+			if (e.underline) {
+				//Determine the line width
+				int width;
+				width = e.size / 12;
+				if (width <= 0) width = 1;
+				
+				if (e.bold) width *= 1.8;
+				gc.setLineWidth(width);
+				gc.drawLine(e.getBounds(yearbook.settings.width, yearbook.settings.height).x + 1, e.getBounds(yearbook.settings.width, yearbook.settings.height).y + e.getBounds(yearbook.settings.width, yearbook.settings.height).height - (int) (e.getBounds(yearbook.settings.width, yearbook.settings.height).height * .1), e.getBounds(yearbook.settings.width, yearbook.settings.height).x + e.getBounds(yearbook.settings.width, yearbook.settings.height).width - 1, e.getBounds(yearbook.settings.width, yearbook.settings.height).y + e.getBounds(yearbook.settings.width, yearbook.settings.height).height - (int) (e.getBounds(yearbook.settings.width, yearbook.settings.height).height * .1));
+				
+			}
+			
+			gc.dispose();
+			
 		}
 		
 		rightCanvas.addMouseMoveListener(new MouseMoveListener() {
