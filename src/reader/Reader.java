@@ -65,7 +65,7 @@ public class Reader {
 		this.refresh();
 		
 		shell.setLayout(new FillLayout());
-		shell.setText(Creator.COMPANY_NAME + " Paradigm Shift");
+		shell.setText(Creator.COMPANY_NAME + " Digital Yearbook");
 		shell.pack();
 		//Magic number, chosen for being near center.
 		shell.setLocation((int) (.09375 * display.getClientArea().width), 0);

@@ -33,9 +33,9 @@ import org.eclipse.swt.widgets.*;
  */
 public class Creator {
 	
-	public static final String VERSION = "0.03";
+	public static final String VERSION = "0.04";
 	public static final String COMPANY_NAME = "Digital Express";
-	public static final String SOFTWARE_NAME = "Smartbook Pro™";
+	public static final String SOFTWARE_NAME = "Yearbook Designer";
 	
 	//Used so we don't "Save As..." every time.
 	public String saveFileName;
