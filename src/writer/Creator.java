@@ -120,7 +120,8 @@ public class Creator {
 	private Canvas rightCanvas;
 	private Color canvasBackgroundColor;
 	
-	private YearbookElement selectedElement;
+	//private YearbookElement selectedElement;
+	private ArrayList<YearbookElement> selectedElements;
 	private UserSettings settings;
 	private Rectangle selectionRectangle;
 	
@@ -128,11 +129,14 @@ public class Creator {
 	private boolean showGrid;
 	protected String comboValue;
 	
+	private boolean MOD1;
+	
 	private Creator() {
 		display = new Display();
 		shell = new Shell(display);
 		settings = new UserSettings();
 		setWindowTitle(SWT.DEFAULT);
+		selectedElements = new ArrayList<YearbookElement>();
 
 		shell.setSize(800, 600);
 		
@@ -303,14 +307,16 @@ public class Creator {
 			public void mouseDoubleClick(MouseEvent event) {
 				if (!isInsertingText) switch (settings.cursorMode) {
 				case MOVE:
-					//Bring element to front.
-					if (selectedElement != null) {
-						int index = yearbook.page(yearbook.activePage).findElementIndex(selectedElement);
-						if (index == -1) {
-							selectedElement = null;
-						} else {
-							yearbook.page(yearbook.activePage).getElements().remove(index);
-							yearbook.page(yearbook.activePage).addElement(selectedElement);
+					//Bring selected elements to front.
+					for (YearbookElement selectedElement : selectedElements) {
+						if (selectedElement != null) {
+							int index = yearbook.page(yearbook.activePage).findElementIndex(selectedElement);
+							if (index == -1) {
+								selectedElement = null;
+							} else {
+								yearbook.page(yearbook.activePage).getElements().remove(index);
+								yearbook.page(yearbook.activePage).addElement(selectedElement);
+							}
 						}
 					}
 					break;
@@ -327,10 +333,18 @@ public class Creator {
 
 			@Override
 			public void mouseDown(MouseEvent event) {
+				xDiff = yDiff = 0;
 				if (!isInsertingText) switch (settings.cursorMode) {
 				case MOVE:
 					if (yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y)) {
-						selectElement(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y));
+						if (!selectedElements.contains(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y))) {
+							if ((event.stateMask & SWT.MOD1) == SWT.MOD1) {
+								selectAnotherElement(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y));
+							} else {
+								selectElement(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y));
+							}
+						}
+						
 						refresh();
 					} else {
 						selectElement(null);
@@ -346,7 +360,7 @@ public class Creator {
 						box.setText("Delete Element");
 						box.setMessage("Are you sure you want to erase this element?");
 						int result = box.open();
-						if (result == SWT.YES) yearbook.page(yearbook.activePage).removeElement(selectedElement);
+						if (result == SWT.YES) yearbook.page(yearbook.activePage).removeElement(selectedElements.get(0));
 						refresh();
 					}
 					break;
@@ -374,16 +388,14 @@ public class Creator {
 					if (yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y)){
 						if (yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y).isText()) {
 							element = (YearbookTextElement) yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y);
-							System.out.println("a");
 						} else {
 							element = new YearbookTextElement(event.x, event.y, yearbook.settings.width, yearbook.settings.height);
 							yearbook.page(yearbook.activePage).addElement(element);
-							System.out.println("b");
 						}
 					} else {
+						int startX = 0;
 						element = new YearbookTextElement(event.x, event.y, yearbook.settings.width, yearbook.settings.height);
 						yearbook.page(yearbook.activePage).addElement(element);
-						System.out.println(event.x + " " + event.y);
 					}
 					
 					refresh();
@@ -400,18 +412,27 @@ public class Creator {
 					yDiff += event.y;
 					
 					//Prevents accidental movement.
-					if (Math.abs(xDiff) < 15 && Math.abs(yDiff) < 15) xDiff = yDiff = 0;
-									
-					if (yearbook.page(yearbook.activePage).findElement(selectedElement) != null && event.button == 1) {
+					if (Math.abs(xDiff) < 5 && Math.abs(yDiff) < 5) xDiff = yDiff = 0;
+								
+					if (selectedElements.size() == 0) return;
+					if (selectedElements.size() == 1) {
+						YearbookElement selectedElement = selectedElements.get(0);
+						if (yearbook.page(yearbook.activePage).findElement(selectedElement) != null && event.button == 1) {
+							int newX, newY;
+							newX = selectedElement.getBounds().x + xDiff;
+							newY = selectedElement.getBounds().y + yDiff;
+							yearbook.page(yearbook.activePage).findElement(selectedElement).setLocationRelative(newX, newY);
+						}
+					} else {
 						int newX, newY;
-						newX = selectedElement.getBounds().x + xDiff;
-						newY = selectedElement.getBounds().y + yDiff;
-						yearbook.page(yearbook.activePage).findElement(selectedElement).setLocationRelative(newX, newY);
+						for (YearbookElement element : selectedElements) {
+							newX = element.getBounds().x + xDiff;
+							newY = element.getBounds().y + yDiff;
+							element.setLocationRelative(newX, newY);
+						}
 					}
-					refresh();
 					
-					xDiff = 0;
-					yDiff = 0;
+					refresh();
 					break;
 				case ERASE:
 					break;
@@ -419,9 +440,11 @@ public class Creator {
 					xDiff += event.x;
 					yDiff += event.y;
 					
-					if (yearbook.page(yearbook.activePage).findElement(selectedElement) != null) {
-						yearbook.page(yearbook.activePage).findElement(selectedElement).resize(display, xDiff, yDiff);
-						refresh();
+					for (YearbookElement selectedElement : selectedElements) {
+						if (yearbook.page(yearbook.activePage).findElement(selectedElement) != null) {
+							yearbook.page(yearbook.activePage).findElement(selectedElement).resize(display, xDiff, yDiff);
+							refresh();
+						}
 					}
 					startX = startY = xDiff = yDiff = 0;
 					
@@ -589,6 +612,22 @@ public class Creator {
 			
 		});
 		
+		sizeCombo.addListener(SWT.KeyUp, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				int size = element.size;
+				try {
+					size = Integer.parseInt(sizeCombo.getText());
+				} catch (NumberFormatException e) {
+					return;
+				}
+				element.size = size;
+				refresh();
+			}
+			
+		});
+		
 		fontCombo.addListener(SWT.Selection, new Listener() {
 
 			@Override
@@ -643,7 +682,19 @@ public class Creator {
 	}
 
 	private void selectElement(YearbookElement element) {
-		this.selectedElement = element;
+		selectedElements.clear();
+		if (element == null) return;
+		selectedElements.add(element);
+	}
+	
+	private void selectAnotherElement(YearbookElement element) {
+		if (element == null) return;
+		selectedElements.add(element);
+	}
+	
+	private void selectElements(ArrayList<YearbookElement> elements) {
+		selectedElements.clear();
+		selectedElements.addAll(elements);
 	}
 
 	private void buildPagesListDnD() {
@@ -879,6 +930,27 @@ public class Creator {
 	
 	private void initialize() {
 		isInsertingText = false;
+		MOD1 = false;
+		
+		shell.addListener(SWT.KeyDown, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+		});
+		
+		shell.addListener(SWT.KeyUp, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+		});
 		
 		canvasBackgroundColor = new Color(display, 254, 254, 254);
 		
@@ -1290,6 +1362,7 @@ public class Creator {
 			@Override
 			public void handleEvent(Event event) {
 				String fileName = imagePicker();
+				if (fileName == null) return;
 				YearbookImageElement element = new YearbookImageElement(display, fileName, yearbook.settings.width, yearbook.settings.height);
 				yearbook.page(yearbook.activePage).addElement(element);
 				//refresh();
@@ -1304,19 +1377,21 @@ public class Creator {
 
 			@Override
 			public void handleEvent(Event event) {
-				if ((settings.cursorMode != CursorMode.SELECT || selectionRectangle == null) && selectedElement == null) {
-					MessageBox box = new MessageBox(shell, SWT.ICON_INFORMATION);
-					box.setText("Insert Video");
-					box.setMessage("Please select an area of the page to link to the video.");
-					box.open();
-					return;
-				} else if (selectedElement != null && selectionRectangle == null && selectedElement.isImage()) {
-					try {
-						attachVideoToImage((YearbookImageElement) selectedElement);
-					} catch (IOException e) {
-						e.printStackTrace();
+				for (YearbookElement selectedElement : selectedElements) {
+					if ((settings.cursorMode != CursorMode.SELECT || selectionRectangle == null) && selectedElements.size() == 0) {
+						MessageBox box = new MessageBox(shell, SWT.ICON_INFORMATION);
+						box.setText("Insert Video");
+						box.setMessage("Please select an area of the page to link to the video.");
+						box.open();
+						return;
+					} else if (selectedElement != null && selectionRectangle == null && selectedElement.isImage()) {
+						try {
+							attachVideoToImage((YearbookImageElement) selectedElement);
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+						return;
 					}
-					return;
 				}
 				
 
@@ -1387,7 +1462,7 @@ public class Creator {
 			public void handleEvent(Event event) {
 				System.out.println("Don't forget to add a page chooser.");
 				yearbook.page(yearbook.activePage).setBackgroundImageData(null);
-				refresh();
+				refreshNoPageList();
 				
 			}
 			
@@ -1398,7 +1473,7 @@ public class Creator {
 			@Override
 			public void handleEvent(Event event) {
 				showGrid = !showGrid;
-				refresh();
+				refreshNoPageList();
 			}
 			
 		});
@@ -1747,14 +1822,15 @@ public class Creator {
 		for (YearbookImageElement element : images) {
 			gc = new GC(canvas);
 			gc.drawImage(element.getImage(display), 0, 0, element.getImage(display).getBounds().width, element.getImage(display).getBounds().height, element.getBounds().x, element.getBounds().y, element.getBounds().width, element.getBounds().height);
-			if (element == this.selectedElement && this.selectedElement != null) {
-				//Element is selected by user.
-				//Draw a border like GIMP.
-				gc.setForeground(uglyYellowColor);
-				gc.setLineStyle(SWT.LINE_DASH);
-				gc.setLineWidth(3);
-				gc.drawRectangle(element.getBounds().x, element.getBounds().y, element.getBounds().width, element.getBounds().height);
-				
+			for (YearbookElement selectedElement : selectedElements) {
+				if (element == selectedElement && selectedElement != null) {
+					//Element is selected by user.
+					//Draw a border like GIMP.
+					gc.setForeground(uglyYellowColor);
+					gc.setLineStyle(SWT.LINE_DASH);
+					gc.setLineWidth(3);
+					gc.drawRectangle(element.getBounds().x, element.getBounds().y, element.getBounds().width, element.getBounds().height);
+				}
 			}
 			gc.dispose();
 		}
