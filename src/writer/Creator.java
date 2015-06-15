@@ -1,5 +1,4 @@
 package writer;
-import java.awt.Frame;
 import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.io.IOException;
@@ -21,6 +20,8 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.*;
@@ -71,6 +72,12 @@ public class Creator {
 	private MenuItem insertLinkItem;
 	private MenuItem insertPageNumbersItem;
 	private MenuItem insertToCItem;
+	private MenuItem pageMenuItem;
+	private Menu pageMenu;
+	private MenuItem pageMirrorItem;
+	private MenuItem pageBackgroundItem;
+	private MenuItem pageClearBackgroundItem;
+	private MenuItem pageShowGridItem;
 	private MenuItem helpMenuItem;
 	private Menu helpMenu;
 	private MenuItem helpAboutItem;
@@ -118,6 +125,7 @@ public class Creator {
 	private Rectangle selectionRectangle;
 	
 	private boolean isInsertingText;
+	private boolean showGrid;
 	protected String comboValue;
 	
 	private Creator() {
@@ -836,7 +844,25 @@ public class Creator {
 		insertToCItem = new MenuItem(insertMenu, SWT.PUSH);
 		insertToCItem.setText("Table of Contents...");
 		
+		//Create Page Menu
+		pageMenuItem = new MenuItem(menubar, SWT.CASCADE);
+		pageMenuItem.setText("&Page");
+		Menu pageMenu = new Menu(shell, SWT.DROP_DOWN);
+		pageMenuItem.setMenu(pageMenu);
 		
+		pageBackgroundItem = new MenuItem(pageMenu, SWT.PUSH);
+		pageBackgroundItem.setText("&Add Background...");
+		
+		pageMirrorItem = new MenuItem(pageMenu, SWT.PUSH);
+		pageMirrorItem.setText("&Mirror Background...");
+		
+		pageClearBackgroundItem = new MenuItem(pageMenu, SWT.PUSH);
+		pageClearBackgroundItem.setText("&Clear Background...");
+		
+		new MenuItem(pageMenu, SWT.SEPARATOR);
+		
+		pageShowGridItem = new MenuItem(pageMenu, SWT.CHECK);
+		pageShowGridItem.setText("Show &Grid");
 		
 		
 		
@@ -1263,9 +1289,7 @@ public class Creator {
 
 			@Override
 			public void handleEvent(Event event) {
-				FileDialog picker = new FileDialog(shell, SWT.OPEN);
-				String fileName = picker.open();
-				if (fileName == null) return;
+				String fileName = imagePicker();
 				YearbookImageElement element = new YearbookImageElement(display, fileName, yearbook.settings.width, yearbook.settings.height);
 				yearbook.page(yearbook.activePage).addElement(element);
 				//refresh();
@@ -1321,6 +1345,64 @@ public class Creator {
 			
 		});
 		
+		pageMirrorItem.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				//TODO: implement UI.
+				//Assume horizontal for now.
+				int mirrorPage = yearbook.activePage + 1;
+				
+				if (mirrorPage >= yearbook.size() || mirrorPage < 0 || yearbook.page(yearbook.activePage).getBackgroundImageData() == null) return;
+				
+				yearbook.page(mirrorPage).setBackgroundImageData(SWTUtils.horizontalFlipSWT(yearbook.page(yearbook.activePage).getBackgroundImageData()));
+				refresh();
+			}
+			
+		});
+		
+		pageBackgroundItem.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				String fileName = imagePicker();
+				if (fileName == null) return;
+				try {
+					ImageData data = new ImageData(fileName);
+					yearbook.page(yearbook.activePage).setBackgroundImageData(data);
+					refresh();
+				} catch (SWTException e) {
+					MessageBox helpBox = new MessageBox(shell, SWT.ICON_INFORMATION | SWT.OK);
+					helpBox.setText("Error");
+					helpBox.setMessage("The following error occurred: \n\t" + e.getMessage());
+					helpBox.open();
+				}
+			}
+			
+		});
+		
+		pageClearBackgroundItem.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				System.out.println("Don't forget to add a page chooser.");
+				yearbook.page(yearbook.activePage).setBackgroundImageData(null);
+				refresh();
+				
+			}
+			
+		});
+		
+		pageShowGridItem.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				showGrid = !showGrid;
+				refresh();
+			}
+			
+		});
+		
 		helpAboutItem.addListener(SWT.Selection, new Listener() {
 
 			@Override
@@ -1337,6 +1419,14 @@ public class Creator {
 		
 	}
 	
+	protected String imagePicker() {
+		FileDialog picker = new FileDialog(shell, SWT.OPEN);
+		String[] allowedExtensions = {"*.jpg; *.jpeg; *.gif; *.tif; *.tiff; *.bpm; *.ico; *.png;"};
+		picker.setFilterExtensions(allowedExtensions);
+		String fileName = picker.open();
+		return fileName;
+	}
+
 	protected void attachVideoToImage(YearbookImageElement element) throws IOException {
 		YearbookClickableImageElement e = new YearbookClickableImageElement(display, element.getImage(display).getImageData(), element.getPageWidth(), element.getPageHeight());
 		
@@ -1435,10 +1525,6 @@ public class Creator {
 		videoBtn = new Button(toolbarWrapper, SWT.PUSH);
 		videoBtn.setImage(YearbookIcons.video(display));
 		videoBtn.pack();
-
-		linkBtn = new Button(toolbarWrapper, SWT.PUSH);
-		linkBtn.setImage(YearbookIcons.link(display));
-		linkBtn.pack();
 
 		Label sep5 = new Label(toolbarWrapper, SWT.NONE);
 		sep5.setText("   ");
@@ -1743,6 +1829,50 @@ public class Creator {
 			
 			gc.dispose();
 			
+		}
+		
+		//If they want a grid, give them a grid.
+		if (showGrid) {
+			gc = new GC(canvas);
+			gc.setLineStyle(SWT.LINE_SOLID);
+			
+			FontData fd = gc.getFont().getFontData()[0];
+			fd.height = 8;
+			gc.setFont(new Font(display, fd));
+			
+			//Let's do a solid line every inch...
+			int x;
+			int xDiff = (int) ((1.0 / 8.5) * yearbook.settings.width);
+			for (int i = 1; i <= 8; i++) {
+				x = i * xDiff;
+				gc.drawLine(x, 0, x, yearbook.settings.height);
+				gc.drawText(Integer.toString(i), x + 2, 0, true);
+			}
+			
+			int y;
+			int yDiff = (int) ((1.0 / 11.0) * yearbook.settings.height);
+			for (int i = 1; i < 11; i++) {
+				y = i * yDiff;
+				gc.drawLine(0, y, yearbook.settings.width, y);
+				gc.drawText(Integer.toString(i), 0, y + 2, true);
+			}
+			
+			//...and a dotted line every quarter inch.
+			gc.setLineStyle(SWT.LINE_DOT);
+			
+			xDiff = (int) ((.25 / 8.5) * yearbook.settings.width);
+			for (int i = 1; i <= 35; i++) {
+				x = i * xDiff;
+				gc.drawLine(x, 0, x, yearbook.settings.height);
+			}
+
+			yDiff = (int) ((.25 / 11.0) * yearbook.settings.height);
+			for (int i = 1; i < 45; i++) {
+				y = i * yDiff;
+				gc.drawLine(0, y, yearbook.settings.width, y);
+			}
+			
+			gc.dispose();
 		}
 		
 		

@@ -1,7 +1,14 @@
 package writer;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.ImageData;
+import org.eclipse.swt.graphics.ImageLoader;
 import org.eclipse.swt.widgets.Display;
 
 /**
@@ -32,6 +39,36 @@ public class YearbookClickableImageElement extends YearbookImageElement implemen
 	@Override
 	public boolean isClickable() {
 		return true;
+	}
+	
+	/*
+	 * Serialization methods
+	 */
+	
+	private void writeObject(ObjectOutputStream out) throws IOException {
+		out.defaultWriteObject();
+		if (this.imageData == null) {
+			this.imageData = YearbookImages.bogusBackgroundData();
+		}
+		ImageLoader imageLoader = new ImageLoader();
+		imageLoader.data = new ImageData[] { this.imageData };
+		ByteArrayOutputStream stream = new ByteArrayOutputStream();
+		imageLoader.save(stream, SWT.IMAGE_PNG);
+		byte[] bytes = stream.toByteArray();
+		out.writeInt(bytes.length);
+		out.write(bytes);
+	}
+
+	private void readObject(ObjectInputStream in) throws IOException,
+			ClassNotFoundException {
+		in.defaultReadObject();
+		int length = in.readInt();
+		byte[] buffer = new byte[length];
+		in.readFully(buffer);
+		ImageLoader imageLoader = new ImageLoader();
+		ByteArrayInputStream stream = new ByteArrayInputStream(buffer);
+		ImageData[] data = imageLoader.load(stream);
+		this.imageData = data[0];
 	}
 
 	
