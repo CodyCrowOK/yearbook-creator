@@ -41,4 +41,12 @@ public class YearbookSettings implements Serializable {
 		return 11 * 300;
 	}
 	
+	public double xInches() {
+		return 8.5;
+	}
+	
+	public double yInches() {
+		return 11.0;
+	}
+	
 }

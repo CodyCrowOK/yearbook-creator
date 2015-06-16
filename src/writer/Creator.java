@@ -334,7 +334,96 @@ public class Creator {
 			@Override
 			public void mouseDown(MouseEvent event) {
 				xDiff = yDiff = 0;
-				if (!isInsertingText) switch (settings.cursorMode) {
+				
+				if (event.button == 3 && yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y)) {
+					int trueX = event.x;
+					int trueY = event.y;
+					Menu menu = new Menu(canvas);
+					MenuItem properties = new MenuItem(menu, SWT.PUSH);
+					properties.setText("Properties");
+					
+					properties.addListener(SWT.Selection, new Listener() {
+
+						@Override
+						public void handleEvent(Event event) {
+							if (yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).isText()) {
+								openTextProperties((YearbookTextElement) yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY));
+							}
+						}
+
+						private void openTextProperties(YearbookTextElement element) {
+							Shell properties = new Shell(shell);
+							properties.setText("Properties");
+							GridLayout layout = new GridLayout();
+							layout.numColumns = 2;
+							layout.makeColumnsEqualWidth = true;
+							properties.setLayout(layout);
+							
+							Label loc = new Label(properties, SWT.LEFT);
+							loc.setText("Location:");
+							
+							GridData data = new GridData();
+							data.horizontalSpan = 1;
+							data.grabExcessHorizontalSpace = true;
+							data.horizontalAlignment = SWT.FILL;
+							loc.setLayoutData(data);
+							
+							Label xy = new Label(properties, SWT.LEFT);
+							String x = String.format("%.2f", element.x * yearbook.settings.xInches());
+							String y = String.format("%.2f", element.y * yearbook.settings.yInches());
+							xy.setText(x + "\", " + y + "\"");
+							GridData data2 = new GridData();
+							data2.horizontalSpan = 1;
+							data2.grabExcessHorizontalSpace = true;
+							data.horizontalAlignment = SWT.FILL;
+							xy.setLayoutData(data2);
+							
+							Label dim = new Label(properties, SWT.LEFT);
+							dim.setText("Dimensions:");
+							dim.setLayoutData(data);
+							
+							Label sizeNumbers = new Label(properties, SWT.LEFT);
+							x = String.format("%.2f", (double) element.getBounds().width / element.pageWidth * yearbook.settings.xInches());
+							y = String.format("%.2f", (double) element.getBounds().height / element.pageHeight * yearbook.settings.yInches());
+							sizeNumbers.setText(x + "\" x " + y + "\"");
+							
+							Label color = new Label(properties, SWT.LEFT);
+							color.setText("Color:");
+							color.setLayoutData(data);
+							
+							Label rgb = new Label(properties, SWT.LEFT);
+							String rString = String.format("%02d", Integer.parseInt(Integer.toHexString(element.getRgb().red)), 16);
+							String gString = String.format("%02d", Integer.parseInt(Integer.toHexString(element.getRgb().green)), 16);
+							String bString = String.format("%02d", Integer.parseInt(Integer.toHexString(element.getRgb().blue)), 16);
+							rgb.setText("#" + rString + gString + bString);
+							rgb.setLayoutData(data2);
+							
+							Label size = new Label(properties, SWT.LEFT);
+							size.setText("Font Size:");
+							size.setLayoutData(data);
+							
+							Label fontSize = new Label(properties, SWT.LEFT);
+							fontSize.setText(Integer.toString(element.size) + " pt.");
+							fontSize.setLayoutData(data2);
+							
+							Label font = new Label(properties, SWT.LEFT);
+							font.setText("Font Family:");
+							font.setLayoutData(data);
+							
+							Label family = new Label(properties, SWT.LEFT);
+							family.setText(element.fontFamily);
+							family.setLayoutData(data2);
+							
+							properties.setSize(250, 200);
+							properties.open();
+						}
+						
+					});
+					
+					menu.setVisible(true);
+				}
+				
+				if (!(isInsertingText || event.button == SWT.BUTTON3)) switch (settings.cursorMode) {
 				case MOVE:
 					if (yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y)) {
 						if (!selectedElements.contains(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y))) {
@@ -348,6 +437,7 @@ public class Creator {
 						refresh();
 					} else {
 						selectElement(null);
+						refresh();
 					}
 					xDiff -= event.x;
 					yDiff -= event.y;
@@ -474,6 +564,56 @@ public class Creator {
 			
 		});
 		
+		//Handle arrow key movement.
+		canvas.addListener(SWT.KeyUp, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				if (selectedElements.size() == 0) return;
+				if (settings.cursorMode == CursorMode.MOVE) switch (event.keyCode) {
+				case SWT.ARROW_DOWN:
+					for (YearbookElement e : selectedElements) {
+						int newY = e.getBounds().y + 1;
+						e.setLocationRelative(e.getBounds().x, newY);
+						if (e.getBounds().y < newY) {
+							e.setLocationRelative(e.getBounds().x, newY + 1);
+						}
+					}
+					break;
+				case SWT.ARROW_UP:
+					for (YearbookElement e : selectedElements) {
+						int newY = e.getBounds().y - 1;
+						e.setLocationRelative(e.getBounds().x, newY);
+						if (e.getBounds().y > newY) {
+							e.setLocationRelative(e.getBounds().x, newY + 1);
+						}
+					}
+					break;
+				case SWT.ARROW_RIGHT:
+					for (YearbookElement e : selectedElements) {
+						int newX = e.getBounds().x + 1;
+						e.setLocationRelative(newX, e.getBounds().y);
+						if (e.getBounds().x < newX) {
+							e.setLocationRelative(newX + 1, e.getBounds().y);
+						}
+					}
+					break;
+				case SWT.ARROW_LEFT:
+					for (YearbookElement e : selectedElements) {
+						int newX = e.getBounds().x - 1;
+						e.setLocationRelative(newX, e.getBounds().y);
+						if (e.getBounds().x > newX) {
+							e.setLocationRelative(newX - 1, e.getBounds().y);
+						}
+					}
+					break;
+				}
+				refresh();
+				
+			}
+			
+		});
+		
 		
 	}
 	
@@ -568,6 +708,9 @@ public class Creator {
 		
 		Button underline = new Button(styleWrapper, SWT.PUSH);
 		underline.setText("U");
+		
+		Button shadow = new Button(styleWrapper, SWT.PUSH);
+		shadow.setText("S");
 		
 		/*
 		 * Add listeners to each component.
@@ -668,6 +811,17 @@ public class Creator {
 			
 		});
 		
+		shadow.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				element.toggleShadow();
+				refresh();
+				
+			}
+			
+		});
+		
 		textTool.addListener(SWT.Close, new Listener() {
 
 			@Override
@@ -677,7 +831,7 @@ public class Creator {
 			
 		});
 		
-		textTool.setSize(400, 200);
+		textTool.setSize(500, 200);
 		textTool.open();
 	}
 
@@ -1731,19 +1885,31 @@ public class Creator {
 			}
 		});
 		
+		/**
+		 * If there's an element already selected, erase it.
+		 * Otherwise, go into erase mode.
+		 */
 		eraseBtn.addListener(SWT.Selection, new Listener() {
 			public void handleEvent(Event e) {
-				Control[] children = toolbarWrapper.getChildren();
-				for (int i = 0; i < children.length; i++) {
-					Control child = children[i];
-					if (e.widget != child && child instanceof Button
-							&& (child.getStyle() & SWT.TOGGLE) != 0) {
-						((Button) child).setSelection(false);
+				if (selectedElements.size() == 0) {
+					Control[] children = toolbarWrapper.getChildren();
+					for (int i = 0; i < children.length; i++) {
+						Control child = children[i];
+						if (e.widget != child && child instanceof Button
+								&& (child.getStyle() & SWT.TOGGLE) != 0) {
+							((Button) child).setSelection(false);
+						}
 					}
+					((Button) e.widget).setSelection(true);
+					settings.cursorMode = CursorMode.ERASE;
+				} else {
+					for (YearbookElement element : selectedElements) {
+						yearbook.page(yearbook.activePage).removeElement(element);
+					}
+					selectedElements.clear();
 				}
-				((Button) e.widget).setSelection(true);
-				settings.cursorMode = CursorMode.ERASE;
 				modeReset();
+				refreshNoPageList();
 			}
 		});
 
@@ -1822,7 +1988,8 @@ public class Creator {
 		for (YearbookImageElement element : images) {
 			gc = new GC(canvas);
 			gc.drawImage(element.getImage(display), 0, 0, element.getImage(display).getBounds().width, element.getImage(display).getBounds().height, element.getBounds().x, element.getBounds().y, element.getBounds().width, element.getBounds().height);
-			for (YearbookElement selectedElement : selectedElements) {
+			if (selectedElements.contains(element)) {
+				YearbookElement selectedElement = selectedElements.get(selectedElements.indexOf(element));
 				if (element == selectedElement && selectedElement != null) {
 					//Element is selected by user.
 					//Draw a border like GIMP.
@@ -1876,9 +2043,20 @@ public class Creator {
 		//...and display those in some manner.
 		for (YearbookTextElement e : texts) {
 			gc = new GC(canvas);
+			gc.setAdvanced(true);
 			gc.setTextAntialias(SWT.ON);
-			gc.setForeground(e.getColor(display));
 			gc.setFont(e.getFont(display));
+			
+			if (e.shadow) {
+				int offset = e.size >= 36 ? 2 : 1;
+				gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
+				gc.setAlpha(0x8f);
+				gc.drawText(e.text, e.getBounds().x + offset, e.getBounds().y + offset, true);
+				gc.setAlpha(0xff);
+			}
+
+			gc.setForeground(e.getColor(display));
+			
 			gc.drawText(e.text, e.getBounds().x, e.getBounds().y, true);
 
 			/*
@@ -1903,6 +2081,19 @@ public class Creator {
 				
 			}
 			
+			if (selectedElements.contains(e)) {
+				YearbookElement selectedElement = selectedElements.get(selectedElements.indexOf(e));
+				if (e == selectedElement && selectedElement != null) {
+					//Element is selected by user.
+					//Draw a border like GIMP.
+					gc.setForeground(uglyYellowColor);
+					gc.setLineStyle(SWT.LINE_DASH);
+					gc.setLineWidth(3);
+					gc.drawRectangle(e.getBounds().x, e.getBounds().y, e.getBounds().width, e.getBounds().height);
+				}
+			}
+
+			uglyYellowColor.dispose();
 			gc.dispose();
 			
 		}

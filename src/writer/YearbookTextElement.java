@@ -19,12 +19,13 @@ public class YearbookTextElement extends YearbookElement implements Serializable
 	public boolean bold;
 	public boolean italic;
 	public boolean underline;
+	public boolean shadow;
 	
 	private RGB rgb;
 	transient private Font font;
 	transient private Color color;
-	private int pageWidth;
-	private int pageHeight;
+	public int pageWidth;
+	public int pageHeight;
 	
 	private double width;
 	private double height;
@@ -134,5 +135,13 @@ public class YearbookTextElement extends YearbookElement implements Serializable
 	
 	public void toggleUnderline() {
 		this.underline = !this.underline;
+	}
+	
+	public void toggleShadow() {
+		this.shadow = !this.shadow;
+	}
+
+	public RGB getRgb() {
+		return rgb;
 	}
 }
