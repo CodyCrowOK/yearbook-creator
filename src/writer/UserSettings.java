@@ -7,6 +7,7 @@ package writer;
  */
 public class UserSettings {
 	public CursorMode cursorMode;
+	public boolean showGrid;
 
 	public UserSettings() {
 		super();

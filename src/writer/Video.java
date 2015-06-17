@@ -23,6 +23,7 @@ public class Video implements Serializable {
 		this.src = "media/" + Long.toString(new Date().getTime()) + source.getName();
 		File destination = new File(this.src);
 		copyFile(source, destination);
+		this.name = fileName.split("/")[fileName.split("/").length - 1];
 	}
 	
 	public Video(String fileName, String name) throws IOException {

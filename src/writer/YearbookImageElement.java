@@ -32,10 +32,6 @@ public class YearbookImageElement extends YearbookElement implements Serializabl
 	private int clientWidth;
 	
 	transient private Display display;
-	
-	private int pageWidth;
-
-	private int pageHeight;
 	transient ImageData imageData;
 	transient private Image image;
 	

@@ -233,7 +233,7 @@ public class Reader {
 	}
 	
 	private boolean leftIsActive() {
-		return yearbook.activePage % 2 == 1;
+		return Math.abs(yearbook.activePage % 2) == 1;
 	}
 	
 	private boolean rightIsActive() {

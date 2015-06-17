@@ -110,6 +110,15 @@ public class YearbookTextElement extends YearbookElement implements Serializable
 		return font;
 	}
 	
+	public Font getFont(Device d, int pageWidth, int pageHeight) {
+		if (font != null) font.dispose();
+		
+		int size = (int) (this.size * ((double) pageWidth / this.pageWidth));
+		
+		font = new Font(d, this.fontFamily, size, this.fontStyle());
+		return font;
+	}
+	
 	public int fontStyle() {
 		int style = SWT.NORMAL;
 		if (bold) style |= SWT.BOLD;

@@ -1,4 +1,5 @@
 package writer;
+import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -11,9 +12,14 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 
+import org.apache.pdfbox.exceptions.COSVisitorException;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.edit.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.graphics.xobject.PDJpeg;
+import org.apache.pdfbox.pdmodel.graphics.xobject.PDPixelMap;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.ImageLoader;
@@ -26,47 +32,47 @@ public class Yearbook implements Serializable {
 	transient private Image defaultBackground;
 	transient private ImageData defaultBackgroundData;
 	boolean noBackground;
-	
+
 	String name;
 	public YearbookSettings settings;
 	public int activePage;
-	
+
 	public Yearbook() {
 		pages = new ArrayList<YearbookPage>();
 		settings = new YearbookSettings();
 		activePage = 0;
 		name = "Untitled";
 	}
-	
+
 	public Yearbook(String name) {
 		this();
 		this.name = name;
 		pages.add(new YearbookPage(name));
 	}
-	
+
 	public YearbookPage page(int index) {
 		return pages.get(index);
 	}
-	
+
 	public void addPage(String name) {
 		pages.add(new YearbookPage(name));
 	}
-	
+
 	public void removePage(int index) {
 		pages.remove(index);
 	}
-	
+
 	public int size() {
 		return pages.size();
 	}
-	
+
 	public void movePage(int source, int destination) {
 		if (destination > size()) return;
 		YearbookPage page = pages.get(source);
 		pages.remove(source);
 		pages.add(destination, page);
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public static Yearbook importFromPDF(Display display, String fileName) {
 
@@ -80,113 +86,71 @@ public class Yearbook implements Serializable {
 				awtImages.add(pdPage.convertToImage(BufferedImage.TYPE_INT_RGB, 300));
 			}
 			document.close();
-			
+
 			//After converted to images.
-			
+
 			ArrayList<ImageData> imageData = new ArrayList<ImageData>();
 			for (java.awt.Image awtImage : awtImages) {
 				imageData.add(SWTUtils.convertAWTImageToSWT(awtImage));
 			}
-			
+
 			ArrayList<Image> images = new ArrayList<Image>();
 			for (ImageData data : imageData) {
 				images.add(new Image(display, data));
 			}
-			
+
 			Yearbook yearbook = new Yearbook();
 			for (Image image : images) {
 				yearbook.pages.add(new YearbookPage(image));
 			}
-			
+
 			return yearbook;
-			
+
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return null;
 	}
-	
-	/*
-	 * Saves a yearbook to a file readable by the digital yearbook software
-	 * (i.e. what the end user sees).
-	 * @param fileName The name of the file to export to.
-	 * @param yearbook The Yearbook to export
-	 * @throws IOException
-	 *
-	
-	public static void export(String fileName, Yearbook yearbook, Display display) throws IOException {
-		/*
-		 * First, prepare the yearbook for writing.
-		 *
-		DigitalYearbook digitalYearbook = new DigitalYearbook(yearbook.name);
-		int pageHeight = yearbook.settings.publishHeight();
-		int pageWidth = yearbook.settings.publishWidth();
-		ArrayList<Image> generatedImages = new ArrayList<Image>();
-		ArrayList<YearbookClickableElement> clickables = new ArrayList<YearbookClickableElement>();
-		
-		for (YearbookPage page : yearbook.pages) {
-			Image image = new Image(display, pageWidth, pageHeight);
+
+	public static void exportToPDF(Yearbook yearbook, String fileName, Display display) throws IOException, COSVisitorException {
+		ArrayList<java.awt.image.BufferedImage> images = new ArrayList<java.awt.image.BufferedImage>();
+		for (int i = 0; i < yearbook.size(); i++) {
+			Image image = new Image(display, yearbook.settings.publishWidth(), yearbook.settings.publishHeight());
 			GC gc = new GC(image);
-			
-			//Set the background image.
-			if (page.backgroundImage(display) != null) {
-				gc.drawImage(page.backgroundImage(display), 0, 0, page.backgroundImage(display).getBounds().width, page.backgroundImage(display).getBounds().height, 0, 0, image.getBounds().width, image.getBounds().height);
-			}
-			
-			//Map the YearbookImageElements to images...
-			ArrayList<YearbookImageElement> images = new ArrayList<YearbookImageElement>();
-			for (int i = 0; i < page.getElements().size(); i++) {
-				if (page.element(i).isImage()) {
-					images.add((YearbookImageElement) page.element(i));
-				}
-			}
-			//...and display them.
-			for (YearbookImageElement element : images) {
-				gc.drawImage(element.getImage(display), 0, 0, element.getImage(display).getBounds().width, element.getImage(display).getBounds().height, element.getBounds(pageWidth, pageHeight).x, element.getBounds(pageWidth, pageHeight).y, element.getBounds(pageWidth, pageHeight).width, element.getBounds(pageWidth, pageHeight).height);
-			}
-			
+			Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), i, yearbook.settings.publishWidth(), yearbook.settings.publishHeight());
+			images.add(SWTUtils.convertToAWT(image.getImageData()));
 			gc.dispose();
-			generatedImages.add(image);
-			
-			//Map them like we did before...
-			for (YearbookElement e : page.getElements()) {
-				if (e.isClickable()) clickables.add((YearbookClickableElement) e);
-			}
-			
-			digitalYearbook.pages.add(new DigitalYearbookPage(image, clickables));
+			image.dispose();
 		}
 		
+		PDDocument document = new PDDocument();
 		
-		
-		/*
-                Image drawable = new Image(e.display, canvas.getBounds());
-		GC gc = new GC(drawable);
-		canvas.print(gc);
-		ImageLoader loader = new ImageLoader();
-		loader.data = new ImageData[] {drawable.getImageData()};
-		loader.save("c:\\swt.png", SWT.IMAGE_PNG);
-		drawable.dispose();
-		gc.dispose();
-		*
-		
-		
-		
-		File file = new File(fileName);
-		if (!file.exists()) {
-			file.createNewFile();
-			return;
+		for (java.awt.image.BufferedImage image : images) {
+			PDPage page = new PDPage();
+			document.addPage(page);
+			
+			//Images will be too large normally, so we need to scale them.
+			int newWidth = (int) page.getMediaBox().getWidth();
+			int newHeight = (int) page.getMediaBox().getHeight();
+			
+			
+			BufferedImage newImage = new BufferedImage(newWidth, newHeight, BufferedImage.SCALE_SMOOTH);
+			Graphics g = newImage.getGraphics();
+			g.drawImage(image, 0, 0, newWidth, newHeight, null);
+			g.dispose();
+			
+			PDPixelMap jpeg = new PDPixelMap(document, newImage);
+			PDPageContentStream stream = new PDPageContentStream(document, page);
+			stream.drawImage(jpeg, 0, 0);
+			stream.close();
+			
 		}
-		FileOutputStream fos = new FileOutputStream(file);
-		ObjectOutputStream oos = new ObjectOutputStream(fos);
 		
-		oos.writeObject(digitalYearbook);
-		oos.flush();
-		oos.close();
-		
-		
-	}*/
-	
+		document.save(fileName);
+		document.close();
+	}
+
 	/**
 	 * Reads in a yearbook file from disk.
 	 * @param fileName The yearbook file to be read in
@@ -197,7 +161,7 @@ public class Yearbook implements Serializable {
 	public static Yearbook readFromDisk(String fileName) throws IOException, ClassNotFoundException {
 		FileInputStream fis = new FileInputStream(fileName);
 		ObjectInputStream ois = new ObjectInputStream(fis);
-		
+
 		Yearbook yearbook = (Yearbook) ois.readObject();
 		ois.close();
 		return yearbook;
@@ -216,16 +180,16 @@ public class Yearbook implements Serializable {
 		}
 		FileOutputStream fos = new FileOutputStream(file);
 		ObjectOutputStream oos = new ObjectOutputStream(fos);
-		
+
 		oos.writeObject(yearbook);
 		oos.flush();
 		oos.close();
 	}
-	
+
 	/*
 	 * Serialization methods
 	 */
-	
+
 	private void writeObject(ObjectOutputStream out) throws IOException {
 		out.defaultWriteObject();
 		if (this.defaultBackgroundData == null) {
@@ -242,7 +206,7 @@ public class Yearbook implements Serializable {
 	}
 
 	private void readObject(ObjectInputStream in) throws IOException,
-			ClassNotFoundException {
+	ClassNotFoundException {
 		in.defaultReadObject();
 		int length = in.readInt();
 		byte[] buffer = new byte[length];

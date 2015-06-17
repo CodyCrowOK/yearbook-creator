@@ -26,6 +26,9 @@ abstract public class YearbookElement implements Serializable {
 	
 	public double rotation;
 	
+	public int pageWidth;
+	public int pageHeight;
+	
 	
 	
 	public boolean isImage() {

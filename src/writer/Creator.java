@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import org.apache.pdfbox.exceptions.COSVisitorException;
 import org.eclipse.swt.*;
 import org.eclipse.swt.dnd.DND;
 import org.eclipse.swt.dnd.DragSource;
@@ -17,6 +18,7 @@ import org.eclipse.swt.dnd.TextTransfer;
 import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Drawable;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.GC;
@@ -126,7 +128,6 @@ public class Creator {
 	private Rectangle selectionRectangle;
 	
 	private boolean isInsertingText;
-	private boolean showGrid;
 	protected String comboValue;
 	
 	private boolean MOD1;
@@ -348,7 +349,76 @@ public class Creator {
 						public void handleEvent(Event event) {
 							if (yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).isText()) {
 								openTextProperties((YearbookTextElement) yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY));
+							} else {
+								openProperties(yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY));
 							}
+						}
+
+						private void openProperties(YearbookElement element) {
+							Shell properties = new Shell(shell);
+							properties.setText("Properties");
+							GridLayout layout = new GridLayout();
+							layout.numColumns = 2;
+							layout.makeColumnsEqualWidth = true;
+							properties.setLayout(layout);
+							
+							GridData data = new GridData();
+							data.horizontalSpan = 1;
+							data.grabExcessHorizontalSpace = true;
+							data.horizontalAlignment = SWT.FILL;
+							
+							GridData data2 = new GridData();
+							data2.horizontalSpan = 1;
+							data2.grabExcessHorizontalSpace = true;
+							data.horizontalAlignment = SWT.FILL;
+							
+							Label loc = new Label(properties, SWT.LEFT);
+							loc.setText("Location:");
+							loc.setLayoutData(data);
+							
+							Label xy = new Label(properties, SWT.LEFT | SWT.WRAP);
+							String x = String.format("%.2f", element.x * yearbook.settings.xInches());
+							String y = String.format("%.2f", element.y * yearbook.settings.yInches());
+							xy.setText(x + "\", " + y + "\"");
+							xy.setLayoutData(data2);
+							
+							Label dim = new Label(properties, SWT.LEFT);
+							dim.setText("Dimensions:");
+							dim.setLayoutData(data);
+							
+							Label sizeNumbers = new Label(properties, SWT.LEFT);
+							x = String.format("%.2f", (double) element.getBounds().width / element.pageWidth * yearbook.settings.xInches());
+							y = String.format("%.2f", (double) element.getBounds().height / element.pageHeight * yearbook.settings.yInches());
+							sizeNumbers.setText(x + "\" x " + y + "\"");
+							
+							Label video = new Label(properties, SWT.LEFT);
+							video.setText("Has video?");
+							video.setLayoutData(data);
+							
+							Label yesno = new Label(properties, SWT.LEFT);
+							yesno.setText(element.isClickable() ? "Yes" : "No");
+							yesno.setLayoutData(data2);
+							
+							if (element.isClickable() && element.isImage()) {
+								YearbookClickableImageElement e = (YearbookClickableImageElement) element;
+								
+								Label videoName = new Label(properties, SWT.LEFT);
+								videoName.setText("Video Name:");
+								videoName.setLayoutData(data);
+								
+								data2 = new GridData();
+								data2.horizontalSpan = 1;
+								data2.grabExcessHorizontalSpace = true;
+								data.horizontalAlignment = SWT.FILL;
+								
+								Label name = new Label(properties, SWT.LEFT | SWT.WRAP);
+								name.setText(e.getVideo().name);
+								name.setLayoutData(data2);
+							}
+							
+							properties.pack();
+							properties.open();
+							
 						}
 
 						private void openTextProperties(YearbookTextElement element) {
@@ -1405,22 +1475,18 @@ public class Creator {
 		fileExportItem.addListener(SWT.Selection, new Listener() {
 
 			@Override
-			public void handleEvent(Event event) {/*
+			public void handleEvent(Event event) {
 				FileDialog picker = new FileDialog(shell, SWT.SAVE);
-				picker.setText("Export to Digital Yearbook");
+				picker.setText("Export to PDF");
 				String fileName = picker.open();
 				if (fileName == null) return;
 				
 				try {
-					Yearbook.export(fileName, yearbook, display);
-				} catch (IOException e) {
-					MessageBox box = new MessageBox(shell, SWT.ERROR);
-					box.setMessage("Could not write yearbook to disk.");
-					box.setText("Write Error");
-					box.open();
+					Yearbook.exportToPDF(yearbook, fileName, display);
+				} catch (COSVisitorException | IOException e) {
+					// TODO Auto-generated catch block
 					e.printStackTrace();
-				}*/
-				System.out.println("Export unimplemented.");
+				}
 			}
 			
 		});
@@ -1626,7 +1692,7 @@ public class Creator {
 
 			@Override
 			public void handleEvent(Event event) {
-				showGrid = !showGrid;
+				settings.showGrid = !settings.showGrid;
 				refreshNoPageList();
 			}
 			
@@ -1961,19 +2027,26 @@ public class Creator {
 	 */
 	private void loadActivePage(int activePage) {
 		GC gc;
+		gc = new GC(canvas);
+		paintPage(gc, display, yearbook, selectedElements, selectionRectangle, settings, activePage, yearbook.settings.width, yearbook.settings.height);
+		gc.dispose();
+	}
+	
+	public static void paintPage(GC gc, Display display, Yearbook yearbook, 
+			ArrayList<YearbookElement> selectedElements, 
+			Rectangle selectionRectangle, UserSettings settings,
+			int activePage, int pageWidth, int pageHeight) {
+		
 		Color uglyYellowColor = new Color(display, 250, 255, 0);
 		
+		gc.setAdvanced(true);
+		gc.setAntialias(SWT.ON);
 		
-		//Reset the canvas to a blank slate so we can refresh it.
-		gc = new GC(canvas);
-		gc.setBackground(canvasBackgroundColor);
-		gc.fillRectangle(0, 0, canvas.getBounds().width, canvas.getBounds().height);
-		gc.dispose();
+		gc.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
+		gc.fillRectangle(0, 0, yearbook.settings.width, yearbook.settings.height);
 		
-		if (yearbook.page(activePage).backgroundImage(display) != null) {
-			gc = new GC(canvas);
-			gc.drawImage(yearbook.page(activePage).backgroundImage(display), 0, 0, yearbook.page(activePage).backgroundImage(display).getBounds().width, yearbook.page(activePage).backgroundImage(display).getBounds().height, 0, 0, canvas.getBounds().width, canvas.getBounds().height);
-			gc.dispose();
+		if (yearbook.page(activePage).backgroundImage(display) != null && !yearbook.page(activePage).noBackground) {
+			gc.drawImage(yearbook.page(activePage).backgroundImage(display), 0, 0, yearbook.page(activePage).backgroundImage(display).getBounds().width, yearbook.page(activePage).backgroundImage(display).getBounds().height, 0, 0, pageWidth, pageHeight);
 		}
 		
 		//Apparently there's no map function in Java.
@@ -1986,25 +2059,22 @@ public class Creator {
 		}
 		//...and display them.
 		for (YearbookImageElement element : images) {
-			gc = new GC(canvas);
-			gc.drawImage(element.getImage(display), 0, 0, element.getImage(display).getBounds().width, element.getImage(display).getBounds().height, element.getBounds().x, element.getBounds().y, element.getBounds().width, element.getBounds().height);
+			gc.drawImage(element.getImage(display), 0, 0, element.getImage(display).getBounds().width, element.getImage(display).getBounds().height, element.getBounds(pageWidth, pageHeight).x, element.getBounds(pageWidth, pageHeight).y, element.getBounds(pageWidth, pageHeight).width, element.getBounds(pageWidth, pageHeight).height);
 			if (selectedElements.contains(element)) {
 				YearbookElement selectedElement = selectedElements.get(selectedElements.indexOf(element));
-				if (element == selectedElement && selectedElement != null) {
+				if (element == selectedElement) {
 					//Element is selected by user.
 					//Draw a border like GIMP.
 					gc.setForeground(uglyYellowColor);
 					gc.setLineStyle(SWT.LINE_DASH);
 					gc.setLineWidth(3);
-					gc.drawRectangle(element.getBounds().x, element.getBounds().y, element.getBounds().width, element.getBounds().height);
+					gc.drawRectangle(element.getBounds(pageWidth, pageHeight).x, element.getBounds(pageWidth, pageHeight).y, element.getBounds(pageWidth, pageHeight).width, element.getBounds(pageWidth, pageHeight).height);
 				}
 			}
-			gc.dispose();
 		}
 		
 		//If the user has selected an area, we should do something about that.
-		if (this.selectionRectangle != null && this.settings.cursorMode == CursorMode.SELECT) {
-			gc = new GC(canvas);
+		if (selectionRectangle != null && settings.cursorMode == CursorMode.SELECT) {
 			gc.setLineStyle(SWT.LINE_DASHDOTDOT);
 			gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
 			gc.setLineWidth(2);
@@ -2012,7 +2082,6 @@ public class Creator {
 			gc.setForeground(display.getSystemColor(SWT.COLOR_BLUE));
 			gc.setAlpha(20);
 			gc.fillRectangle(selectionRectangle);
-			gc.dispose();
 		}
 		
 		//We should also show the areas that are clickable.
@@ -2023,15 +2092,13 @@ public class Creator {
 		}
 		//...and display those in some manner.
 		for (YearbookElement e : clickables) {
-			gc = new GC(canvas);
 			gc.setLineWidth(1);
 			gc.setLineStyle(SWT.LINE_DASH);
-			gc.drawRectangle(e.getBounds());
+			gc.drawRectangle(e.getBounds(pageWidth, pageHeight));
 			
 			gc.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
 			gc.setAlpha(50);
-			gc.fillRectangle(e.getBounds());
-			gc.dispose();
+			gc.fillRectangle(e.getBounds(pageWidth, pageHeight));
 		}
 		
 		//Next, draw the text elements.
@@ -2042,28 +2109,27 @@ public class Creator {
 		
 		//...and display those in some manner.
 		for (YearbookTextElement e : texts) {
-			gc = new GC(canvas);
 			gc.setAdvanced(true);
 			gc.setTextAntialias(SWT.ON);
-			gc.setFont(e.getFont(display));
+			gc.setFont(e.getFont(display, pageWidth, pageHeight));
 			
 			if (e.shadow) {
-				int offset = e.size >= 36 ? 2 : 1;
+				int offset = e.size >= 72 ? 4 : e.size >= 36 ? 2 : 1;
 				gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
 				gc.setAlpha(0x8f);
-				gc.drawText(e.text, e.getBounds().x + offset, e.getBounds().y + offset, true);
+				gc.drawText(e.text, e.getBounds(pageWidth, pageHeight).x + offset, e.getBounds(pageWidth, pageHeight).y + offset, true);
 				gc.setAlpha(0xff);
 			}
 
 			gc.setForeground(e.getColor(display));
 			
-			gc.drawText(e.text, e.getBounds().x, e.getBounds().y, true);
+			gc.drawText(e.text, e.getBounds(pageWidth, pageHeight).x, e.getBounds(pageWidth, pageHeight).y, true);
 
 			/*
 			 * Inform the text element of its bounds.
 			 * This must be done here, regrettably.
 			 */
-			e.setBounds(new Rectangle(e.getBounds().x, e.getBounds().y, gc.stringExtent(e.text).x, gc.stringExtent(e.text).y));
+			e.setBounds(new Rectangle(e.getBounds(pageWidth, pageHeight).x, e.getBounds(pageWidth, pageHeight).y, gc.stringExtent(e.text).x, gc.stringExtent(e.text).y));
 			
 			/*
 			 * Handle underlining (SWT has no native GC underlining)
@@ -2077,7 +2143,7 @@ public class Creator {
 				
 				if (e.bold) width *= 1.8;
 				gc.setLineWidth(width);
-				gc.drawLine(e.getBounds().x + 1, e.getBounds().y + e.getBounds().height - (int) (e.getBounds().height * .1), e.getBounds().x + e.getBounds().width - 1, e.getBounds().y + e.getBounds().height - (int) (e.getBounds().height * .1));
+				gc.drawLine(e.getBounds(pageWidth, pageHeight).x + 1, e.getBounds(pageWidth, pageHeight).y + e.getBounds(pageWidth, pageHeight).height - (int) (e.getBounds(pageWidth, pageHeight).height * .1), e.getBounds(pageWidth, pageHeight).x + e.getBounds(pageWidth, pageHeight).width - 1, e.getBounds(pageWidth, pageHeight).y + e.getBounds(pageWidth, pageHeight).height - (int) (e.getBounds(pageWidth, pageHeight).height * .1));
 				
 			}
 			
@@ -2089,18 +2155,16 @@ public class Creator {
 					gc.setForeground(uglyYellowColor);
 					gc.setLineStyle(SWT.LINE_DASH);
 					gc.setLineWidth(3);
-					gc.drawRectangle(e.getBounds().x, e.getBounds().y, e.getBounds().width, e.getBounds().height);
+					gc.drawRectangle(e.getBounds(pageWidth, pageHeight).x, e.getBounds(pageWidth, pageHeight).y, e.getBounds(pageWidth, pageHeight).width, e.getBounds(pageWidth, pageHeight).height);
 				}
 			}
 
 			uglyYellowColor.dispose();
-			gc.dispose();
 			
 		}
 		
 		//If they want a grid, give them a grid.
-		if (showGrid) {
-			gc = new GC(canvas);
+		if (settings.showGrid) {
 			gc.setLineStyle(SWT.LINE_SOLID);
 			
 			FontData fd = gc.getFont().getFontData()[0];
@@ -2139,11 +2203,7 @@ public class Creator {
 				gc.drawLine(0, y, yearbook.settings.width, y);
 			}
 			
-			gc.dispose();
 		}
-		
-		
-		
 	}
 	
 	private void createNewPage(String name) {
