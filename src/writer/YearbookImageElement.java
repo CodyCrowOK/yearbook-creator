@@ -170,4 +170,35 @@ public class YearbookImageElement extends YearbookElement implements Serializabl
 	public int getPageHeight() {
 		return pageHeight;
 	}
+
+	@Override
+	public YearbookElement copy() {
+		YearbookImageElement copy = new YearbookImageElement(this.display, this.imageData, this.pageWidth, this.pageHeight);
+		copy.x = this.x;
+		copy.y = this.y;
+		copy.rotation = this.rotation;
+		copy.scale = this.scale;
+		copy.clientWidth = this.clientWidth;
+		return copy;
+	}
+
+	public double getScale() {
+		return scale;
+	}
+
+	public int getClientWidth() {
+		return clientWidth;
+	}
+
+	public Display getDisplay() {
+		return display;
+	}
+
+	public ImageData getImageData() {
+		return imageData;
+	}
+
+	public Image getImage() {
+		return image;
+	}
 }

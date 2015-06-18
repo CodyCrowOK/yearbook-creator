@@ -123,9 +123,10 @@ public class Creator {
 	private Color canvasBackgroundColor;
 
 	//private YearbookElement selectedElement;
-	private ArrayList<YearbookElement> selectedElements;
+	//private ArrayList<YearbookElement> clipboard.elements;
 	private UserSettings settings;
 	private Rectangle selectionRectangle;
+	private Clipboard clipboard;
 
 	private boolean isInsertingText;
 	protected String comboValue;
@@ -137,7 +138,8 @@ public class Creator {
 		shell = new Shell(display);
 		settings = new UserSettings();
 		setWindowTitle(SWT.DEFAULT);
-		selectedElements = new ArrayList<YearbookElement>();
+		//clipboard.elements = new ArrayList<YearbookElement>();
+		clipboard = new Clipboard();
 
 		shell.setSize(800, 600);
 
@@ -310,7 +312,7 @@ public class Creator {
 				if (!isInsertingText) switch (settings.cursorMode) {
 				case MOVE:
 					//Bring selected elements to front.
-					for (YearbookElement selectedElement : selectedElements) {
+					for (YearbookElement selectedElement : clipboard.elements) {
 						if (selectedElement != null) {
 							int index = yearbook.page(yearbook.activePage).findElementIndex(selectedElement);
 							if (index == -1) {
@@ -481,6 +483,11 @@ public class Creator {
 							Label font = new Label(properties, SWT.LEFT);
 							font.setText("Font Family:");
 							font.setLayoutData(data);
+							
+							data2 = new GridData();
+							data2.horizontalSpan = 1;
+							data2.grabExcessHorizontalSpace = true;
+							data.horizontalAlignment = SWT.FILL;
 
 							Label family = new Label(properties, SWT.LEFT);
 							family.setText(element.fontFamily);
@@ -498,7 +505,7 @@ public class Creator {
 				if (!(isInsertingText || event.button == SWT.BUTTON3)) switch (settings.cursorMode) {
 				case MOVE:
 					if (yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y)) {
-						if (!selectedElements.contains(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y))) {
+						if (!clipboard.elements.contains(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y))) {
 							if ((event.stateMask & SWT.MOD1) == SWT.MOD1) {
 								selectAnotherElement(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y));
 							} else {
@@ -522,7 +529,7 @@ public class Creator {
 						box.setText("Delete Element");
 						box.setMessage("Are you sure you want to erase this element?");
 						int result = box.open();
-						if (result == SWT.YES) yearbook.page(yearbook.activePage).removeElement(selectedElements.get(0));
+						if (result == SWT.YES) yearbook.page(yearbook.activePage).removeElement(clipboard.elements.get(0));
 						refresh();
 					}
 					break;
@@ -577,9 +584,9 @@ public class Creator {
 					//Prevents accidental movement.
 					if (Math.abs(xDiff) < 5 && Math.abs(yDiff) < 5) xDiff = yDiff = 0;
 
-					if (selectedElements.size() == 0) return;
-					if (selectedElements.size() == 1) {
-						YearbookElement selectedElement = selectedElements.get(0);
+					if (clipboard.elements.size() == 0) return;
+					if (clipboard.elements.size() == 1) {
+						YearbookElement selectedElement = clipboard.elements.get(0);
 						if (yearbook.page(yearbook.activePage).findElement(selectedElement) != null && event.button == 1) {
 							int newX, newY;
 							newX = selectedElement.getBounds().x + xDiff;
@@ -588,7 +595,7 @@ public class Creator {
 						}
 					} else {
 						int newX, newY;
-						for (YearbookElement element : selectedElements) {
+						for (YearbookElement element : clipboard.elements) {
 							newX = element.getBounds().x + xDiff;
 							newY = element.getBounds().y + yDiff;
 							element.setLocationRelative(newX, newY);
@@ -603,7 +610,7 @@ public class Creator {
 					xDiff += event.x;
 					yDiff += event.y;
 
-					for (YearbookElement selectedElement : selectedElements) {
+					for (YearbookElement selectedElement : clipboard.elements) {
 						if (yearbook.page(yearbook.activePage).findElement(selectedElement) != null) {
 							yearbook.page(yearbook.activePage).findElement(selectedElement).resize(display, xDiff, yDiff);
 							refresh();
@@ -650,7 +657,7 @@ public class Creator {
 				if (!isInsertingText) switch (settings.cursorMode) {
 				case MOVE:
 					//Bring selected elements to front.
-					for (YearbookElement selectedElement : selectedElements) {
+					for (YearbookElement selectedElement : clipboard.elements) {
 						if (selectedElement != null) {
 							int index = yearbook.page(yearbook.activePage).findElementIndex(selectedElement);
 							if (index == -1) {
@@ -838,7 +845,7 @@ public class Creator {
 				if (!(isInsertingText || event.button == SWT.BUTTON3)) switch (settings.cursorMode) {
 				case MOVE:
 					if (yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y)) {
-						if (!selectedElements.contains(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y))) {
+						if (!clipboard.elements.contains(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y))) {
 							if ((event.stateMask & SWT.MOD1) == SWT.MOD1) {
 								selectAnotherElement(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y));
 							} else {
@@ -862,7 +869,7 @@ public class Creator {
 						box.setText("Delete Element");
 						box.setMessage("Are you sure you want to erase this element?");
 						int result = box.open();
-						if (result == SWT.YES) yearbook.page(yearbook.activePage).removeElement(selectedElements.get(0));
+						if (result == SWT.YES) yearbook.page(yearbook.activePage).removeElement(clipboard.elements.get(0));
 						refresh();
 					}
 					break;
@@ -917,9 +924,9 @@ public class Creator {
 					//Prevents accidental movement.
 					if (Math.abs(xDiff) < 5 && Math.abs(yDiff) < 5) xDiff = yDiff = 0;
 
-					if (selectedElements.size() == 0) return;
-					if (selectedElements.size() == 1) {
-						YearbookElement selectedElement = selectedElements.get(0);
+					if (clipboard.elements.size() == 0) return;
+					if (clipboard.elements.size() == 1) {
+						YearbookElement selectedElement = clipboard.elements.get(0);
 						if (yearbook.page(yearbook.activePage).findElement(selectedElement) != null && event.button == 1) {
 							int newX, newY;
 							newX = selectedElement.getBounds().x + xDiff;
@@ -928,7 +935,7 @@ public class Creator {
 						}
 					} else {
 						int newX, newY;
-						for (YearbookElement element : selectedElements) {
+						for (YearbookElement element : clipboard.elements) {
 							newX = element.getBounds().x + xDiff;
 							newY = element.getBounds().y + yDiff;
 							element.setLocationRelative(newX, newY);
@@ -943,7 +950,7 @@ public class Creator {
 					xDiff += event.x;
 					yDiff += event.y;
 
-					for (YearbookElement selectedElement : selectedElements) {
+					for (YearbookElement selectedElement : clipboard.elements) {
 						if (yearbook.page(yearbook.activePage).findElement(selectedElement) != null) {
 							yearbook.page(yearbook.activePage).findElement(selectedElement).resize(display, xDiff, yDiff);
 							refresh();
@@ -983,10 +990,10 @@ public class Creator {
 			@Override
 			public void handleEvent(Event event) {
 				if (!leftIsActive()) return;
-				if (selectedElements.size() == 0) return;
+				if (clipboard.elements.size() == 0) return;
 				if (settings.cursorMode == CursorMode.MOVE) switch (event.keyCode) {
 				case SWT.ARROW_DOWN:
-					for (YearbookElement e : selectedElements) {
+					for (YearbookElement e : clipboard.elements) {
 						int newY = e.getBounds().y + 1;
 						e.setLocationRelative(e.getBounds().x, newY);
 						if (e.getBounds().y < newY) {
@@ -995,7 +1002,7 @@ public class Creator {
 					}
 					break;
 				case SWT.ARROW_UP:
-					for (YearbookElement e : selectedElements) {
+					for (YearbookElement e : clipboard.elements) {
 						int newY = e.getBounds().y - 1;
 						e.setLocationRelative(e.getBounds().x, newY);
 						if (e.getBounds().y > newY) {
@@ -1004,7 +1011,7 @@ public class Creator {
 					}
 					break;
 				case SWT.ARROW_RIGHT:
-					for (YearbookElement e : selectedElements) {
+					for (YearbookElement e : clipboard.elements) {
 						int newX = e.getBounds().x + 1;
 						e.setLocationRelative(newX, e.getBounds().y);
 						if (e.getBounds().x < newX) {
@@ -1013,7 +1020,7 @@ public class Creator {
 					}
 					break;
 				case SWT.ARROW_LEFT:
-					for (YearbookElement e : selectedElements) {
+					for (YearbookElement e : clipboard.elements) {
 						int newX = e.getBounds().x - 1;
 						e.setLocationRelative(newX, e.getBounds().y);
 						if (e.getBounds().x > newX) {
@@ -1033,10 +1040,10 @@ public class Creator {
 			@Override
 			public void handleEvent(Event event) {
 				if (!rightIsActive()) return;
-				if (selectedElements.size() == 0) return;
+				if (clipboard.elements.size() == 0) return;
 				if (settings.cursorMode == CursorMode.MOVE) switch (event.keyCode) {
 				case SWT.ARROW_DOWN:
-					for (YearbookElement e : selectedElements) {
+					for (YearbookElement e : clipboard.elements) {
 						int newY = e.getBounds().y + 1;
 						e.setLocationRelative(e.getBounds().x, newY);
 						if (e.getBounds().y < newY) {
@@ -1045,7 +1052,7 @@ public class Creator {
 					}
 					break;
 				case SWT.ARROW_UP:
-					for (YearbookElement e : selectedElements) {
+					for (YearbookElement e : clipboard.elements) {
 						int newY = e.getBounds().y - 1;
 						e.setLocationRelative(e.getBounds().x, newY);
 						if (e.getBounds().y > newY) {
@@ -1054,7 +1061,7 @@ public class Creator {
 					}
 					break;
 				case SWT.ARROW_RIGHT:
-					for (YearbookElement e : selectedElements) {
+					for (YearbookElement e : clipboard.elements) {
 						int newX = e.getBounds().x + 1;
 						e.setLocationRelative(newX, e.getBounds().y);
 						if (e.getBounds().x < newX) {
@@ -1063,7 +1070,7 @@ public class Creator {
 					}
 					break;
 				case SWT.ARROW_LEFT:
-					for (YearbookElement e : selectedElements) {
+					for (YearbookElement e : clipboard.elements) {
 						int newX = e.getBounds().x - 1;
 						e.setLocationRelative(newX, e.getBounds().y);
 						if (e.getBounds().x > newX) {
@@ -1300,19 +1307,19 @@ public class Creator {
 	}
 
 	private void selectElement(YearbookElement element) {
-		selectedElements.clear();
+		clipboard.elements.clear();
 		if (element == null) return;
-		selectedElements.add(element);
+		clipboard.elements.add(element);
 	}
 
 	private void selectAnotherElement(YearbookElement element) {
 		if (element == null) return;
-		selectedElements.add(element);
+		clipboard.elements.add(element);
 	}
 
 	private void selectElements(ArrayList<YearbookElement> elements) {
-		selectedElements.clear();
-		selectedElements.addAll(elements);
+		clipboard.elements.clear();
+		clipboard.elements.addAll(elements);
 	}
 
 	private void buildPagesListDnD() {
@@ -1919,8 +1926,12 @@ public class Creator {
 
 			@Override
 			public void handleEvent(Event event) {
-				System.out.println("Edit >> Cut not implemented.");
-
+				clipboard.cutElements.clear();
+				clipboard.cutElements.addAll(clipboard.elements);
+				for (YearbookElement e : clipboard.cutElements) {
+					yearbook.removeElement(e);
+				}
+				refreshNoPageList();
 			}
 
 		});
@@ -1929,7 +1940,8 @@ public class Creator {
 
 			@Override
 			public void handleEvent(Event event) {
-				System.out.println("Edit >> Copy not implemented.");
+				clipboard.cutElements.clear();
+				clipboard.cutElements.addAll(clipboard.elements);
 
 			}
 
@@ -1939,8 +1951,10 @@ public class Creator {
 
 			@Override
 			public void handleEvent(Event event) {
-				System.out.println("Edit >> Paste not implemented.");
-
+				for (YearbookElement e : clipboard.cutElements) {
+					yearbook.page(yearbook.activePage).addElement(e.copy());
+				}
+				refreshNoPageList();
 			}
 
 		});
@@ -1991,8 +2005,8 @@ public class Creator {
 
 			@Override
 			public void handleEvent(Event event) {
-				for (YearbookElement selectedElement : selectedElements) {
-					if ((settings.cursorMode != CursorMode.SELECT || selectionRectangle == null) && selectedElements.size() == 0) {
+				for (YearbookElement selectedElement : clipboard.elements) {
+					if ((settings.cursorMode != CursorMode.SELECT || selectionRectangle == null) && clipboard.elements.size() == 0) {
 						MessageBox box = new MessageBox(shell, SWT.ICON_INFORMATION);
 						box.setText("Insert Video");
 						box.setMessage("Please select an area of the page to link to the video.");
@@ -2075,7 +2089,7 @@ public class Creator {
 			@Override
 			public void handleEvent(Event event) {
 				System.out.println("Don't forget to add a page chooser.");
-				yearbook.page(yearbook.activePage).setBackgroundImageData(null);
+				yearbook.page(yearbook.activePage).clearBackgroundImage();
 				refreshNoPageList();
 
 			}
@@ -2265,6 +2279,36 @@ public class Creator {
 			}
 
 		});
+		
+		cutBtn.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				editCutItem.getListeners(SWT.Selection)[0].handleEvent(event);
+				
+			}
+			
+		});
+		
+		copyBtn.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				editCopyItem.getListeners(SWT.Selection)[0].handleEvent(event);
+				
+			}
+			
+		});
+		
+		pasteBtn.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				editPasteItem.getListeners(SWT.Selection)[0].handleEvent(event);
+				
+			}
+			
+		});
 
 		textBtn.addListener(SWT.Selection, new Listener() {
 
@@ -2350,7 +2394,7 @@ public class Creator {
 		 */
 		eraseBtn.addListener(SWT.Selection, new Listener() {
 			public void handleEvent(Event e) {
-				if (selectedElements.size() == 0) {
+				if (clipboard.elements.size() == 0) {
 					Control[] children = toolbarWrapper.getChildren();
 					for (int i = 0; i < children.length; i++) {
 						Control child = children[i];
@@ -2362,10 +2406,10 @@ public class Creator {
 					((Button) e.widget).setSelection(true);
 					settings.cursorMode = CursorMode.ERASE;
 				} else {
-					for (YearbookElement element : selectedElements) {
+					for (YearbookElement element : clipboard.elements) {
 						yearbook.page(yearbook.activePage).removeElement(element);
 					}
-					selectedElements.clear();
+					clipboard.elements.clear();
 				}
 				modeReset();
 				refreshNoPageList();
@@ -2445,14 +2489,14 @@ public class Creator {
 	private void loadLeftCanvas(int index) {
 		GC gc;
 		gc = new GC(canvas);
-		paintPage(gc, display, yearbook, selectedElements, selectionRectangle, settings, index, yearbook.settings.width, yearbook.settings.height);
+		paintPage(gc, display, yearbook, clipboard.elements, selectionRectangle, settings, index, yearbook.settings.width, yearbook.settings.height);
 		gc.dispose();
 	}
 	
 	private void loadRightCanvas(int index) {
 		GC gc;
 		gc = new GC(rightCanvas);
-		paintPage(gc, display, yearbook, selectedElements, selectionRectangle, settings, index, yearbook.settings.width, yearbook.settings.height);
+		paintPage(gc, display, yearbook, clipboard.elements, selectionRectangle, settings, index, yearbook.settings.width, yearbook.settings.height);
 		gc.dispose();
 	}
 	
@@ -2502,7 +2546,7 @@ public class Creator {
 	private void loadActivePage(int activePage) {
 		GC gc;
 		gc = new GC(canvas);
-		paintPage(gc, display, yearbook, selectedElements, selectionRectangle, settings, activePage, yearbook.settings.width, yearbook.settings.height);
+		paintPage(gc, display, yearbook, clipboard.elements, selectionRectangle, settings, activePage, yearbook.settings.width, yearbook.settings.height);
 		gc.dispose();
 	}
 
@@ -2573,6 +2617,7 @@ public class Creator {
 			gc.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
 			gc.setAlpha(50);
 			gc.fillRectangle(e.getBounds(pageWidth, pageHeight));
+			gc.setAlpha(0xff);
 		}
 
 

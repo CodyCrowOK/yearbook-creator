@@ -208,7 +208,13 @@ public class YearbookPage implements Serializable {
 	}
 	
 	public void setBackgroundImageData(ImageData imageData) {
+		this.noBackground = false;
 		this.backgroundImageData = imageData;
+	}
+	
+	public void clearBackgroundImage() {
+		this.noBackground = true;
+		this.backgroundImageData = null;
 	}
 
 	public ImageData getBackgroundImageData() {

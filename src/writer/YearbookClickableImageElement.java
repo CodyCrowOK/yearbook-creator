@@ -21,6 +21,16 @@ public class YearbookClickableImageElement extends YearbookImageElement implemen
 	private static final long serialVersionUID = -2109379287205311724L;
 	public Video video;
 	
+	public YearbookClickableImageElement copy() {
+		YearbookClickableImageElement copy = new YearbookClickableImageElement(this.getDisplay(), this.imageData, this.pageWidth, this.pageHeight);
+		copy.video = video;
+		copy.x = this.x;
+		copy.y = this.y;
+		copy.rotation = this.rotation;
+		copy.scale = this.scale;
+		return copy;
+	}
+	
 	public YearbookClickableImageElement(Display display, String fileName,
 			int pageWidth, int pageHeight) {
 		super(display, fileName, pageWidth, pageHeight);

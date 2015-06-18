@@ -30,6 +30,25 @@ public class YearbookTextElement extends YearbookElement implements Serializable
 	private double width;
 	private double height;
 
+	@Override
+	public YearbookElement copy() {
+		YearbookTextElement copy = new YearbookTextElement(this.pageWidth, this.pageHeight);
+		copy.x = this.x;
+		copy.y = this.y;
+		copy.rotation = this.rotation;
+		copy.text = this.text;
+		copy.fontFamily = this.fontFamily;
+		copy.size = this.size;
+		copy.bold = this.bold;
+		copy.italic = this.italic;
+		copy.underline = this.underline;
+		copy.shadow = this.shadow;
+		copy.rgb = this.rgb;
+		copy.width = this.width;
+		copy.height = this.height;
+		return copy;
+	}
+
 	public YearbookTextElement(int pageWidth, int pageHeight) {
 		generateRandomElementId();
 		this.x = 0;

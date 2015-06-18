@@ -82,7 +82,14 @@ abstract public class YearbookElement implements Serializable {
 	 */
 	abstract public void resize(Display display, int x, int y);
 	
-	protected void generateRandomElementId() {
+	/**
+	 * Used for copying yearbook elements
+	 * @param element the element to be copied
+	 * @return the new copy of the element
+	 */
+	abstract public YearbookElement copy();
+	
+	public void generateRandomElementId() {
 		elementId = (long) (Math.random() * (Math.pow(2, 63) - 1));
 	}
 	

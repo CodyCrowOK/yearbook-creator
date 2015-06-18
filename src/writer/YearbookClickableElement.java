@@ -22,6 +22,18 @@ public class YearbookClickableElement extends YearbookElement implements Clickab
 	private int pageHeight;
 	
 	private Video video;
+
+
+	@Override
+	public YearbookElement copy() {
+		YearbookClickableElement copy = new YearbookClickableElement(video, new Rectangle(0, 0, 0, 0), this.pageHeight, this.pageWidth);
+		copy.x = this.x;
+		copy.y = this.y;
+		copy.width = this.width;
+		copy.height = this.height;
+		copy.rotation = this.rotation;
+		return copy;
+	}
 	
 	public YearbookClickableElement(Video v, Rectangle rect, int pageHeight, int pageWidth) {
 		generateRandomElementId();
