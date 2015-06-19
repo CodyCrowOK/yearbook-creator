@@ -1085,6 +1085,25 @@ public class Creator {
 
 		});
 
+		canvas.addPaintListener(new PaintListener() {
+
+			@Override
+			public void paintControl(PaintEvent e) {
+				refreshNoPageList();
+				
+			}
+			
+		});
+
+		rightCanvas.addPaintListener(new PaintListener() {
+
+			@Override
+			public void paintControl(PaintEvent e) {
+				refreshNoPageList();
+				
+			}
+			
+		});
 
 	}
 
@@ -1152,7 +1171,9 @@ public class Creator {
 		for (String fontName : fontNames) {
 			fontCombo.add(fontName);
 		}
-		index = Arrays.binarySearch(fontNames, element.fontFamily);
+		for (index = 0; index < fontNames.length; index++) {
+			if (fontNames[index].equalsIgnoreCase(element.fontFamily)) break;
+		}
 		if (index >= 0) fontCombo.select(index);
 
 		Composite styleWrapper = new Composite(textTool, SWT.NONE);
@@ -1518,7 +1539,7 @@ public class Creator {
 		insertPageNumbersItem.setText("Page Numbers...");
 
 		insertToCItem = new MenuItem(insertMenu, SWT.PUSH);
-		insertToCItem.setText("Table of Contents...");
+		insertToCItem.setText("Clear Page Numbers");
 
 		//Create Page Menu
 		pageMenuItem = new MenuItem(menubar, SWT.CASCADE);
@@ -1533,7 +1554,7 @@ public class Creator {
 		pageMirrorItem.setText("&Mirror Background...");
 
 		pageClearBackgroundItem = new MenuItem(pageMenu, SWT.PUSH);
-		pageClearBackgroundItem.setText("&Clear Background...");
+		pageClearBackgroundItem.setText("&Clear Background");
 
 		new MenuItem(pageMenu, SWT.SEPARATOR);
 
@@ -1947,6 +1968,9 @@ public class Creator {
 
 		});
 
+		/*
+		 * FIXME: Crashes sometimes on paste.
+		 */
 		editPasteItem.addListener(SWT.Selection, new Listener() {
 
 			@Override
@@ -2047,6 +2071,26 @@ public class Creator {
 			}
 
 		});
+		
+		insertPageNumbersItem.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				yearbook.settings.showPageNumbers = true;
+				openPageNumberDialog(yearbook.pageNumber);
+			}
+			
+		});
+		
+		insertToCItem.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				yearbook.settings.showPageNumbers = false;
+				refreshNoPageList();
+			}
+			
+		});
 
 		pageMirrorItem.addListener(SWT.Selection, new Listener() {
 
@@ -2119,6 +2163,281 @@ public class Creator {
 			}
 
 		});
+
+	}
+
+	protected void openPageNumberDialog(YearbookPageNumberElement element) {
+		Shell textTool = new Shell(display, SWT.DIALOG_TRIM);
+		textTool.setText("Page Number Tool");
+		GridLayout layout = new GridLayout();
+		layout.numColumns = 5;
+		layout.makeColumnsEqualWidth = true;
+		textTool.setLayout(layout);
+
+		/*
+		Text textbox = new Text(textTool, SWT.BORDER | SWT.MULTI);
+		textbox.setText(element.text);
+		GridData textboxData = new GridData(SWT.FILL, SWT.FILL, true, true);
+		textboxData.horizontalSpan = 10;
+		textbox.setLayoutData(textboxData);
+		*/
+		Canvas preview = new Canvas(textTool, SWT.BORDER | SWT.MULTI);
+		GridData previewData = new GridData(SWT.FILL, SWT.FILL, true, true);
+		previewData.horizontalSpan = 5;
+		preview.setLayoutData(previewData);
+		
+
+		ColorDialog colorDialog = new ColorDialog(textTool, SWT.APPLICATION_MODAL | SWT.DIALOG_TRIM);
+		colorDialog.setText("Color Picker");
+		Button colorButton = new Button(textTool, SWT.PUSH);
+		colorButton.setText("Pick color...");
+		GridData buttonData = new GridData(SWT.FILL, SWT.FILL, true, false);
+		buttonData.horizontalSpan = 3;
+		colorButton.setLayoutData(buttonData);
+
+		Combo sizeCombo = new Combo(textTool, SWT.DROP_DOWN);
+		GridData sizeData = new GridData(SWT.FILL, SWT.FILL, true, false);
+		sizeData.horizontalSpan = 2;
+		sizeCombo.setLayoutData(sizeData);
+		String[] fontSizes = {
+				"8",
+				"9",
+				"10",
+				"11",
+				"12",
+				"14",
+				"16",
+				"18",
+				"20",
+				"22",
+				"24",
+				"26",
+				"28",
+				"36",
+				"48",
+				"72"
+		};
+		for (String size : fontSizes) {
+			sizeCombo.add(size);
+		}
+		int index = Arrays.binarySearch(fontSizes, Integer.toString(element.size));
+		if (index >= 0) sizeCombo.select(index);
+		else sizeCombo.select(4);
+
+		Composite styleWrapper = new Composite(textTool, SWT.NONE);
+		styleWrapper.setLayout(new FillLayout());
+		GridData styleData = new GridData(SWT.FILL, SWT.FILL, true, false);
+		styleData.horizontalSpan = 2;
+		styleWrapper.setLayoutData(styleData);
+
+		Button bold = new Button(styleWrapper, SWT.PUSH);
+		bold.setText("B");
+		FontData fd = bold.getFont().getFontData()[0];
+		fd.setStyle(SWT.BOLD);
+		Font f = new Font(display, fd);
+		bold.setFont(f);
+		f.dispose();
+
+		Button italic = new Button(styleWrapper, SWT.PUSH);
+		italic.setText("I");
+		fd = italic.getFont().getFontData()[0];
+		fd.setStyle(SWT.ITALIC);
+		f = new Font(display, fd);
+		italic.setFont(f);
+		f.dispose();
+
+		Button shadow = new Button(styleWrapper, SWT.PUSH);
+		shadow.setText("S");
+		
+		String[] directions = new String[] {
+			"High and In",
+			"High and Middle",
+			"High and Out",
+			"Low and In",
+			"Low and Middle",
+			"Low and Out"
+		};
+		Combo directionCombo = new Combo(textTool, SWT.DROP_DOWN);
+		GridData directionData  = new GridData(SWT.FILL, SWT.FILL, true, false);
+		directionData.horizontalSpan = 3;
+		directionCombo.setLayoutData(directionData);
+		for (String d : directions) {
+			directionCombo.add(d);
+		}
+		
+		String[] fontNames = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
+		Combo fontCombo = new Combo(textTool, SWT.DROP_DOWN);
+		GridData fontData  = new GridData(SWT.FILL, SWT.FILL, true, false);
+		fontData.horizontalSpan = 5;
+		fontCombo.setLayoutData(fontData);
+		for (String fontName : fontNames) {
+			fontCombo.add(fontName);
+		}
+		for (index = 0; index < fontNames.length; index++) {
+			if (fontNames[index].equalsIgnoreCase(element.fontFamily)) break;
+		}
+		if (index >= 0) fontCombo.select(index);
+		
+		preview.addPaintListener(new PaintListener() {
+
+			@Override
+			public void paintControl(PaintEvent e) {
+				e.gc.setAdvanced(true);
+				e.gc.setAntialias(SWT.ON);
+				e.gc.setFont(element.getFont(e.display));
+				
+				if (element.shadow) {
+					int offset = element.size >= 72 ? 4 : element.size >= 36 ? 2 : 1;
+					e.gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
+					e.gc.setAlpha(0x8f);
+					e.gc.drawText("1234567890", preview.getBounds().x + offset, preview.getBounds().y + offset, true);
+					e.gc.setAlpha(0xff);
+				}
+				
+				e.gc.setForeground(element.getColor(e.display));
+				e.gc.drawText("1234567890", preview.getBounds().x, preview.getBounds().y);
+				
+				if (element.underline) {
+					//Determine the line width
+					int width;
+					width = element.size / 12;
+					if (width <= 0) width = 1;
+
+					if (element.bold) width *= 1.8;
+					e.gc.setLineWidth(width);
+					e.gc.drawLine(element.getBounds().x + 1, element.getBounds().y + element.getBounds().height - (int) (element.getBounds().height * .1), element.getBounds().x + element.getBounds().width - 1, element.getBounds().y + element.getBounds().height - (int) (element.getBounds().height * .1));
+
+				}
+			}
+			
+		});
+
+		colorButton.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				RGB rgb = colorDialog.open();
+				if (rgb != null) element.setRGB(rgb);
+				refresh();
+				preview.redraw();
+			}
+
+		});
+
+
+		sizeCombo.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				element.size = Integer.parseInt(sizeCombo.getItem(sizeCombo.getSelectionIndex()));
+				refresh();
+				preview.redraw();
+			}
+
+		});
+
+		sizeCombo.addListener(SWT.KeyUp, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				int size = element.size;
+				try {
+					size = Integer.parseInt(sizeCombo.getText());
+				} catch (NumberFormatException e) {
+					return;
+				}
+				element.size = size;
+				refresh();
+				preview.redraw();
+			}
+
+		});
+
+		fontCombo.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				element.fontFamily = fontNames[fontCombo.getSelectionIndex()];
+				refresh();
+				preview.redraw();
+			}
+
+		});
+		
+		directionCombo.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				switch (directionCombo.getSelectionIndex()) {
+				case 0:
+					element.location = PageNumberLocations.UP_IN;
+					break;
+				case 1:
+					element.location = PageNumberLocations.UP_MIDDLE;
+					break;
+				case 2:
+					element.location = PageNumberLocations.UP_OUT;
+					break;
+				case 3:
+					element.location = PageNumberLocations.DOWN_IN;
+					break;
+				case 4:
+					element.location = PageNumberLocations.DOWN_MIDDLE;
+					break;
+				case 5:
+					element.location = PageNumberLocations.DOWN_OUT;
+					break;
+				}
+				refreshNoPageList();
+			}
+			
+		});
+		
+		bold.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				element.toggleBold();
+				refresh();
+				preview.redraw();
+			}
+
+		});
+
+		italic.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				element.toggleItalic();
+				refresh();
+				preview.redraw();
+			}
+
+		});
+
+		shadow.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				element.toggleShadow();
+				refresh();
+				preview.redraw();
+
+			}
+
+		});
+
+		textTool.addListener(SWT.Close, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				modeReset();
+			}
+
+		});
+
+		textTool.setSize(250, 200);
+		textTool.open();
 
 	}
 
@@ -2669,6 +2988,14 @@ public class Creator {
 		for (YearbookElement e : yearbook.page(activePage).getElements()) {
 			if (e.isText()) texts.add((YearbookTextElement) e);
 		}
+		
+		//If they want page numbers let's add them as fake elements.
+		boolean displayNumbers = !(activePage == 0 || activePage - 1 == yearbook.size()) && yearbook.settings.showPageNumbers;
+		if (displayNumbers) {
+			yearbook.pageNumber.setBounds(YearbookPageNumberElement.generateBounds(pageWidth, pageHeight, yearbook.pageNumber.location, activePage));
+			yearbook.pageNumber.text = Integer.toString(activePage);
+			texts.add(yearbook.pageNumber);
+		}
 
 		//...and display those in some manner.
 		for (YearbookTextElement e : texts) {
@@ -2723,6 +3050,34 @@ public class Creator {
 			}
 
 		}
+		
+		//Make sure we remove the page number element.
+		if (displayNumbers) {
+			texts.remove(yearbook.pageNumber);
+		}
+		
+		/*
+		//Paint the page numbers
+		if (!(activePage == 0 || activePage - 1 == yearbook.size()) && yearbook.settings.showPageNumbers) {
+			gc.setAdvanced(true);
+			gc.setTextAntialias(SWT.ON);
+			gc.setFont(yearbook.pageNumber.getFont(display, pageWidth, pageHeight));
+			
+			
+			
+			if (yearbook.pageNumber.shadow) {
+				int offset = yearbook.pageNumber.size >= 72 ? 4 : yearbook.pageNumber.size >= 36 ? 2 : 1;
+				gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
+				gc.setAlpha(0x8f);
+				gc.drawText("48", pageNumberX + offset, pageNumberX + offset, true);
+				gc.setAlpha(0xff);
+			}
+
+			gc.setForeground(yearbook.pageNumber.getColor(display));
+
+			gc.drawText("48", pageNumberX, pageNumberY, true);
+		}
+		*/
 	}
 
 	private void createNewPage(String name) {

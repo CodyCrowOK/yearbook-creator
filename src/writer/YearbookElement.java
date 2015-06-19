@@ -84,7 +84,6 @@ abstract public class YearbookElement implements Serializable {
 	
 	/**
 	 * Used for copying yearbook elements
-	 * @param element the element to be copied
 	 * @return the new copy of the element
 	 */
 	abstract public YearbookElement copy();

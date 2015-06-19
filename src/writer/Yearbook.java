@@ -36,12 +36,15 @@ public class Yearbook implements Serializable {
 	String name;
 	public YearbookSettings settings;
 	public int activePage;
+	
+	public YearbookPageNumberElement pageNumber;
 
 	public Yearbook() {
 		pages = new ArrayList<YearbookPage>();
 		settings = new YearbookSettings();
 		activePage = 0;
 		name = "Untitled";
+		pageNumber = new YearbookPageNumberElement(settings.width, settings.height);
 	}
 
 	public Yearbook(String name) {
