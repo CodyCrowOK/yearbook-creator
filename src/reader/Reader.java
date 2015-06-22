@@ -9,6 +9,8 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.MouseListener;
 import org.eclipse.swt.events.MouseMoveListener;
+import org.eclipse.swt.events.PaintEvent;
+import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Rectangle;
@@ -23,6 +25,7 @@ import org.eclipse.swt.widgets.Shell;
 
 import writer.Creator;
 import writer.SWTUtils;
+import writer.UserSettings;
 import writer.Yearbook;
 import writer.YearbookClickableElement;
 import writer.YearbookClickableImageElement;
@@ -184,6 +187,27 @@ public class Reader {
 			}
 			
 		});
+		
+		canvas.addPaintListener(new PaintListener() {
+
+			@Override
+			public void paintControl(PaintEvent e) {
+				refresh();
+				
+			}
+			
+		});
+		
+		rightCanvas.addPaintListener(new PaintListener() {
+
+			@Override
+			public void paintControl(PaintEvent e) {
+				refresh();
+				
+			}
+			
+		});
+		
 	}
 
 	private void createNewYearbook() {
@@ -258,69 +282,9 @@ public class Reader {
 	
 	private void loadLeftCanvas(int activePage) {
 		blankLeftCanvas();
-		GC gc;
-		
-		if (yearbook.page(activePage).backgroundImage(display) != null) {
-			gc = new GC(canvas);
-			gc.drawImage(yearbook.page(activePage).backgroundImage(display), 0, 0, yearbook.page(activePage).backgroundImage(display).getBounds().width, yearbook.page(activePage).backgroundImage(display).getBounds().height, 0, 0, canvas.getBounds().width, canvas.getBounds().height);
-			gc.dispose();
-		}
-		
-		//Apparently there's no map function in Java.
-		//Map the YearbookImageElements to images...
-		ArrayList<YearbookImageElement> images = new ArrayList<YearbookImageElement>();
-		for (int i = 0; i < yearbook.page(activePage).getElements().size(); i++) {
-			if (yearbook.page(activePage).element(i).isImage()) {
-				images.add((YearbookImageElement) yearbook.page(activePage).element(i));
-			}
-		}
-		//...and display them.
-		for (YearbookImageElement element : images) {
-			gc = new GC(canvas);
-			gc.drawImage(element.getImage(display), 0, 0, element.getImage(display).getBounds().width, element.getImage(display).getBounds().height, element.getBounds(yearbook.settings.width, yearbook.settings.height).x, element.getBounds(yearbook.settings.width, yearbook.settings.height).y, element.getBounds(yearbook.settings.width, yearbook.settings.height).width, element.getBounds(yearbook.settings.width, yearbook.settings.height).height);
-			gc.dispose();
-		}
-		
-
-		//Next, draw the text elements.
-		ArrayList<YearbookTextElement> texts = new ArrayList<YearbookTextElement>();
-		for (YearbookElement e : yearbook.page(activePage).getElements()) {
-			if (e.isText()) texts.add((YearbookTextElement) e);
-		}
-		
-		//...and display those in some manner.
-		for (YearbookTextElement e : texts) {
-			gc = new GC(canvas);
-			gc.setTextAntialias(SWT.ON);
-			gc.setForeground(e.getColor(display));
-			gc.setFont(e.getFont(display));
-			gc.drawText(e.text, e.getBounds(yearbook.settings.width, yearbook.settings.height).x, e.getBounds(yearbook.settings.width, yearbook.settings.height).y, true);
-
-			/*
-			 * Inform the text element of its bounds.
-			 * This must be done here, regrettably.
-			 */
-			//e.setBounds(new Rectangle(e.getBounds(yearbook.settings.width, yearbook.settings.height).x, e.getBounds(yearbook.settings.width, yearbook.settings.height).y, gc.stringExtent(e.text).x, gc.stringExtent(e.text).y));
-			
-			/*
-			 * Handle underlining (SWT has no native GC underlining)
-			 * All magic numbers were chosen for their looks.
-			 */
-			if (e.underline) {
-				//Determine the line width
-				int width;
-				width = e.size / 12;
-				if (width <= 0) width = 1;
-				
-				if (e.bold) width *= 1.8;
-				gc.setLineWidth(width);
-				gc.drawLine(e.getBounds(yearbook.settings.width, yearbook.settings.height).x + 1, e.getBounds(yearbook.settings.width, yearbook.settings.height).y + e.getBounds(yearbook.settings.width, yearbook.settings.height).height - (int) (e.getBounds(yearbook.settings.width, yearbook.settings.height).height * .1), e.getBounds(yearbook.settings.width, yearbook.settings.height).x + e.getBounds(yearbook.settings.width, yearbook.settings.height).width - 1, e.getBounds(yearbook.settings.width, yearbook.settings.height).y + e.getBounds(yearbook.settings.width, yearbook.settings.height).height - (int) (e.getBounds(yearbook.settings.width, yearbook.settings.height).height * .1));
-				
-			}
-			
-			gc.dispose();
-			
-		}
+		GC gc = new GC(canvas);
+		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), activePage, yearbook.settings.width, yearbook.settings.height);
+		gc.dispose();
 		
 		canvas.addMouseMoveListener(new MouseMoveListener() {
 
@@ -344,68 +308,9 @@ public class Reader {
 	
 	private void loadRightCanvas(int activePage) {
 		blankRightCanvas();
-		GC gc;
-		
-		if (yearbook.page(activePage).backgroundImage(display) != null) {
-			gc = new GC(rightCanvas);
-			gc.drawImage(yearbook.page(activePage).backgroundImage(display), 0, 0, yearbook.page(activePage).backgroundImage(display).getBounds().width, yearbook.page(activePage).backgroundImage(display).getBounds().height, 0, 0, rightCanvas.getBounds().width, rightCanvas.getBounds().height);
-			gc.dispose();
-		}
-		
-		//Apparently there's no map function in Java.
-		//Map the YearbookImageElements to images...
-		ArrayList<YearbookImageElement> images = new ArrayList<YearbookImageElement>();
-		for (int i = 0; i < yearbook.page(activePage).getElements().size(); i++) {
-			if (yearbook.page(activePage).element(i).isImage()) {
-				images.add((YearbookImageElement) yearbook.page(activePage).element(i));
-			}
-		}
-		//...and display them.
-		for (YearbookImageElement element : images) {
-			gc = new GC(rightCanvas);
-			gc.drawImage(element.getImage(display), 0, 0, element.getImage(display).getBounds().width, element.getImage(display).getBounds().height, element.getBounds(yearbook.settings.width, yearbook.settings.height).x, element.getBounds(yearbook.settings.width, yearbook.settings.height).y, element.getBounds(yearbook.settings.width, yearbook.settings.height).width, element.getBounds(yearbook.settings.width, yearbook.settings.height).height);
-			gc.dispose();
-		}
-		
-		//Next, draw the text elements.
-		ArrayList<YearbookTextElement> texts = new ArrayList<YearbookTextElement>();
-		for (YearbookElement e : yearbook.page(activePage).getElements()) {
-			if (e.isText()) texts.add((YearbookTextElement) e);
-		}
-		
-		//...and display those in some manner.
-		for (YearbookTextElement e : texts) {
-			gc = new GC(rightCanvas);
-			gc.setTextAntialias(SWT.ON);
-			gc.setForeground(e.getColor(display));
-			gc.setFont(e.getFont(display));
-			gc.drawText(e.text, e.getBounds(yearbook.settings.width, yearbook.settings.height).x, e.getBounds(yearbook.settings.width, yearbook.settings.height).y, true);
-
-			/*
-			 * Inform the text element of its bounds.
-			 * This must be done here, regrettably.
-			 */
-			//e.setBounds(new Rectangle(e.getBounds(yearbook.settings.width, yearbook.settings.height).x, e.getBounds(yearbook.settings.width, yearbook.settings.height).y, gc.stringExtent(e.text).x, gc.stringExtent(e.text).y));
-			
-			/*
-			 * Handle underlining (SWT has no native GC underlining)
-			 * All magic numbers were chosen for their looks.
-			 */
-			if (e.underline) {
-				//Determine the line width
-				int width;
-				width = e.size / 12;
-				if (width <= 0) width = 1;
-				
-				if (e.bold) width *= 1.8;
-				gc.setLineWidth(width);
-				gc.drawLine(e.getBounds(yearbook.settings.width, yearbook.settings.height).x + 1, e.getBounds(yearbook.settings.width, yearbook.settings.height).y + e.getBounds(yearbook.settings.width, yearbook.settings.height).height - (int) (e.getBounds(yearbook.settings.width, yearbook.settings.height).height * .1), e.getBounds(yearbook.settings.width, yearbook.settings.height).x + e.getBounds(yearbook.settings.width, yearbook.settings.height).width - 1, e.getBounds(yearbook.settings.width, yearbook.settings.height).y + e.getBounds(yearbook.settings.width, yearbook.settings.height).height - (int) (e.getBounds(yearbook.settings.width, yearbook.settings.height).height * .1));
-				
-			}
-			
-			gc.dispose();
-			
-		}
+		GC gc = new GC(rightCanvas);
+		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), activePage, yearbook.settings.width, yearbook.settings.height);
+		gc.dispose();
 		
 		rightCanvas.addMouseMoveListener(new MouseMoveListener() {
 
