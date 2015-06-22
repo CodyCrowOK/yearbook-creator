@@ -60,6 +60,7 @@ public class YearbookTextElement extends YearbookElement implements Serializable
 		this.fontFamily = "Arial";
 		this.pageWidth = pageWidth;
 		this.pageHeight = pageHeight;
+		System.out.println("text");
 	}
 	
 	public YearbookTextElement(int x, int y, int pageWidth, int pageHeight) {

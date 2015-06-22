@@ -1906,7 +1906,6 @@ public class Creator {
 				try {
 					Yearbook.exportToPDF(yearbook, fileName, display);
 				} catch (COSVisitorException | IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
@@ -2991,11 +2990,12 @@ public class Creator {
 		
 		//If they want page numbers let's add them as fake elements.
 		boolean displayNumbers = !(activePage == 0 || activePage - 1 == yearbook.size()) && yearbook.settings.showPageNumbers;
+		/*
 		if (displayNumbers) {
 			yearbook.pageNumber.setBounds(YearbookPageNumberElement.generateBounds(pageWidth, pageHeight, yearbook.pageNumber.location, activePage));
 			yearbook.pageNumber.text = Integer.toString(activePage);
 			texts.add(yearbook.pageNumber);
-		}
+		}*/
 
 		//...and display those in some manner.
 		for (YearbookTextElement e : texts) {
@@ -3050,34 +3050,35 @@ public class Creator {
 			}
 
 		}
-		
+		/*
 		//Make sure we remove the page number element.
 		if (displayNumbers) {
 			texts.remove(yearbook.pageNumber);
-		}
+		}*/
 		
-		/*
+		
 		//Paint the page numbers
-		if (!(activePage == 0 || activePage - 1 == yearbook.size()) && yearbook.settings.showPageNumbers) {
+		if (displayNumbers) {
+			//FIXME: Make page numbers work.
 			gc.setAdvanced(true);
 			gc.setTextAntialias(SWT.ON);
 			gc.setFont(yearbook.pageNumber.getFont(display, pageWidth, pageHeight));
 			
-			
+			yearbook.pageNumber.setBounds(YearbookPageNumberElement.generateBounds(pageWidth, pageHeight, yearbook.pageNumber.location, activePage));
 			
 			if (yearbook.pageNumber.shadow) {
 				int offset = yearbook.pageNumber.size >= 72 ? 4 : yearbook.pageNumber.size >= 36 ? 2 : 1;
 				gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
 				gc.setAlpha(0x8f);
-				gc.drawText("48", pageNumberX + offset, pageNumberX + offset, true);
+				gc.drawText("48", yearbook.pageNumber.getBounds(pageWidth, pageHeight).x + offset, yearbook.pageNumber.getBounds(pageWidth, pageHeight).y + offset, true);
 				gc.setAlpha(0xff);
 			}
-
+			
 			gc.setForeground(yearbook.pageNumber.getColor(display));
 
-			gc.drawText("48", pageNumberX, pageNumberY, true);
+			gc.drawText("48", yearbook.pageNumber.getBounds(pageWidth, pageHeight).x, yearbook.pageNumber.getBounds(pageWidth, pageHeight).y, true);
 		}
-		*/
+		
 	}
 
 	private void createNewPage(String name) {
