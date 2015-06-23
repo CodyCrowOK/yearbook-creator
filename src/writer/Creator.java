@@ -37,7 +37,7 @@ import org.eclipse.swt.widgets.*;
  */
 public class Creator {
 
-	public static final String VERSION = "0.05";
+	public static final String VERSION = "0.06";
 	public static final String COMPANY_NAME = "Digital Express";
 	public static final String SOFTWARE_NAME = "Yearbook Designer";
 

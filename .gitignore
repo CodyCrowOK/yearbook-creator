@@ -3,6 +3,7 @@ builds
 lib
 media
 doc
+yearbooks
 .settings
 .classpath
 .project
