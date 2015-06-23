@@ -253,7 +253,7 @@ public class Reader {
 			return;
 		}
 		
-		
+		yearbook.tidyUp();
 	}
 	
 	private boolean leftIsActive() {

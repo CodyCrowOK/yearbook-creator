@@ -111,6 +111,7 @@ public class Yearbook implements Serializable {
 			Yearbook yearbook = new Yearbook();
 			for (Image image : images) {
 				yearbook.pages.add(new YearbookPage(image));
+				image.dispose();
 			}
 
 			return yearbook;
@@ -227,5 +228,12 @@ public class Yearbook implements Serializable {
 		if (this.noBackground) {
 			this.defaultBackgroundData = null;
 		}
+	}
+
+	public void tidyUp() {
+		for (int i = 0; i < this.size(); i++) {
+			if (Math.abs(this.activePage - i) > 1) this.page(i).setInactive();
+		}
+		
 	}
 }

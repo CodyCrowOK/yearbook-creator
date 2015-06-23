@@ -56,8 +56,12 @@ public class YearbookPage implements Serializable {
 	public Image backgroundImage(Display display) {
 		//Try not to leak too many resources...
 		if (display == null || this.backgroundImageData == null) return null; 
-		this.backgroundImage = null;
-		this.backgroundImage = new Image(display, this.backgroundImageData);
+		if (this.backgroundImage != null) {
+			if (this.backgroundImage.getImageData() != this.backgroundImageData) {
+			}
+		} else {
+			this.backgroundImage = new Image(display, this.backgroundImageData);
+		}
 		return this.backgroundImage;
 	}
 	
@@ -208,16 +212,30 @@ public class YearbookPage implements Serializable {
 	}
 	
 	public void setBackgroundImageData(ImageData imageData) {
+		if (this.backgroundImage != null) {
+			if (!this.backgroundImage.isDisposed()) backgroundImage.dispose();
+		}
+		
+		
 		this.noBackground = false;
 		this.backgroundImageData = imageData;
 	}
 	
 	public void clearBackgroundImage() {
+		if (this.backgroundImage != null) {
+			if (!this.backgroundImage.isDisposed()) backgroundImage.dispose();
+		}
 		this.noBackground = true;
 		this.backgroundImageData = null;
 	}
 
 	public ImageData getBackgroundImageData() {
 		return backgroundImageData;
+	}
+	
+	public void setInactive() {
+		if (this.backgroundImage != null) {
+			if (!backgroundImage.isDisposed()) backgroundImage.dispose();
+		}
 	}
 }

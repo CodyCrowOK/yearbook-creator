@@ -18,6 +18,7 @@ import org.eclipse.swt.dnd.TextTransfer;
 import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.DeviceData;
 import org.eclipse.swt.graphics.Drawable;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
@@ -2800,6 +2801,8 @@ public class Creator {
 			loadRightCanvas(yearbook.activePage);
 			return;
 		}
+		
+		yearbook.tidyUp();
 		
 		
 	}
