@@ -66,7 +66,9 @@ public class YearbookPageNumberElement extends YearbookTextElement implements Se
 			break;
 		}
 		
-		return new Rectangle(pageNumberX, pageNumberY, 30, 30);
+		Rectangle rekt = new Rectangle(pageNumberX, pageNumberY, 30, 30);
+		
+		return rekt;
 	}
 
 

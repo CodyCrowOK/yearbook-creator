@@ -3254,8 +3254,9 @@ public class Creator {
 		
 		//Paint the page numbers
 		if (displayNumbers) {
-			yearbook.pageNumber.setBounds(YearbookPageNumberElement.generateBounds(pageWidth, pageHeight, yearbook.pageNumber.location, activePage));
+			Rectangle bounds = YearbookPageNumberElement.generateBounds(pageWidth, pageHeight, yearbook.pageNumber.location, activePage);
 			YearbookTextElement element = yearbook.pageNumber;
+			String text = Integer.toString(activePage);
 			gc.setAdvanced(true);
 			gc.setAntialias(SWT.ON);
 			gc.setFont(element.getFont(display));
@@ -3264,12 +3265,12 @@ public class Creator {
 				int offset = element.size >= 72 ? 4 : element.size >= 36 ? 2 : 1;
 				gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
 				gc.setAlpha(0x8f);
-				gc.drawText("1234567890", element.getBounds().x + offset, element.getBounds().y + offset, true);
+				gc.drawText(text, bounds.x + offset, bounds.y + offset, true);
 				gc.setAlpha(0xff);
 			}
 			
 			gc.setForeground(element.getColor(display));
-			gc.drawText("1234567890", element.getBounds().x, element.getBounds().y, true);
+			gc.drawText(text, bounds.x, bounds.y, true);
 			
 			if (element.underline) {
 				//Determine the line width
@@ -3279,7 +3280,7 @@ public class Creator {
 
 				if (element.bold) width *= 1.8;
 				gc.setLineWidth(width);
-				gc.drawLine(element.getBounds().x + 1, element.getBounds().y + element.getBounds().height - (int) (element.getBounds().height * .1), element.getBounds().x + element.getBounds().width - 1, element.getBounds().y + element.getBounds().height - (int) (element.getBounds().height * .1));
+				gc.drawLine(bounds.x + 1, bounds.y + bounds.height - (int) (bounds.height * .1), bounds.x + bounds.width - 1, bounds.y + bounds.height - (int) (bounds.height * .1));
 
 			}
 		}
