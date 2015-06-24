@@ -92,4 +92,8 @@ public class YearbookIcons {
 	static Image erase(Display display) {
 		return new Image(display, "icons/delete.png");
 	}
+	
+	static Image rotate(Display display) {
+		return new Image(display, "icons/rotate.png");
+	}
 }

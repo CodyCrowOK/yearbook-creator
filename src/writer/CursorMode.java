@@ -6,5 +6,5 @@ package writer;
  *
  */
 public enum CursorMode {
-	MOVE, RESIZE, SELECT, ERASE;
+	MOVE, RESIZE, SELECT, ERASE, ROTATE;
 }

@@ -25,8 +25,10 @@ import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.graphics.Transform;
 import org.eclipse.swt.layout.*;
 import org.eclipse.swt.widgets.*;
 
@@ -66,7 +68,7 @@ public class Creator {
 	private MenuItem editCutItem;
 	private MenuItem editCopyItem;
 	private MenuItem editPasteItem;
-	private MenuItem editPreferencesItem;
+	private MenuItem editYearbookNameItem;
 	private MenuItem insertMenuItem;
 	private Menu insertMenu;
 	private MenuItem insertTextItem;
@@ -106,6 +108,7 @@ public class Creator {
 	Button resizeBtn;
 	Button selectBtn;
 	Button eraseBtn;
+	Button rotateBtn;
 
 
 	private Composite content;
@@ -306,6 +309,8 @@ public class Creator {
 			int yDiff = 0;
 			int startX = 0;
 			int startY = 0;
+			int centerX;
+			int centerY;
 
 			@Override
 			public void mouseDoubleClick(MouseEvent event) {
@@ -547,6 +552,10 @@ public class Creator {
 					xDiff -= event.x;
 					yDiff -= event.y;					
 					break;
+				case ROTATE:
+					if (!yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y)) break;
+					openRotateDialog(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y));
+					break;
 				default:
 					break;
 
@@ -574,7 +583,7 @@ public class Creator {
 
 			}
 
-			@Override
+						@Override
 			public void mouseUp(MouseEvent event) {
 				if (!leftIsActive()) return;
 				if (!isInsertingText) switch (settings.cursorMode) {
@@ -636,6 +645,26 @@ public class Creator {
 
 					refresh();
 
+					break;
+				case ROTATE:
+					/*
+					if (clipboard.elements.size() == 0) return;
+					int x2 = event.x;
+					int y2 = event.y;
+					int x1Diff = startX - centerX;
+					int y1Diff = startY - centerY;
+					int x2Diff = startX - x2;
+					int y2Diff = startY - y2;
+					float angle = 10 * -(float) (Math.atan2(y2Diff, x2Diff) - Math.atan2(y1Diff, x1Diff));
+					yearbook.page(yearbook.activePage).removeElement(clipboard.elements.get(0));
+					clipboard.elements.get(0).rotation += angle;
+					yearbook.page(yearbook.activePage).addElement(clipboard.elements.get(0));
+					
+					System.out.println(angle);
+					
+					startX = 0;
+					startY = 0;*/
+					refreshNoPageList();
 					break;
 				default:
 					break;
@@ -887,6 +916,10 @@ public class Creator {
 					xDiff -= event.x;
 					yDiff -= event.y;					
 					break;
+				case ROTATE:
+					if (!yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y)) break;
+					openRotateDialog(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y));
+					break;
 				default:
 					break;
 
@@ -1107,6 +1140,83 @@ public class Creator {
 		});
 
 	}
+	
+	private void openRotateDialog(YearbookElement elementAtPoint) {
+		float originalRotation = elementAtPoint.rotation;
+		final Shell dialog = new Shell(shell, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
+		dialog.setText("Rotate Element");
+		dialog.setSize(400, 300);
+		FormLayout formLayout = new FormLayout();
+		formLayout.marginWidth = 10;
+		formLayout.marginHeight = 10;
+		formLayout.spacing = 10;
+		dialog.setLayout(formLayout);
+
+		Label label = new Label(dialog, SWT.NONE);
+		label.setText("Angle of rotation (°):");
+		FormData data = new FormData();
+		label.setLayoutData(data);
+
+		Button cancel = new Button(dialog, SWT.PUSH);
+		cancel.setText("Cancel");
+		data = new FormData();
+		data.width = 60;
+		data.right = new FormAttachment(100, 0);
+		data.bottom = new FormAttachment(100, 0);
+		cancel.setLayoutData(data);
+		cancel.addSelectionListener(new SelectionAdapter () {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				elementAtPoint.rotation = originalRotation;
+				refreshNoPageList();
+				dialog.close();
+			}
+		});
+
+		final Spinner text = new Spinner(dialog, SWT.WRAP);
+		text.setMinimum(-179);
+		text.setMaximum(180);
+		text.addModifyListener(new ModifyListener() {
+
+			@Override
+			public void modifyText(ModifyEvent e) {
+				int count = 0;
+				elementAtPoint.rotation = Float.valueOf(text.getText());
+				if (count++ % 3 == 0) refreshNoPageList();
+			}
+			
+		});
+		data = new FormData();
+		data.width = 200;
+		data.left = new FormAttachment(label, 0, SWT.DEFAULT);
+		data.right = new FormAttachment(100, 0);
+		data.top = new FormAttachment(label, 0, SWT.CENTER);
+		data.bottom = new FormAttachment(cancel, 0, SWT.DEFAULT);
+		text.setLayoutData(data);
+
+		Button ok = new Button(dialog, SWT.PUSH);
+		ok.setText("OK");
+		data = new FormData();
+		data.width = 60;
+		data.right = new FormAttachment(cancel, 0, SWT.DEFAULT);
+		data.bottom = new FormAttachment(100, 0);
+		ok.setLayoutData(data);
+		ok.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected (SelectionEvent e) {
+				elementAtPoint.rotation = Float.valueOf(text.getText());
+				dialog.close();
+				refreshNoPageList();
+			}
+		});
+
+		dialog.setDefaultButton (ok);
+		dialog.pack();
+		dialog.open();
+		
+	}
+
+
 
 	protected void openTextDialog(YearbookTextElement element) {
 
@@ -1512,8 +1622,8 @@ public class Creator {
 
 		new MenuItem(editMenu, SWT.SEPARATOR);
 
-		editPreferencesItem = new MenuItem(editMenu, SWT.PUSH);
-		editPreferencesItem.setText("Preferences");
+		editYearbookNameItem = new MenuItem(editMenu, SWT.PUSH);
+		editYearbookNameItem.setText("Yearbook Name...");
 
 
 		//Create the insert menu.
@@ -1578,26 +1688,6 @@ public class Creator {
 	private void initialize() {
 		isInsertingText = false;
 		MOD1 = false;
-
-		shell.addListener(SWT.KeyDown, new Listener() {
-
-			@Override
-			public void handleEvent(Event event) {
-				// TODO Auto-generated method stub
-
-			}
-
-		});
-
-		shell.addListener(SWT.KeyUp, new Listener() {
-
-			@Override
-			public void handleEvent(Event event) {
-				// TODO Auto-generated method stub
-
-			}
-
-		});
 
 		canvasBackgroundColor = new Color(display, 254, 254, 254);
 
@@ -1671,7 +1761,28 @@ public class Creator {
 					box.setMessage("File " + fileName + " is not a PDF file.");
 					box.open();
 				} else {
+					Shell wait = new Shell(splash, SWT.NO_TRIM);
+					wait.setSize(300, 300);
+					
+					wait.addPaintListener(new PaintListener() {
+
+						@Override
+						public void paintControl(
+								PaintEvent e) {
+							Font font = new Font(display,"Arial",14,SWT.BOLD | SWT.ITALIC); 
+							e.gc.setFont(font);
+							int x = (300 - e.gc.textExtent("Please wait.").x) / 2;
+							int y = (300 - e.gc.textExtent("Please wait.").y) / 2;
+							e.gc.drawText("Please wait.", x, y, true);
+							font.dispose();
+						}
+						
+					});
+					
+					wait.open();
 					Yearbook newYearbook = Yearbook.importFromPDF(display, fileName);
+					wait.close();
+					wait.dispose();
 					if (newYearbook != null) {
 						yearbook = newYearbook;
 						createNewYearbook();
@@ -1983,12 +2094,66 @@ public class Creator {
 
 		});
 
-		editPreferencesItem.addListener(SWT.Selection, new Listener() {
+		editYearbookNameItem.addListener(SWT.Selection, new Listener() {
 
 			@Override
 			public void handleEvent(Event event) {
-				System.out.println("Edit >> Preferences not implemented.");
+				final Shell dialog = new Shell(shell, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
+				dialog.setText("Enter Yearbook Name");
+				dialog.setSize(400, 300);
+				FormLayout formLayout = new FormLayout();
+				formLayout.marginWidth = 10;
+				formLayout.marginHeight = 10;
+				formLayout.spacing = 10;
+				dialog.setLayout(formLayout);
 
+				Label label = new Label(dialog, SWT.NONE);
+				label.setText("Yearbook name:");
+				FormData data = new FormData();
+				label.setLayoutData(data);
+
+				Button cancel = new Button(dialog, SWT.PUSH);
+				cancel.setText("Cancel");
+				data = new FormData();
+				data.width = 60;
+				data.right = new FormAttachment(100, 0);
+				data.bottom = new FormAttachment(100, 0);
+				cancel.setLayoutData(data);
+				cancel.addSelectionListener(new SelectionAdapter () {
+					@Override
+					public void widgetSelected(SelectionEvent e) {
+						dialog.close();
+					}
+				});
+
+				final Text text = new Text(dialog, SWT.BORDER);
+				data = new FormData();
+				data.width = 200;
+				data.left = new FormAttachment(label, 0, SWT.DEFAULT);
+				data.right = new FormAttachment(100, 0);
+				data.top = new FormAttachment(label, 0, SWT.CENTER);
+				data.bottom = new FormAttachment(cancel, 0, SWT.DEFAULT);
+				text.setLayoutData(data);
+
+				Button ok = new Button(dialog, SWT.PUSH);
+				ok.setText("OK");
+				data = new FormData();
+				data.width = 60;
+				data.right = new FormAttachment(cancel, 0, SWT.DEFAULT);
+				data.bottom = new FormAttachment(100, 0);
+				ok.setLayoutData(data);
+				ok.addSelectionListener(new SelectionAdapter() {
+					@Override
+					public void widgetSelected (SelectionEvent e) {
+						yearbook.name = text.getText();
+						dialog.close();
+						refreshYearbookName();
+					}
+				});
+
+				dialog.setDefaultButton (ok);
+				dialog.pack();
+				dialog.open();
 			}
 
 		});
@@ -2567,6 +2732,10 @@ public class Creator {
 		eraseBtn.setImage(YearbookIcons.erase(display));
 		eraseBtn.pack();
 
+		rotateBtn = new Button(toolbarWrapper, SWT.TOGGLE);
+		rotateBtn.setImage(YearbookIcons.rotate(display));
+		rotateBtn.pack();
+
 
 
 
@@ -2731,9 +2900,28 @@ public class Creator {
 					clipboard.elements.clear();
 				}
 				modeReset();
+				shell.setCursor(display.getSystemCursor(SWT.CURSOR_HAND));
 				refreshNoPageList();
 			}
 		});
+
+		rotateBtn.addListener(SWT.Selection, new Listener() {
+			public void handleEvent(Event e) {
+				Control[] children = toolbarWrapper.getChildren();
+				for (int i = 0; i < children.length; i++) {
+					Control child = children[i];
+					if (e.widget != child && child instanceof Button
+							&& (child.getStyle() & SWT.TOGGLE) != 0) {
+						((Button) child).setSelection(false);
+					}
+				}
+				((Button) e.widget).setSelection(true);
+				settings.cursorMode = CursorMode.ROTATE;
+				modeReset();
+				shell.setCursor(display.getSystemCursor(SWT.CURSOR_HAND));
+			}
+		});
+
 
 	}
 
@@ -2882,12 +3070,12 @@ public class Creator {
 		gc.setAntialias(SWT.ON);
 
 		gc.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
-		gc.fillRectangle(0, 0, yearbook.settings.width, yearbook.settings.height);
+		if (yearbook.page(activePage).noBackground) gc.fillRectangle(0, 0, yearbook.settings.width, yearbook.settings.height);
 
 		if (yearbook.page(activePage).backgroundImage(display) != null && !yearbook.page(activePage).noBackground) {
 			gc.drawImage(yearbook.page(activePage).backgroundImage(display), 0, 0, yearbook.page(activePage).backgroundImage(display).getBounds().width, yearbook.page(activePage).backgroundImage(display).getBounds().height, 0, 0, pageWidth, pageHeight);
 		}
-
+		
 		//Apparently there's no map function in Java.
 		//Map the YearbookImageElements to images...
 		ArrayList<YearbookImageElement> images = new ArrayList<YearbookImageElement>();
@@ -2898,18 +3086,26 @@ public class Creator {
 		}
 		//...and display them.
 		for (YearbookImageElement element : images) {
+			Transform tr = new Transform(display);
+			tr.rotate(element.rotation);
+			gc.setTransform(tr);
 			gc.drawImage(element.getImage(display), 0, 0, element.getImage(display).getBounds().width, element.getImage(display).getBounds().height, element.getBounds(pageWidth, pageHeight).x, element.getBounds(pageWidth, pageHeight).y, element.getBounds(pageWidth, pageHeight).width, element.getBounds(pageWidth, pageHeight).height);
 			if (selectedElements.contains(element)) {
 				YearbookElement selectedElement = selectedElements.get(selectedElements.indexOf(element));
 				if (element == selectedElement) {
 					//Element is selected by user.
 					//Draw a border like GIMP.
+					tr.dispose();
+					Transform tra = new Transform(display);
+					tra.rotate(0);
+					gc.setTransform(tra);
 					gc.setForeground(uglyYellowColor);
 					gc.setLineStyle(SWT.LINE_DASH);
 					gc.setLineWidth(3);
 					gc.drawRectangle(element.getBounds(pageWidth, pageHeight).x, element.getBounds(pageWidth, pageHeight).y, element.getBounds(pageWidth, pageHeight).width, element.getBounds(pageWidth, pageHeight).height);
 				}
 			}
+			tr.dispose();
 		}
 
 		//If the user has selected an area, we should do something about that.
@@ -2931,6 +3127,9 @@ public class Creator {
 		}
 		//...and display those in some manner.
 		for (YearbookElement e : clickables) {
+			Transform tr = new Transform(display);
+			tr.rotate(e.rotation);
+			gc.setTransform(tr);
 			gc.setLineWidth(1);
 			gc.setLineStyle(SWT.LINE_DASH);
 			gc.drawRectangle(e.getBounds(pageWidth, pageHeight));
@@ -2939,6 +3138,7 @@ public class Creator {
 			gc.setAlpha(50);
 			gc.fillRectangle(e.getBounds(pageWidth, pageHeight));
 			gc.setAlpha(0xff);
+			tr.dispose();
 		}
 
 
@@ -2991,17 +3191,12 @@ public class Creator {
 			if (e.isText()) texts.add((YearbookTextElement) e);
 		}
 		
-		//If they want page numbers let's add them as fake elements.
-		boolean displayNumbers = !(activePage == 0 || activePage - 1 == yearbook.size()) && yearbook.settings.showPageNumbers;
-		/*
-		if (displayNumbers) {
-			yearbook.pageNumber.setBounds(YearbookPageNumberElement.generateBounds(pageWidth, pageHeight, yearbook.pageNumber.location, activePage));
-			yearbook.pageNumber.text = Integer.toString(activePage);
-			texts.add(yearbook.pageNumber);
-		}*/
 
 		//...and display those in some manner.
 		for (YearbookTextElement e : texts) {
+			Transform tr = new Transform(display);
+			tr.rotate(e.rotation);
+			gc.setTransform(tr);
 			gc.setAdvanced(true);
 			gc.setTextAntialias(SWT.ON);
 			gc.setFont(e.getFont(display, pageWidth, pageHeight));
@@ -3051,35 +3246,42 @@ public class Creator {
 					gc.drawRectangle(e.getBounds(pageWidth, pageHeight).x, e.getBounds(pageWidth, pageHeight).y, e.getBounds(pageWidth, pageHeight).width, e.getBounds(pageWidth, pageHeight).height);
 				}
 			}
+			tr.dispose();
 
 		}
-		/*
-		//Make sure we remove the page number element.
-		if (displayNumbers) {
-			texts.remove(yearbook.pageNumber);
-		}*/
-		
+
+		boolean displayNumbers = !(activePage == 0 || activePage - 1 == yearbook.size()) && yearbook.settings.showPageNumbers;
 		
 		//Paint the page numbers
 		if (displayNumbers) {
-			//FIXME: Make page numbers work.
-			gc.setAdvanced(true);
-			gc.setTextAntialias(SWT.ON);
-			gc.setFont(yearbook.pageNumber.getFont(display, pageWidth, pageHeight));
-			
 			yearbook.pageNumber.setBounds(YearbookPageNumberElement.generateBounds(pageWidth, pageHeight, yearbook.pageNumber.location, activePage));
+			YearbookTextElement element = yearbook.pageNumber;
+			gc.setAdvanced(true);
+			gc.setAntialias(SWT.ON);
+			gc.setFont(element.getFont(display));
 			
-			if (yearbook.pageNumber.shadow) {
-				int offset = yearbook.pageNumber.size >= 72 ? 4 : yearbook.pageNumber.size >= 36 ? 2 : 1;
+			if (element.shadow) {
+				int offset = element.size >= 72 ? 4 : element.size >= 36 ? 2 : 1;
 				gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
 				gc.setAlpha(0x8f);
-				gc.drawText("48", yearbook.pageNumber.getBounds(pageWidth, pageHeight).x + offset, yearbook.pageNumber.getBounds(pageWidth, pageHeight).y + offset, true);
+				gc.drawText("1234567890", element.getBounds().x + offset, element.getBounds().y + offset, true);
 				gc.setAlpha(0xff);
 			}
 			
-			gc.setForeground(yearbook.pageNumber.getColor(display));
+			gc.setForeground(element.getColor(display));
+			gc.drawText("1234567890", element.getBounds().x, element.getBounds().y, true);
+			
+			if (element.underline) {
+				//Determine the line width
+				int width;
+				width = element.size / 12;
+				if (width <= 0) width = 1;
 
-			gc.drawText("48", yearbook.pageNumber.getBounds(pageWidth, pageHeight).x, yearbook.pageNumber.getBounds(pageWidth, pageHeight).y, true);
+				if (element.bold) width *= 1.8;
+				gc.setLineWidth(width);
+				gc.drawLine(element.getBounds().x + 1, element.getBounds().y + element.getBounds().height - (int) (element.getBounds().height * .1), element.getBounds().x + element.getBounds().width - 1, element.getBounds().y + element.getBounds().height - (int) (element.getBounds().height * .1));
+
+			}
 		}
 		
 	}
@@ -3109,7 +3311,10 @@ public class Creator {
 	public void refreshNoPageList() {
 		updateCanvas();
 		shell.layout();
-
+		refreshYearbookName();
+	}
+	
+	public void refreshYearbookName() {
 		if (!shell.getText().contains(yearbook.name)) setWindowTitle(yearbook.name);
 		else if (yearbook.name.isEmpty()) setWindowTitle(SWT.DEFAULT);
 	}

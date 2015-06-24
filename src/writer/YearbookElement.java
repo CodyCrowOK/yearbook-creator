@@ -24,7 +24,7 @@ abstract public class YearbookElement implements Serializable {
 	protected double x;
 	protected double y;
 	
-	public double rotation;
+	public float rotation;
 	
 	public int pageWidth;
 	public int pageHeight;

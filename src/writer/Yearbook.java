@@ -89,7 +89,6 @@ public class Yearbook implements Serializable {
 		try {
 			document = PDDocument.loadNonSeq(new File(fileName), null);
 			ArrayList<PDPage> pdPages = (ArrayList<PDPage>) document.getDocumentCatalog().getAllPages();
-			int page = 0;
 			ArrayList<java.awt.Image> awtImages = new ArrayList<java.awt.Image>();
 			for (PDPage pdPage : pdPages) {
 				awtImages.add(pdPage.convertToImage(BufferedImage.TYPE_INT_RGB, 300));
@@ -97,7 +96,12 @@ public class Yearbook implements Serializable {
 			document.close();
 
 			//After converted to images.
+			Yearbook yearbook = new Yearbook();
+			for (java.awt.Image awtImage : awtImages) {
+				yearbook.pages.add(new YearbookPage(SWTUtils.convertAWTImageToSWT(awtImage)));
+			}
 
+			/*
 			ArrayList<ImageData> imageData = new ArrayList<ImageData>();
 			for (java.awt.Image awtImage : awtImages) {
 				imageData.add(SWTUtils.convertAWTImageToSWT(awtImage));
@@ -113,6 +117,7 @@ public class Yearbook implements Serializable {
 				yearbook.pages.add(new YearbookPage(image));
 				image.dispose();
 			}
+			*/
 
 			return yearbook;
 

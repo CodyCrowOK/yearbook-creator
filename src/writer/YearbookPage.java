@@ -31,6 +31,12 @@ public class YearbookPage implements Serializable {
 		this.name = "";
 		this.backgroundImageData = backgroundImage.getImageData();
 	}
+	
+	public YearbookPage(ImageData backgroundImage) {
+		this();
+		this.name = "";
+		this.backgroundImageData = backgroundImage;
+	}
 
 	public YearbookElement element(int index) {
 		return elements.get(index);
