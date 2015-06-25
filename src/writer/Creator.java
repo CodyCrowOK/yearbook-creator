@@ -2058,11 +2058,9 @@ public class Creator {
 
 			@Override
 			public void handleEvent(Event event) {
+				clipboard.cut = true;
 				clipboard.cutElements.clear();
 				clipboard.cutElements.addAll(clipboard.elements);
-				for (YearbookElement e : clipboard.cutElements) {
-					yearbook.removeElement(e);
-				}
 				refreshNoPageList();
 			}
 
@@ -2088,6 +2086,13 @@ public class Creator {
 			public void handleEvent(Event event) {
 				for (YearbookElement e : clipboard.cutElements) {
 					yearbook.page(yearbook.activePage).addElement(e.copy());
+				}
+				
+				if (clipboard.cut) {
+					for (YearbookElement e : clipboard.cutElements) {
+					yearbook.removeElement(e);
+					}
+					clipboard.cut = false;
 				}
 				refreshNoPageList();
 			}
@@ -2194,6 +2199,14 @@ public class Creator {
 
 			@Override
 			public void handleEvent(Event event) {
+				if (clipboard.elements.isEmpty() && selectionRectangle == null) {
+					MessageBox box = new MessageBox(shell, SWT.ICON_INFORMATION);
+					box.setText("Insert Video");
+					box.setMessage("Please select an area of the page to link to the video.");
+					box.open();
+					return;
+				}
+				System.out.println(clipboard.elements.size());
 				for (YearbookElement selectedElement : clipboard.elements) {
 					if ((settings.cursorMode != CursorMode.SELECT || selectionRectangle == null) && clipboard.elements.size() == 0) {
 						MessageBox box = new MessageBox(shell, SWT.ICON_INFORMATION);
@@ -2894,10 +2907,16 @@ public class Creator {
 					((Button) e.widget).setSelection(true);
 					settings.cursorMode = CursorMode.ERASE;
 				} else {
-					for (YearbookElement element : clipboard.elements) {
-						yearbook.page(yearbook.activePage).removeElement(element);
+					MessageBox box = new MessageBox(shell, SWT.ICON_WARNING | SWT.YES | SWT.NO);
+					box.setText("Delete Element");
+					box.setMessage("Are you sure you want to erase these element(s)?");
+					int result = box.open();
+					if (result == SWT.YES) {
+						for (YearbookElement element : clipboard.elements) {
+							yearbook.page(yearbook.activePage).removeElement(element);
+						}
+						clipboard.elements.clear();
 					}
-					clipboard.elements.clear();
 				}
 				modeReset();
 				shell.setCursor(display.getSystemCursor(SWT.CURSOR_HAND));
@@ -3254,12 +3273,12 @@ public class Creator {
 		
 		//Paint the page numbers
 		if (displayNumbers) {
-			Rectangle bounds = YearbookPageNumberElement.generateBounds(pageWidth, pageHeight, yearbook.pageNumber.location, activePage);
 			YearbookTextElement element = yearbook.pageNumber;
 			String text = Integer.toString(activePage);
 			gc.setAdvanced(true);
 			gc.setAntialias(SWT.ON);
 			gc.setFont(element.getFont(display));
+			Rectangle bounds = YearbookPageNumberElement.generateBounds(pageWidth, pageHeight, yearbook.pageNumber.location, activePage, gc.textExtent(text));
 			
 			if (element.shadow) {
 				int offset = element.size >= 72 ? 4 : element.size >= 36 ? 2 : 1;
@@ -3271,18 +3290,6 @@ public class Creator {
 			
 			gc.setForeground(element.getColor(display));
 			gc.drawText(text, bounds.x, bounds.y, true);
-			
-			if (element.underline) {
-				//Determine the line width
-				int width;
-				width = element.size / 12;
-				if (width <= 0) width = 1;
-
-				if (element.bold) width *= 1.8;
-				gc.setLineWidth(width);
-				gc.drawLine(bounds.x + 1, bounds.y + bounds.height - (int) (bounds.height * .1), bounds.x + bounds.width - 1, bounds.y + bounds.height - (int) (bounds.height * .1));
-
-			}
 		}
 		
 	}

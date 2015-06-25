@@ -13,6 +13,7 @@ import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridLayout;
@@ -30,7 +31,9 @@ import writer.Yearbook;
 import writer.YearbookClickableElement;
 import writer.YearbookClickableImageElement;
 import writer.YearbookElement;
+import writer.YearbookIcons;
 import writer.YearbookImageElement;
+import writer.YearbookImages;
 import writer.YearbookTextElement;
 
 /**
@@ -105,8 +108,9 @@ public class Reader {
 
 			@Override
 			public void mouseDown(MouseEvent e) {
-				if (rightIsActive() && yearbook.activePage - 1 >= 0) yearbook.activePage--;
-				refresh();
+				if (rightIsActive() && yearbook.activePage - 1 >= 0) {
+					yearbook.activePage--;
+				}
 				
 				if (yearbook.page(yearbook.activePage).isClickableAtPoint(e.x, e.y) && leftIsActive()) {
 					//Show their video.
@@ -152,8 +156,9 @@ public class Reader {
 
 			@Override
 			public void mouseDown(MouseEvent e) {
-				if (leftIsActive() && yearbook.activePage + 1 < yearbook.size()) yearbook.activePage++;
-				refresh();
+				if (leftIsActive() && yearbook.activePage + 1 < yearbook.size()) { 
+					yearbook.activePage++;
+				}
 
 				if (yearbook.page(yearbook.activePage).isClickableAtPoint(e.x, e.y) && rightIsActive()) {
 					//Show their video.
@@ -269,6 +274,11 @@ public class Reader {
 		gc = new GC(canvas);
 		gc.setBackground(canvasBackgroundColor);
 		gc.fillRectangle(0, 0, canvas.getBounds().width, canvas.getBounds().height);
+		Image logo = YearbookImages.logo(display);
+		int x = (yearbook.settings.width - logo.getBounds().width) / 2;
+		int y = (yearbook.settings.height - logo.getBounds().height) / 2;
+		gc.drawImage(logo, x, y);
+		logo.dispose();
 		gc.dispose();		
 	}
 	
@@ -277,12 +287,24 @@ public class Reader {
 		gc = new GC(rightCanvas);
 		gc.setBackground(canvasBackgroundColor);
 		gc.fillRectangle(0, 0, rightCanvas.getBounds().width, rightCanvas.getBounds().height);
-		gc.dispose();		
+		Image logo = YearbookImages.logo(display);
+		int x = (yearbook.settings.width - logo.getBounds().width) / 2;
+		int y = (yearbook.settings.height - logo.getBounds().height) / 2;
+		gc.drawImage(logo, x, y);
+		logo.dispose();
+		gc.dispose();
 	}
 	
 	private void loadLeftCanvas(int activePage) {
-		blankLeftCanvas();
+		//blankLeftCanvas();
+		
 		GC gc = new GC(canvas);
+		
+		if (yearbook.page(activePage).noBackground) {
+			gc.setBackground(canvasBackgroundColor);
+			gc.fillRectangle(0, 0, rightCanvas.getBounds().width, rightCanvas.getBounds().height);
+		}
+		
 		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), activePage, yearbook.settings.width, yearbook.settings.height);
 		gc.dispose();
 		
@@ -307,7 +329,7 @@ public class Reader {
 	}
 	
 	private void loadRightCanvas(int activePage) {
-		blankRightCanvas();
+		//blankRightCanvas();
 		GC gc = new GC(rightCanvas);
 		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), activePage, yearbook.settings.width, yearbook.settings.height);
 		gc.dispose();

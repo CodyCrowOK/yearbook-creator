@@ -48,7 +48,7 @@ public class YearbookImageElement extends YearbookElement implements Serializabl
 	private void construct(Display display, ImageData imageData, int pageWidth, int pageHeight) {
 		generateRandomElementId();
 		scale = 1;
-		if (imageData == null && display == null) System.out.println("asntheou");
+		if (imageData == null && display == null) return;
 		image = new Image(display, imageData);
 		this.display = display;
 		

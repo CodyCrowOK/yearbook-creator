@@ -24,7 +24,7 @@ public class YearbookPage implements Serializable {
 	public String name;
 	transient private ImageData backgroundImageData;
 	transient private Image backgroundImage;
-	boolean noBackground;
+	public boolean noBackground;
 	
 	public YearbookPage(Image backgroundImage) {
 		this();

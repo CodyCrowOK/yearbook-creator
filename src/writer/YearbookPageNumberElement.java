@@ -2,6 +2,7 @@ package writer;
 
 import java.io.Serializable;
 
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 
 /**
@@ -20,18 +21,18 @@ public class YearbookPageNumberElement extends YearbookTextElement implements Se
 		location = PageNumberLocations.DOWN_MIDDLE;
 	}
 
-	public static Rectangle generateBounds(int pageWidth, int pageHeight, PageNumberLocations location, int activePage) {
+	public static Rectangle generateBounds(int pageWidth, int pageHeight, PageNumberLocations location, int activePage, Point point) {
 		int pageNumberX, pageNumberY;
 		switch (location) {
 		case UP_IN:
 		case UP_MIDDLE:
 		case UP_OUT:
-			pageNumberY = (int) (pageHeight * .05);
+			pageNumberY = (int) ((pageHeight + point.y) * (1.0 - .982712));
 			break;
 		case DOWN_IN:
 		case DOWN_MIDDLE:
 		case DOWN_OUT:
-			pageNumberY = (int) (pageHeight * .95);
+			pageNumberY = (int) ((pageHeight - point.y) * .982712);
 			break;
 		default:
 			pageNumberY = 0;
@@ -43,22 +44,22 @@ public class YearbookPageNumberElement extends YearbookTextElement implements Se
 		case UP_IN:
 			//Left pages
 			if (activePage % 2 == 1) {
-				pageNumberX = (int) (pageWidth * .95);
+				pageNumberX = (int) ((pageWidth - point.x) * .95);
 			} else {
-				pageNumberX = (int) (pageWidth * .05);
+				pageNumberX = (int) ((pageWidth - point.x) * .05);
 			}
 			break;
 		case DOWN_MIDDLE:
 		case UP_MIDDLE:
-			pageNumberX = (int) ((pageWidth - 10) / 2.0);
+			pageNumberX = (int) ((pageWidth - point.x) / 2.0);
 			break;
 		case DOWN_OUT:
 		case UP_OUT:
 			//Right pages
 			if (activePage % 2 != 1) {
-				pageNumberX = (int) (pageWidth * .95);
+				pageNumberX = (int) ((pageWidth - point.x) * .95);
 			} else {
-				pageNumberX = (int) (pageWidth * .05);
+				pageNumberX = (int) ((pageWidth - point.x) * .05);
 			}
 			break;
 		default:

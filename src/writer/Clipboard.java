@@ -3,6 +3,9 @@ package writer;
 import java.util.ArrayList;
 
 public class Clipboard {
+	
+	boolean cut;
+	
 	/**
 	 * Selected elements
 	 */
