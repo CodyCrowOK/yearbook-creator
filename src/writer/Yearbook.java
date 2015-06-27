@@ -235,6 +235,9 @@ public class Yearbook implements Serializable {
 		}
 	}
 
+	/**
+	 * Magic function which keeps a yearbook from turning into a fork bomb.
+	 */
 	public void tidyUp() {
 		for (int i = 0; i < this.size(); i++) {
 			if (Math.abs(this.activePage - i) > 1) this.page(i).setInactive();

@@ -28,6 +28,14 @@ public class YearbookImages {
 		return new Image(display, "icons/large/logo.png");
 	}
 	
+	public static Image readerBackground(Display display) {
+		return new Image(display, "icons/large/reader-background.png");
+	}
+	
+	public static Image openBook(Display display) {
+		return new Image(display, "icons/large/open-book.png");
+	}
+	
 	/**
 	 * This is bogus ImageData that is written to disk whenever ImageData
 	 * would otherwise be null. This is a necessary implication of the way

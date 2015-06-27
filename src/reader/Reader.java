@@ -16,11 +16,16 @@ import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.layout.RowLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.FileDialog;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 
@@ -70,11 +75,12 @@ public class Reader {
 		
 		this.refresh();
 		
-		shell.setLayout(new FillLayout());
+		shell.setLayout(new GridLayout());
 		shell.setText(Creator.COMPANY_NAME + " Digital Yearbook");
 		shell.pack();
 		//Magic number, chosen for being near center.
 		shell.setLocation((int) (.09375 * display.getClientArea().width), 0);
+		shell.setFullScreen(true);
 		shell.open();
 		
 		while (!shell.isDisposed()) {
@@ -84,26 +90,32 @@ public class Reader {
 	}
 	
 	private void initialize() {
+
+		int canvasHeight = display.getClientArea().height - 120;
+		int canvasWidth = (int) ((8.5 / 11.0) * canvasHeight);
+		
 		canvasBackgroundColor = new Color(display, 254, 254, 254);
 		
-		Composite bigCanvasWrapper = new Composite(shell, SWT.NONE);
-		bigCanvasWrapper.setLayout(new GridLayout(2, false));
+		Composite bigCanvasWrapper = new Composite(shell, SWT.BORDER);
+		bigCanvasWrapper.setLayoutData(new GridData(SWT.CENTER, SWT.BEGINNING, true, true));
+		GridLayout wrapperLayout = new GridLayout(2, false);
+		wrapperLayout.marginHeight = (int) (1.1 * (68.0 / 2868.0) * canvasHeight);
+		wrapperLayout.marginWidth = (int) (2.2 * (68.0 / 2868.0) * canvasHeight);
+		bigCanvasWrapper.setLayout(wrapperLayout);
 		
 		Composite canvasWrapper = new Composite(bigCanvasWrapper, SWT.NONE);
-		canvas = new Canvas(canvasWrapper, SWT.BORDER);
+		canvas = new Canvas(canvasWrapper, SWT.NONE);
 		canvas.setBackground(canvasBackgroundColor);
 		
 		Composite canvasWrapper2 = new Composite(bigCanvasWrapper, SWT.NONE);
-		rightCanvas = new Canvas(canvasWrapper2, SWT.BORDER);
+		rightCanvas = new Canvas(canvasWrapper2, SWT.NONE);
 		rightCanvas.setBackground(canvasBackgroundColor);
 		
 		canvas.addMouseListener(new MouseListener() {
 
 			@Override
 			public void mouseDoubleClick(MouseEvent e) {
-				yearbook.activePage -= 2;
-				if (yearbook.activePage < 0) yearbook.activePage = 0;
-				refresh();
+				turnPageLeft();
 			}
 
 			@Override
@@ -149,9 +161,7 @@ public class Reader {
 
 			@Override
 			public void mouseDoubleClick(MouseEvent e) {
-				yearbook.activePage += 2;
-				if (yearbook.activePage >= yearbook.size()) yearbook.activePage = yearbook.size() - 1;
-				refresh();
+				turnPageRight();
 			}
 
 			@Override
@@ -213,11 +223,119 @@ public class Reader {
 			
 		});
 		
+		Composite navbar = new Composite(shell, SWT.NONE);
+		navbar.setLayoutData(new GridData(SWT.CENTER, SWT.BEGINNING, true, true));
+		RowLayout barLayout = new RowLayout();
+		barLayout.pack = true;
+		barLayout.marginBottom = 0;
+		barLayout.marginRight = 0;
+		barLayout.marginLeft = 5;
+		barLayout.marginTop = 0;
+		barLayout.spacing = 0;
+
+		navbar.setLayout(barLayout);
+		Button frontBtn = new Button(navbar, SWT.PUSH);
+		Button backBtn = new Button(navbar, SWT.PUSH);
+		Button nextBtn = new Button(navbar, SWT.PUSH);
+		Button endBtn = new Button(navbar, SWT.PUSH);
+		
+		Image image = YearbookIcons.navFront(display);
+		frontBtn.setImage(image);
+		image.dispose();
+		image = YearbookIcons.navBack(display);
+		backBtn.setImage(image);
+		image.dispose();
+		image = YearbookIcons.navNext(display);
+		nextBtn.setImage(image);
+		image.dispose();
+		image = YearbookIcons.navEnd(display);
+		endBtn.setImage(image);
+		image.dispose();
+		navbar.pack();
+		
+		nextBtn.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				turnPageRight();
+				
+			}
+			
+		});
+		
+		backBtn.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				turnPageLeft();
+				
+			}
+			
+		});
+		
+		frontBtn.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				yearbook.activePage = 0;
+				refresh();
+				
+			}
+			
+		});
+		
+		endBtn.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				yearbook.activePage = yearbook.size() - 1;
+				refresh();
+				
+			}
+			
+		});
+
+		shell.addPaintListener(new PaintListener() {
+
+			@Override
+			public void paintControl(PaintEvent e) {
+				Image bg = YearbookImages.readerBackground(display);
+				e.gc.drawImage(bg, 0, 0, bg.getBounds().width, bg.getBounds().height, 0, 0, shell.getBounds().width, shell.getBounds().height);
+				bg.dispose();
+			}
+			
+		});
+		
+		bigCanvasWrapper.addPaintListener(new PaintListener() {
+
+			@Override
+			public void paintControl(PaintEvent e) {
+				Image bg = YearbookImages.openBook(display);
+				e.gc.drawImage(bg, 0, 0, bg.getBounds().width, bg.getBounds().height, 0, 0, bigCanvasWrapper.getBounds().width, bigCanvasWrapper.getBounds().height);
+				bg.dispose();
+				
+			}
+			
+		});
+
+		navbar.addPaintListener(new PaintListener() {
+
+			@Override
+			public void paintControl(PaintEvent e) {
+				Image bg = YearbookImages.readerBackground(display);
+				e.gc.drawImage(bg, 0, 0, bg.getBounds().width, bg.getBounds().height, 0, 0, shell.getBounds().width, shell.getBounds().height);
+				bg.dispose();
+				
+			}
+			
+		});
+		
 	}
 
 	private void createNewYearbook() {
+		
 
-		int canvasHeight = display.getClientArea().height - 80;
+		int canvasHeight = display.getClientArea().height - 120;
 		
 		yearbook.settings.height = canvasHeight;
 		yearbook.settings.width = (int) ((8.5 / 11.0) * canvasHeight);
@@ -357,6 +475,18 @@ public class Reader {
 	private void refresh() {
 		loadPages(yearbook.activePage);
 		shell.layout();
+	}
+
+	private void turnPageLeft() {
+		yearbook.activePage -= 2;
+		if (yearbook.activePage < 0) yearbook.activePage = 0;
+		refresh();
+	}
+
+	private void turnPageRight() {
+		yearbook.activePage += 2;
+		if (yearbook.activePage >= yearbook.size()) yearbook.activePage = yearbook.size() - 1;
+		refresh();
 	}
 
 	public static void main(String[] args) {

@@ -96,4 +96,20 @@ public class YearbookIcons {
 	static Image rotate(Display display) {
 		return new Image(display, "icons/rotate.png");
 	}
+	
+	public static Image navFront(Display display) {
+		return new Image(display, "icons/go-front.png");
+	}
+	
+	public static Image navBack(Display display) {
+		return new Image(display, "icons/go-back.png");
+	}
+	
+	public static Image navNext(Display display) {
+		return new Image(display, "icons/go-next.png");
+	}
+	
+	public static Image navEnd(Display display) {
+		return new Image(display, "icons/go-end.png");
+	}
 }
