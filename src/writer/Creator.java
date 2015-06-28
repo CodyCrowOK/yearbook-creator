@@ -82,6 +82,7 @@ public class Creator {
 	private MenuItem pageMirrorItem;
 	private MenuItem pageBackgroundItem;
 	private MenuItem pageClearBackgroundItem;
+	private MenuItem pageUseCoverItem;
 	private MenuItem pageShowGridItem;
 	private MenuItem helpMenuItem;
 	private Menu helpMenu;
@@ -1669,6 +1670,11 @@ public class Creator {
 
 		new MenuItem(pageMenu, SWT.SEPARATOR);
 
+		pageUseCoverItem = new MenuItem(pageMenu, SWT.CHECK);
+		pageUseCoverItem.setText("Show Cover");
+
+		new MenuItem(pageMenu, SWT.SEPARATOR);
+
 		pageShowGridItem = new MenuItem(pageMenu, SWT.CHECK);
 		pageShowGridItem.setText("Show &Grid");
 
@@ -2076,10 +2082,6 @@ public class Creator {
 			}
 
 		});
-
-		/*
-		 * FIXME: Crashes sometimes on paste.
-		 */
 		editPasteItem.addListener(SWT.Selection, new Listener() {
 
 			@Override
@@ -2316,6 +2318,15 @@ public class Creator {
 
 			}
 
+		});
+		
+		pageUseCoverItem.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				yearbook.hasCover = !yearbook.hasCover;
+			}
+			
 		});
 
 		pageShowGridItem.addListener(SWT.Selection, new Listener() {
@@ -2964,6 +2975,8 @@ public class Creator {
 		yearbook.settings.width = (int) ((8.5 / 11.0) * canvasHeight);
 		canvas.setSize(yearbook.settings.width, yearbook.settings.height);
 		rightCanvas.setSize(yearbook.settings.width, yearbook.settings.height);
+
+		pageUseCoverItem.setSelection(yearbook.hasCover);
 
 	}
 

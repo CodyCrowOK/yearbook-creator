@@ -32,6 +32,7 @@ public class Yearbook implements Serializable {
 	transient private Image defaultBackground;
 	transient private ImageData defaultBackgroundData;
 	boolean noBackground;
+	boolean hasCover;
 
 	String name;
 	public YearbookSettings settings;

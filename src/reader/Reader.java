@@ -5,6 +5,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import javax.sound.sampled.*;
+import javax.sound.sampled.LineEvent.Type;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.MouseListener;
@@ -50,6 +53,7 @@ public class Reader {
 	Display display;
 	Shell shell;
 	
+	int canvasHeight;
 	Yearbook yearbook;
 
 	private Canvas canvas;
@@ -91,8 +95,7 @@ public class Reader {
 	
 	private void initialize() {
 
-		int canvasHeight = display.getClientArea().height - 120;
-		int canvasWidth = (int) ((8.5 / 11.0) * canvasHeight);
+		canvasHeight = display.getClientArea().height - 120;
 		
 		canvasBackgroundColor = new Color(display, 254, 254, 254);
 		
@@ -335,7 +338,7 @@ public class Reader {
 	private void createNewYearbook() {
 		
 
-		int canvasHeight = display.getClientArea().height - 120;
+		canvasHeight = display.getClientArea().height - 120;
 		
 		yearbook.settings.height = canvasHeight;
 		yearbook.settings.width = (int) ((8.5 / 11.0) * canvasHeight);
@@ -481,12 +484,58 @@ public class Reader {
 		yearbook.activePage -= 2;
 		if (yearbook.activePage < 0) yearbook.activePage = 0;
 		refresh();
+		this.pageTurnSound();
 	}
 
 	private void turnPageRight() {
 		yearbook.activePage += 2;
 		if (yearbook.activePage >= yearbook.size()) yearbook.activePage = yearbook.size() - 1;
 		refresh();
+		this.pageTurnSound();
+	}
+	
+	private void pageTurnSound() {
+		try {
+			File file = new File("icons/sounds/pageflip.wav");
+			playClip(file);
+		} catch (IOException | UnsupportedAudioFileException
+				| LineUnavailableException
+				| InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	private static void playClip(File clipFile) throws IOException, 
+	UnsupportedAudioFileException, LineUnavailableException, InterruptedException {
+		class AudioListener implements LineListener {
+			private boolean done = false;
+			@Override public synchronized void update(LineEvent event) {
+				Type eventType = event.getType();
+				if (eventType == Type.STOP || eventType == Type.CLOSE) {
+					done = true;
+					notifyAll();
+				}
+			}
+			public synchronized void waitUntilDone() throws InterruptedException {
+				while (!done) { wait(); }
+			}
+		}
+		AudioListener listener = new AudioListener();
+		AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(clipFile);
+		try {
+			Clip clip = AudioSystem.getClip();
+			clip.addLineListener(listener);
+			clip.open(audioInputStream);
+			try {
+				clip.start();
+				listener.waitUntilDone();
+			} finally {
+				clip.close();
+			}
+		} finally {
+			audioInputStream.close();
+		}
 	}
 
 	public static void main(String[] args) {
