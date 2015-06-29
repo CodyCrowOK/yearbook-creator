@@ -29,7 +29,7 @@ public class YearbookImages {
 	}
 	
 	public static Image readerBackground(Display display) {
-		return new Image(display, "icons/large/reader-background.png");
+		return new Image(display, "icons/large/reader-background-new.png");
 	}
 	
 	public static Image openBook(Display display) {
