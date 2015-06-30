@@ -3166,10 +3166,12 @@ public class Creator {
 			gc.setLineStyle(SWT.LINE_DASH);
 			gc.drawRectangle(e.getBounds(pageWidth, pageHeight));
 
+			/*
 			gc.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
 			gc.setAlpha(50);
 			gc.fillRectangle(e.getBounds(pageWidth, pageHeight));
 			gc.setAlpha(0xff);
+			*/
 			tr.dispose();
 		}
 

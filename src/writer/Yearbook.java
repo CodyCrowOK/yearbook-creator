@@ -31,8 +31,8 @@ public class Yearbook implements Serializable {
 	private ArrayList<YearbookPage> pages;
 	transient private Image defaultBackground;
 	transient private ImageData defaultBackgroundData;
-	boolean noBackground;
-	boolean hasCover;
+	public boolean noBackground;
+	public boolean hasCover;
 
 	String name;
 	public YearbookSettings settings;
@@ -241,7 +241,7 @@ public class Yearbook implements Serializable {
 	 */
 	public void tidyUp() {
 		for (int i = 0; i < this.size(); i++) {
-			if (Math.abs(this.activePage - i) > 1) this.page(i).setInactive();
+			if (Math.abs(this.activePage - i) > 2) this.page(i).setInactive();
 		}
 		
 	}
