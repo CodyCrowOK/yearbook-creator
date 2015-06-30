@@ -7,6 +7,8 @@ import java.util.ArrayList;
 
 import javax.sound.sampled.*;
 import javax.sound.sampled.LineEvent.Type;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.MouseEvent;
@@ -212,7 +214,6 @@ public class Reader {
 
 			@Override
 			public void mouseUp(MouseEvent e) {
-				System.out.println(e.x + " " + startX);
 				if (e.x - startX <= 20) {
 					if (front) {
 						openBook();
@@ -383,12 +384,12 @@ public class Reader {
 	}
 
 	protected void openFromBack() {
-		// TODO Auto-generated method stub
+		//
 		
 	}
 
 	protected void openBook() {
-		pageTurnRightAnimation(0, 1);
+		//pageTurnRightAnimation(0, 1);
 	}
 	
 	private void pageTurnRightAnimation(int current, int next) {
@@ -398,13 +399,33 @@ public class Reader {
 		gc.dispose();
 		Image pageTwo = new Image(display, rightCanvas.getBounds().width, rightCanvas.getBounds().height);
 		gc = new GC(pageTwo);
-		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), next, yearbook.settings.width, yearbook.settings.height);
+		if (next != MagicNumber.LAST_PAGE) Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), next, yearbook.settings.width, yearbook.settings.height);
+		else {
+			int x = canvasWrapper2.getBounds().x + bigCanvasWrapper.getBounds().x;
+			int y = canvasWrapper2.getBounds().y + bigCanvasWrapper.getBounds().y;
+			int width = canvasWrapper2.getBounds().width;
+			int height = canvasWrapper2.getBounds().height;
+			Image shellBg = YearbookImages.readerBackground(display);
+			int xc = (int) ((double) x / shell.getBounds().width * shellBg.getBounds().width);
+			int yc = (int) ((double) y / shell.getBounds().height * shellBg.getBounds().height);
+			int wc = (int) ((double) width / shell.getBounds().width * shellBg.getBounds().width);
+			int hc = (int) ((double) height / shell.getBounds().height * shellBg.getBounds().height);
+			gc.drawImage(shellBg, xc, yc, wc, hc, 0, 0, width, height);
+		}
+		//System.out.println(canvasWrapper2.getBounds());
+		
 		gc.dispose();
 		
 		int i = 0;
 		int subtrahend = 0;
 		
 		while (i < 500) {
+			System.out.println(i);
+			try {
+				Thread.sleep(1);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 			rightCanvas.update();
 			i += 1;
 			subtrahend = (int) ((double) i / 500 * image.getBounds().width);
@@ -579,8 +600,10 @@ public class Reader {
 			} else if (yearbook.activePage == yearbook.size() - 1) {
 				back = true;
 				canvasWrapper.setVisible(true);
-				canvasWrapper2.setVisible(false);
 				bigCanvasWrapper.redraw();
+				pageTurnRightAnimation(yearbook.activePage - 1, MagicNumber.LAST_PAGE);
+				canvasWrapper2.setVisible(false);
+				loadBackCover();
 			} else {
 				if (onPageCover || front || back) {
 					onPageCover = false;
@@ -608,6 +631,21 @@ public class Reader {
 		gc.drawRectangle(rightCanvas.getBounds());
 		gc.dispose();
 	}
+	
+	private void loadBackCover() {
+		GC gc = new GC(canvas);
+		
+		if (yearbook.page(0).noBackground) {
+			gc.setBackground(canvasBackgroundColor);
+			gc.fillRectangle(0, 0, rightCanvas.getBounds().width, rightCanvas.getBounds().height);
+		}
+		
+		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), yearbook.size() - 1, yearbook.settings.width, yearbook.settings.height);
+		gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
+		gc.setLineWidth(3);
+		gc.drawRectangle(rightCanvas.getBounds());
+		gc.dispose();
+	}
 
 	private void turnPageLeft() {
 		yearbook.activePage -= 2;
@@ -617,8 +655,11 @@ public class Reader {
 	}
 
 	private void turnPageRight() {
+		//pageTurnRightAnimation(yearbook.activePage, yearbook.activePage + 2);
+		int initial = yearbook.activePage;
 		yearbook.activePage += 2;
 		if (yearbook.activePage >= yearbook.size()) yearbook.activePage = yearbook.size() - 1;
+		if (initial != yearbook.activePage && yearbook.activePage + 1 != yearbook.size()) pageTurnRightAnimation(initial, yearbook.activePage);
 		refresh();
 		this.pageTurnSound();
 	}
@@ -630,7 +671,6 @@ public class Reader {
 		} catch (IOException | UnsupportedAudioFileException
 				| LineUnavailableException
 				| InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -670,8 +710,8 @@ public class Reader {
 	public static void main(String[] args) {
 		try {
 			new Reader();
-		} catch (ClassNotFoundException | IOException e) {
-			// TODO Auto-generated catch block
+		} catch (Exception e) {
+			JOptionPane.showMessageDialog(new JFrame(), "Something went wrong.\n\t" + e.getMessage());
 			e.printStackTrace();
 		}
 	}
