@@ -33,7 +33,7 @@ public class YearbookImages {
 	}
 	
 	public static Image openBook(Display display) {
-		return new Image(display, "icons/large/open-book.png");
+		return new Image(display, "icons/large/open-book-small.png");
 	}
 	
 	/**

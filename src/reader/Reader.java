@@ -17,12 +17,14 @@ import org.eclipse.swt.events.MouseMoveListener;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.layout.RowData;
 import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Canvas;
@@ -30,9 +32,11 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.FileDialog;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Text;
 
 import writer.Creator;
 import writer.SWTUtils;
@@ -65,6 +69,12 @@ public class Reader {
 	private Canvas rightCanvas;
 	private Color canvasBackgroundColor;
 	
+	Label yearbookName;
+	Label separator;
+	Text pageNumbers;
+	Label pages;
+	Label totalPages;
+	
 	boolean onPageCover;
 	boolean front;
 	boolean back;
@@ -87,6 +97,8 @@ public class Reader {
 		yearbook = Yearbook.readFromDisk(fileName);
 		this.createNewYearbook();
 		
+		this.initializeUI();
+		
 		this.refresh();
 		
 		shell.setLayout(new GridLayout());
@@ -103,17 +115,92 @@ public class Reader {
 		display.dispose();
 	}
 	
+	private void initializeUI() {
+		yearbookName.setText(yearbook.name);
+		
+		pageNumbers.setText(Integer.toString(0));
+		totalPages.setText(" / " + Integer.toString(yearbook.size() - 1));
+		
+		pageNumbers.addListener(SWT.DefaultSelection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				try {
+					int entry = Integer.parseInt(pageNumbers.getText());
+					if (entry >= 0 && entry <= yearbook.size() - 1)	
+						if (yearbook.activePage < entry) {
+							pageTurnRightAnimation(yearbook.activePage, entry);
+							yearbook.activePage = entry;
+							refresh();
+						}
+				} catch (NumberFormatException e) {
+					
+				}
+				
+			}
+			
+		});
+	}
+
 	private void initialize() {
 
 		canvasHeight = display.getClientArea().height - 120;
 		
 		canvasBackgroundColor = new Color(display, 254, 254, 254);
 		
+		Color barColor = new Color(display, 0x84, 0x2c, 0x2a);
+		Color gray = new Color(display, 0xee, 0xee, 0xee);
+		
+		Composite topbar = new Composite(shell, SWT.NONE);
+		topbar.setBackground(barColor);
+		topbar.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+		RowLayout topbarLayout = new RowLayout();
+		topbarLayout.wrap = false;
+		topbarLayout.marginTop = 10;
+		topbarLayout.marginBottom = 10;
+		topbarLayout.marginLeft = 20;
+		topbar.setLayout(topbarLayout);
+		
+		Font tahomaBold = new Font(display, "Tahoma", 16, SWT.BOLD);
+		Font tahomaSmall = new Font(display, "Tahoma", 14, SWT.NONE);
+		
+		yearbookName = new Label(topbar, SWT.NONE);
+		yearbookName.setBackground(barColor);
+		yearbookName.setForeground(display.getSystemColor(SWT.COLOR_WHITE));
+		yearbookName.setFont(tahomaBold);
+		//separator = new Label(topbar, SWT.SEPARATOR);
+		//separator.setBackground(barColor);
+		pages = new Label(topbar, SWT.NONE);
+		pages.setForeground(gray);
+		pages.setBackground(barColor);
+		pages.setFont(tahomaSmall);
+		pages.setText("   pages: ");
+		
+		Composite numberWrapper = new Composite(topbar, SWT.NONE);
+		numberWrapper.setLayout(new FillLayout());
+		pageNumbers = new Text(numberWrapper, SWT.SINGLE);
+		pageNumbers.setBackground(gray);
+		
+		totalPages = new Label(topbar, SWT.NONE);
+		totalPages.setForeground(gray);
+		totalPages.setBackground(barColor);
+		totalPages.setFont(tahomaSmall);
+		
+		barColor.dispose();
+		tahomaBold.dispose();
+		tahomaSmall.dispose();
+		gray.dispose();
+		
+		
 		bigCanvasWrapper = new Composite(shell, SWT.NONE);
 		bigCanvasWrapper.setLayoutData(new GridData(SWT.CENTER, SWT.BEGINNING, true, true));
 		GridLayout wrapperLayout = new GridLayout(2, false);
-		wrapperLayout.marginHeight = (int) (1.1 * (68.0 / 2868.0) * canvasHeight);
-		wrapperLayout.marginWidth = (int) (2.2 * (68.0 / 2868.0) * canvasHeight);
+		//For the larger open book image:
+		//wrapperLayout.marginHeight = (int) (1.1 * (68.0 / 2868.0) * canvasHeight);
+		//wrapperLayout.marginWidth = (int) (2.2 * (68.0 / 2868.0) * canvasHeight);
+		
+		wrapperLayout.marginHeight = (int) ((13.0 / 2868.0) * (canvasHeight));
+		wrapperLayout.marginWidth = (int) (1.05 * (68.0 / 2868.0) * canvasHeight);
 		bigCanvasWrapper.setLayout(wrapperLayout);
 		
 		canvasWrapper = new Composite(bigCanvasWrapper, SWT.NONE);
@@ -219,9 +306,6 @@ public class Reader {
 						openBook();
 					}
 					turnPageRight();
-				} else if (e.x - startX >= -20) {
-					if (back) openFromBack();
-					turnPageLeft();
 				}
 			}
 			
@@ -420,7 +504,6 @@ public class Reader {
 		int subtrahend = 0;
 		
 		while (i < 500) {
-			System.out.println(i);
 			try {
 				Thread.sleep(1);
 			} catch (InterruptedException e) {
@@ -448,7 +531,7 @@ public class Reader {
 	private void createNewYearbook() {
 		
 
-		canvasHeight = display.getClientArea().height - 120;
+		canvasHeight = display.getClientArea().height - 200;
 		
 		yearbook.settings.height = canvasHeight;
 		yearbook.settings.width = (int) ((8.5 / 11.0) * canvasHeight);
@@ -586,6 +669,7 @@ public class Reader {
 	}
 	
 	private void refresh() {
+		pageNumbers.setText(Integer.toString(yearbook.activePage));
 		if (!yearbook.hasCover) {
 			loadPages(yearbook.activePage);
 			onPageCover = false;

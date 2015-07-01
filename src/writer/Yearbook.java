@@ -34,7 +34,7 @@ public class Yearbook implements Serializable {
 	public boolean noBackground;
 	public boolean hasCover;
 
-	String name;
+	public String name;
 	public YearbookSettings settings;
 	public int activePage;
 	
