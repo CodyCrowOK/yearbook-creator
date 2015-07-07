@@ -22,6 +22,8 @@ public class YearbookImageElement extends YearbookElement implements Serializabl
 	//Percentage values
 	public double scale;
 	
+	public YearbookImageElementBorder border;
+	
 	public Image getImage(Display display) {
 		if (image == null) {
 			image = new Image(display, imageData);
@@ -33,6 +35,10 @@ public class YearbookImageElement extends YearbookElement implements Serializabl
 	transient private Display display;
 	transient ImageData imageData;
 	transient private Image image;
+	
+	public YearbookImageElement() {
+		this.border = new YearbookImageElementBorder();
+	}
 	
 	public YearbookImageElement(Display display, String fileName, int pageWidth, int pageHeight) {
 		Image tmp = new Image(display, fileName);

@@ -55,6 +55,10 @@ public class Yearbook implements Serializable {
 	}
 
 	public YearbookPage page(int index) {
+		if (index >= this.size()) {
+			index = 0;
+			this.activePage = 0;
+		}
 		return pages.get(index);
 	}
 

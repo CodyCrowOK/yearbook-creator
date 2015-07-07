@@ -945,9 +945,12 @@ public class Creator {
 					}
 					break;
 				case RESIZE:
-					if (yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y)) {
+					if (yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y) && (event.stateMask & SWT.MOD1) == SWT.MOD1) {
+						selectAnotherElement(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y));
+						refreshNoPageList();
+					} else if (yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y)) {
 						selectElement(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y));
-						refresh();
+						refreshNoPageList();
 					} else {
 						selectElement(null);
 					}
@@ -1024,14 +1027,23 @@ public class Creator {
 				case RESIZE:
 					xDiff += event.x;
 					yDiff += event.y;
-
-					for (YearbookElement selectedElement : clipboard.elements) {
-						if (yearbook.page(yearbook.activePage).findElement(selectedElement) != null) {
-							yearbook.page(yearbook.activePage).findElement(selectedElement).resize(display, xDiff, yDiff);
+					
+					if (clipboard.elements.size() > 0) { 
+						double xPercent = (double) xDiff / clipboard.elements.get(clipboard.elements.size() - 1).getBounds(yearbook.settings.width, yearbook.settings.height).width;
+						double yPercent = (double) yDiff / clipboard.elements.get(clipboard.elements.size() - 1).getBounds(yearbook.settings.width, yearbook.settings.height).height; 
+						int newX, newY;
+						
+						for (YearbookElement selectedElement : clipboard.elements) {
+							newX = (int) (xPercent * selectedElement.getBounds(yearbook.settings.width, yearbook.settings.height).width);
+							newY = (int) (yPercent * selectedElement.getBounds(yearbook.settings.width, yearbook.settings.height).height);
+							
+							if (yearbook.page(yearbook.activePage).findElement(selectedElement) != null) {
+								yearbook.page(yearbook.activePage).findElement(selectedElement).resize(display, newX, newY);
+							}
 						}
+						refreshNoPageList();
+						startX = startY = xDiff = yDiff = 0;
 					}
-					refreshNoPageList();
-					startX = startY = xDiff = yDiff = 0;
 
 					break;
 				case SELECT:
@@ -3034,6 +3046,7 @@ public class Creator {
 	}
 
 	private void updateCanvas() {
+		System.out.println(yearbook.activePage + " " + yearbook.size() + " " + leftIsActive() + " " + rightIsActive());
 		
 		//Back cover
 		if (yearbook.activePage + 1 == yearbook.size() && leftIsActive()) {
@@ -3394,6 +3407,7 @@ public class Creator {
 	public void refresh() {
 		updatePageList();
 		refreshNoPageList();
+		System.out.println(yearbook.activePage);
 	}
 	
 	private void loadFonts() {

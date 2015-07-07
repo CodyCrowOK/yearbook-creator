@@ -53,6 +53,7 @@ public class YearbookPage implements Serializable {
 	public YearbookPage(String name) {
 		this();
 		this.name = name;
+		this.noBackground = true;
 	}
 	
 	public void addElement(YearbookElement e) {
