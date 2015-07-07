@@ -8,3 +8,5 @@ yearbooks
 .classpath
 .project
 
+*.ctc
+
