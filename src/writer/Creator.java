@@ -39,7 +39,7 @@ import org.eclipse.swt.widgets.*;
  */
 public class Creator {
 
-	public static final String VERSION = "0.07";
+	public static final String VERSION = "0.08";
 	public static final String COMPANY_NAME = "Digital Express";
 	public static final String SOFTWARE_NAME = "Yearbook Designer";
 
@@ -151,6 +151,7 @@ public class Creator {
 		this.buildMenu();
 		this.setMenuListeners();
 
+		this.loadFonts();
 		this.initialize();
 
 		//Create the layout.
@@ -274,6 +275,8 @@ public class Creator {
 		});
 
 		this.buildPagesListDnD();
+		
+		this.finalPrep();
 
 		shell.setMaximized(true);
 		while (!shell.isDisposed()) {
@@ -281,6 +284,31 @@ public class Creator {
 		}
 		display.dispose();
 
+	}
+
+	private void finalPrep() {
+		
+		/*
+		 * Handle global shortcuts
+		 */
+		display.addFilter(SWT.KeyDown, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				if ((event.stateMask & SWT.MOD1) == SWT.MOD1) switch (event.keyCode) {
+				case 'a':
+				case 'A':
+					clipboard.elements.clear();
+					for (YearbookElement e : yearbook.page(yearbook.activePage).getElements()) {
+						selectAnotherElement(e);
+					}
+					break;
+				}
+				
+			}
+			
+		});
+		
 	}
 
 	private void initializeCanvas() {
@@ -537,13 +565,16 @@ public class Creator {
 						box.setMessage("Are you sure you want to erase this element?");
 						int result = box.open();
 						if (result == SWT.YES) yearbook.page(yearbook.activePage).removeElement(clipboard.elements.get(0));
-						refresh();
+						refreshNoPageList();
 					}
 					break;
 				case RESIZE:
-					if (yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y)) {
+					if (yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y) && (event.stateMask & SWT.MOD1) == SWT.MOD1) {
+						selectAnotherElement(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y));
+						refreshNoPageList();
+					} else if (yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y)) {
 						selectElement(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y));
-						refresh();
+						refreshNoPageList();
 					} else {
 						selectElement(null);
 					}
@@ -620,14 +651,23 @@ public class Creator {
 				case RESIZE:
 					xDiff += event.x;
 					yDiff += event.y;
-
-					for (YearbookElement selectedElement : clipboard.elements) {
-						if (yearbook.page(yearbook.activePage).findElement(selectedElement) != null) {
-							yearbook.page(yearbook.activePage).findElement(selectedElement).resize(display, xDiff, yDiff);
-							refresh();
+					
+					if (clipboard.elements.size() > 0) { 
+						double xPercent = (double) xDiff / clipboard.elements.get(clipboard.elements.size() - 1).getBounds(yearbook.settings.width, yearbook.settings.height).width;
+						double yPercent = (double) yDiff / clipboard.elements.get(clipboard.elements.size() - 1).getBounds(yearbook.settings.width, yearbook.settings.height).height; 
+						int newX, newY;
+						
+						for (YearbookElement selectedElement : clipboard.elements) {
+							newX = (int) (xPercent * selectedElement.getBounds(yearbook.settings.width, yearbook.settings.height).width);
+							newY = (int) (yPercent * selectedElement.getBounds(yearbook.settings.width, yearbook.settings.height).height);
+							
+							if (yearbook.page(yearbook.activePage).findElement(selectedElement) != null) {
+								yearbook.page(yearbook.activePage).findElement(selectedElement).resize(display, newX, newY);
+							}
 						}
+						refreshNoPageList();
+						startX = startY = xDiff = yDiff = 0;
 					}
-					startX = startY = xDiff = yDiff = 0;
 
 					break;
 				case SELECT:
@@ -884,7 +924,7 @@ public class Creator {
 							}
 						}
 
-						refresh();
+						refreshNoPageList();
 					} else {
 						selectElement(null);
 						refresh();
@@ -977,7 +1017,7 @@ public class Creator {
 						}
 					}
 
-					refresh();
+					refreshNoPageList();
 					break;
 				case ERASE:
 					break;
@@ -988,9 +1028,9 @@ public class Creator {
 					for (YearbookElement selectedElement : clipboard.elements) {
 						if (yearbook.page(yearbook.activePage).findElement(selectedElement) != null) {
 							yearbook.page(yearbook.activePage).findElement(selectedElement).resize(display, xDiff, yDiff);
-							refresh();
 						}
 					}
+					refreshNoPageList();
 					startX = startY = xDiff = yDiff = 0;
 
 					break;
@@ -1447,6 +1487,7 @@ public class Creator {
 
 	private void selectAnotherElement(YearbookElement element) {
 		if (element == null) return;
+		if (clipboard.elements.contains(element)) return;
 		clipboard.elements.add(element);
 	}
 
@@ -2632,7 +2673,7 @@ public class Creator {
 
 	protected String imagePicker() {
 		FileDialog picker = new FileDialog(shell, SWT.OPEN);
-		String[] allowedExtensions = {"*.jpg; *.jpeg; *.gif; *.tif; *.tiff; *.bpm; *.ico; *.png;"};
+		String[] allowedExtensions = {"*.jpg; *.jpeg; *.gif; *.tif; *.tiff; *.bpm; *.ico; *.png", "*.*"};
 		picker.setFilterExtensions(allowedExtensions);
 		return picker.open();
 	}
@@ -2961,7 +3002,7 @@ public class Creator {
 	protected void modeReset() {
 		this.isInsertingText = false;
 		this.selectionRectangle = null;
-		selectElement(null);
+		//selectElement(null);
 
 		shell.setCursor(display.getSystemCursor(SWT.CURSOR_ARROW));
 
@@ -3030,14 +3071,14 @@ public class Creator {
 	private void loadLeftCanvas(int index) {
 		GC gc;
 		gc = new GC(canvas);
-		paintPage(gc, display, yearbook, clipboard.elements, selectionRectangle, settings, index, yearbook.settings.width, yearbook.settings.height);
+		paintPage(gc, display, yearbook, clipboard.elements, selectionRectangle, settings, index, yearbook.settings.width, yearbook.settings.height, false);
 		gc.dispose();
 	}
 	
 	private void loadRightCanvas(int index) {
 		GC gc;
 		gc = new GC(rightCanvas);
-		paintPage(gc, display, yearbook, clipboard.elements, selectionRectangle, settings, index, yearbook.settings.width, yearbook.settings.height);
+		paintPage(gc, display, yearbook, clipboard.elements, selectionRectangle, settings, index, yearbook.settings.width, yearbook.settings.height, false);
 		gc.dispose();
 	}
 	
@@ -3087,14 +3128,14 @@ public class Creator {
 	private void loadActivePage(int activePage) {
 		GC gc;
 		gc = new GC(canvas);
-		paintPage(gc, display, yearbook, clipboard.elements, selectionRectangle, settings, activePage, yearbook.settings.width, yearbook.settings.height);
+		paintPage(gc, display, yearbook, clipboard.elements, selectionRectangle, settings, activePage, yearbook.settings.width, yearbook.settings.height, false);
 		gc.dispose();
 	}
 
 	public static void paintPage(GC gc, Display display, Yearbook yearbook, 
 			ArrayList<YearbookElement> selectedElements, 
 			Rectangle selectionRectangle, UserSettings settings,
-			int activePage, int pageWidth, int pageHeight) {
+			int activePage, int pageWidth, int pageHeight, boolean isReader) {
 
 		Color uglyYellowColor = display.getSystemColor(SWT.COLOR_GRAY);
 
@@ -3158,12 +3199,13 @@ public class Creator {
 			if (e.isClickable()) clickables.add(e);
 		}
 		//...and display those in some manner.
-		for (YearbookElement e : clickables) {
+		if (!isReader) for (YearbookElement e : clickables) {
 			Transform tr = new Transform(display);
 			tr.rotate(e.rotation);
 			gc.setTransform(tr);
 			gc.setLineWidth(1);
 			gc.setLineStyle(SWT.LINE_DASH);
+			gc.setForeground(uglyYellowColor);
 			gc.drawRectangle(e.getBounds(pageWidth, pageHeight));
 
 			/*
@@ -3179,6 +3221,8 @@ public class Creator {
 
 		//If they want a grid, give them a grid.
 		if (settings.showGrid) {
+			gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
+			gc.setLineWidth(1);
 			gc.setLineStyle(SWT.LINE_SOLID);
 
 			FontData fd = gc.getFont().getFontData()[0];
@@ -3234,9 +3278,12 @@ public class Creator {
 			gc.setAdvanced(true);
 			gc.setTextAntialias(SWT.ON);
 			gc.setFont(e.getFont(display, pageWidth, pageHeight));
+			
+			//int x = (int) (e.x * pageWidth);
+			//int y = (int) (e.y * pageHeight);
 
 			if (e.shadow) {
-				int offset = e.size >= 72 ? 4 : e.size >= 36 ? 2 : 1;
+				int offset = e.size >= 72 ? 3 : e.size >= 36 ? 2 : 1;
 				gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
 				gc.setAlpha(0x8f);
 				gc.drawText(e.text, e.getBounds(pageWidth, pageHeight).x + offset, e.getBounds(pageWidth, pageHeight).y + offset, true);
@@ -3244,14 +3291,16 @@ public class Creator {
 			}
 
 			gc.setForeground(e.getColor(display));
-
-			gc.drawText(e.text, e.getBounds(pageWidth, pageHeight).x, e.getBounds(pageWidth, pageHeight).y, true);
-
+			
+			//System.out.println(x + " " + e.getBounds().x);
+			
 			/*
 			 * Inform the text element of its bounds.
 			 * This must be done here, regrettably.
 			 */
-			e.setBounds(new Rectangle(e.getBounds(pageWidth, pageHeight).x, e.getBounds(pageWidth, pageHeight).y, gc.stringExtent(e.text).x, gc.stringExtent(e.text).y));
+			//e.setBounds(new Rectangle(x, y, gc.stringExtent(e.text).x, gc.stringExtent(e.text).y));
+			
+			gc.drawText(e.text, e.getBounds(pageWidth, pageHeight).x, e.getBounds(pageWidth, pageHeight).y, true);
 
 			/*
 			 * Handle underlining (SWT has no native GC underlining)
@@ -3345,6 +3394,14 @@ public class Creator {
 	public void refresh() {
 		updatePageList();
 		refreshNoPageList();
+	}
+	
+	private void loadFonts() {
+		File folder = new File("icons/fonts");
+		File[] files = folder.listFiles();
+		for (File f : files) {
+			display.loadFont(f.getPath());
+		}
 	}
 
 	public static void main(String[] args) {

@@ -134,7 +134,7 @@ public class Yearbook implements Serializable {
 		for (int i = 0; i < yearbook.size(); i++) {
 			Image image = new Image(display, yearbook.settings.publishWidth(), yearbook.settings.publishHeight());
 			GC gc = new GC(image);
-			Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), i, yearbook.settings.publishWidth(), yearbook.settings.publishHeight());
+			Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), i, yearbook.settings.publishWidth(), yearbook.settings.publishHeight(), true);
 			images.add(SWTUtils.convertToAWT(image.getImageData()));
 			gc.dispose();
 			image.dispose();

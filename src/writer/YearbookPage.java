@@ -62,7 +62,7 @@ public class YearbookPage implements Serializable {
 	public Image backgroundImage(Display display) {
 		//Try not to leak too many resources...
 		if (display == null || this.backgroundImageData == null) return null; 
-		if (this.backgroundImage != null) {
+		if (this.backgroundImage != null && !this.backgroundImage.isDisposed()) {
 			if (this.backgroundImage.getImageData() != this.backgroundImageData) {
 			}
 		} else {
@@ -145,6 +145,14 @@ public class YearbookPage implements Serializable {
 		for (int i = elements.size() - 1; i >= 0; i--) {
 			YearbookElement e = elements.get(i);
 			if (e.isAtPoint(x, y)) return e;
+		}
+		return null;
+	}
+	
+	public YearbookElement getElementAtPoint(int x, int y, int pageWidth, int pageHeight) {
+		for (int i = elements.size() - 1; i >= 0; i--) {
+			YearbookElement e = elements.get(i);
+			if (e.isAtPoint(x, y, pageWidth, pageHeight)) return e;
 		}
 		return null;
 	}
