@@ -760,6 +760,22 @@ public class Creator {
 					int trueX = event.x;
 					int trueY = event.y;
 					Menu menu = new Menu(shell);
+					
+					if (yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).isImage()) {
+						MenuItem addBorderItem = new MenuItem(menu, SWT.PUSH);
+						addBorderItem.setText("Add &Border");
+						addBorderItem.addListener(SWT.Selection, new Listener() {
+
+							@Override
+							public void handleEvent(Event event) {
+								openAddBorderDialog((YearbookImageElement) yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY));
+							}
+							
+						});
+						
+						new MenuItem(menu, SWT.SEPARATOR);
+					}
+					
 					MenuItem properties = new MenuItem(menu, SWT.PUSH);
 					properties.setText("Properties");
 
@@ -1269,7 +1285,107 @@ public class Creator {
 		
 	}
 
+	private void openAddBorderDialog(YearbookImageElement element) {
+		YearbookImageElementBorder orig = element.border;
+		element.border.noBorder = false;
+		
+		final Shell dialog = new Shell(shell, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
+		dialog.setText("Add Border");
+		dialog.setSize(400, 300);
+		FormLayout formLayout = new FormLayout();
+		formLayout.marginWidth = 10;
+		formLayout.marginHeight = 10;
+		formLayout.spacing = 10;
+		dialog.setLayout(formLayout);
 
+		Label label = new Label(dialog, SWT.NONE);
+		label.setText("Border width (px):");
+		FormData data = new FormData();
+		label.setLayoutData(data);
+
+		Button cancel = new Button(dialog, SWT.PUSH);
+		cancel.setText("Cancel");
+		data = new FormData();
+		data.width = 60;
+		data.right = new FormAttachment(100, 0);
+		data.bottom = new FormAttachment(100, 0);
+		cancel.setLayoutData(data);
+		cancel.addSelectionListener(new SelectionAdapter () {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				element.border = orig;
+				refreshNoPageList();
+				dialog.close();
+			}
+		});
+
+		final Spinner text = new Spinner(dialog, SWT.NONE);
+		text.setMaximum(180);
+		text.addModifyListener(new ModifyListener() {
+
+			@Override
+			public void modifyText(ModifyEvent e) {
+				int val = 0;
+				try {
+					 val = Integer.valueOf(text.getText());
+				} catch (NumberFormatException ex) {
+					//Ignore.
+				}
+				element.border.setWidth(val, yearbook.settings.width);
+				refreshNoPageList();
+				
+			}
+			
+		});
+		data = new FormData();
+		data.width = 200;
+		data.left = new FormAttachment(label, 0, SWT.DEFAULT);
+		data.right = new FormAttachment(100, 0);
+		data.top = new FormAttachment(label, 0, SWT.CENTER);
+		data.bottom = new FormAttachment(cancel, 0, SWT.DEFAULT);
+		text.setLayoutData(data);
+
+		Button ok = new Button(dialog, SWT.PUSH);
+		ok.setText("OK");
+		data = new FormData();
+		data.width = 60;
+		data.right = new FormAttachment(cancel, 0, SWT.DEFAULT);
+		data.bottom = new FormAttachment(100, 0);
+		ok.setLayoutData(data);
+		ok.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected (SelectionEvent e) {
+				dialog.close();
+				refreshNoPageList();
+			}
+		});
+
+		ColorDialog colorDialog = new ColorDialog(dialog, SWT.APPLICATION_MODAL | SWT.DIALOG_TRIM);
+		colorDialog.setText("Color Picker");
+		Button colorButton = new Button(dialog, SWT.PUSH);
+		colorButton.setText("Pick color...");
+		data = new FormData();
+		data.width = 100;
+		data.right = new FormAttachment(ok, 0, SWT.DEFAULT);
+		data.bottom = new FormAttachment(100, 0);
+		colorButton.setLayoutData(data);
+
+		colorButton.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				RGB rgb = colorDialog.open();
+				if (rgb != null) element.border.rgb = rgb;
+				refreshNoPageList();
+
+			}
+
+		});
+
+		dialog.setDefaultButton (ok);
+		dialog.pack();
+		dialog.open();
+	}
 
 	protected void openTextDialog(YearbookTextElement element) {
 
@@ -3046,7 +3162,6 @@ public class Creator {
 	}
 
 	private void updateCanvas() {
-		System.out.println(yearbook.activePage + " " + yearbook.size() + " " + leftIsActive() + " " + rightIsActive());
 		
 		//Back cover
 		if (yearbook.activePage + 1 == yearbook.size() && leftIsActive()) {
@@ -3191,6 +3306,20 @@ public class Creator {
 					gc.drawRectangle(element.getBounds(pageWidth, pageHeight).x, element.getBounds(pageWidth, pageHeight).y, element.getBounds(pageWidth, pageHeight).width, element.getBounds(pageWidth, pageHeight).height);
 				}
 			}
+			
+			if (!element.border.noBorder) {
+				gc.setLineWidth(element.border.getWidthInPixels(pageWidth));
+				Color c = new Color(display, element.border.rgb);
+				gc.setForeground(c);
+				gc.setLineStyle(SWT.LINE_SOLID);
+				
+				gc.drawRectangle(element.getBounds(pageWidth, pageHeight));
+				
+				gc.setLineWidth(1);
+				gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
+				c.dispose();
+			}
+			
 			tr.dispose();
 		}
 
@@ -3407,7 +3536,6 @@ public class Creator {
 	public void refresh() {
 		updatePageList();
 		refreshNoPageList();
-		System.out.println(yearbook.activePage);
 	}
 	
 	private void loadFonts() {

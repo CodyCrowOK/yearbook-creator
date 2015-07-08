@@ -28,6 +28,7 @@ public class YearbookImageElementBorder implements Serializable {
 
 	public YearbookImageElementBorder() {
 		noBorder = true;
+		this.rgb = new RGB(0, 0, 0);
 	}
 	
 	public YearbookImageElementBorder(RGB rgb, double width) {
@@ -40,6 +41,10 @@ public class YearbookImageElementBorder implements Serializable {
 		noBorder = false;
 		this.width = (int) Math.ceil((double) width / pageWidth);
 		this.rgb = rgb;
+	}
+	
+	public void setWidth(int pixels, int pageWidth) {
+		this.width = (double) pixels / pageWidth;
 	}
 	
 	

@@ -41,6 +41,7 @@ public class YearbookImageElement extends YearbookElement implements Serializabl
 	}
 	
 	public YearbookImageElement(Display display, String fileName, int pageWidth, int pageHeight) {
+		this();
 		Image tmp = new Image(display, fileName);
 		imageData = tmp.getImageData();
 		tmp.dispose();
@@ -48,6 +49,7 @@ public class YearbookImageElement extends YearbookElement implements Serializabl
 	}
 	
 	public YearbookImageElement(Display display, ImageData imageData, int pageWidth, int pageHeight) {
+		this();
 		this.construct(display, imageData, pageWidth, pageHeight);
 	}
 	
