@@ -11,6 +11,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.ImageLoader;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Display;
 
 /**
@@ -25,13 +26,13 @@ public class YearbookPage implements Serializable {
 	transient private ImageData backgroundImageData;
 	transient private Image backgroundImage;
 	public boolean noBackground;
-	
+
 	public YearbookPage(Image backgroundImage) {
 		this();
 		this.name = "";
 		this.backgroundImageData = backgroundImage.getImageData();
 	}
-	
+
 	public YearbookPage(ImageData backgroundImage) {
 		this();
 		this.name = "";
@@ -41,7 +42,7 @@ public class YearbookPage implements Serializable {
 	public YearbookElement element(int index) {
 		return elements.get(index);
 	}
-	
+
 	public ArrayList<YearbookElement> getElements() {
 		return elements;
 	}
@@ -55,11 +56,11 @@ public class YearbookPage implements Serializable {
 		this.name = name;
 		this.noBackground = true;
 	}
-	
+
 	public void addElement(YearbookElement e) {
 		elements.add(e);
 	}
-	
+
 	public Image backgroundImage(Display display) {
 		//Try not to leak too many resources...
 		if (display == null || this.backgroundImageData == null) return null; 
@@ -71,11 +72,11 @@ public class YearbookPage implements Serializable {
 		}
 		return this.backgroundImage;
 	}
-	
+
 	public String toString() {
 		return this.name;
 	}
-	
+
 	/**
 	 * 
 	 * @param x
@@ -88,7 +89,7 @@ public class YearbookPage implements Serializable {
 		}
 		return false;
 	}
-	
+
 	/**
 	 * 
 	 * @param x
@@ -103,7 +104,7 @@ public class YearbookPage implements Serializable {
 		}
 		return false;
 	}
-	
+
 	/**
 	 * 
 	 * @param x
@@ -135,7 +136,7 @@ public class YearbookPage implements Serializable {
 		}
 		return false;
 	}
-	
+
 	/**
 	 * Finds the element at a given point on the working canvas (x, y)
 	 * @param x
@@ -149,7 +150,7 @@ public class YearbookPage implements Serializable {
 		}
 		return null;
 	}
-	
+
 	public YearbookElement getElementAtPoint(int x, int y, int pageWidth, int pageHeight) {
 		for (int i = elements.size() - 1; i >= 0; i--) {
 			YearbookElement e = elements.get(i);
@@ -171,7 +172,7 @@ public class YearbookPage implements Serializable {
 		}
 		return null;
 	}
-	
+
 	/**
 	 * Finds the element on the page which is equal to e
 	 * @param e the YearbookElement to compare to
@@ -185,11 +186,27 @@ public class YearbookPage implements Serializable {
 		}
 		return -1;
 	}
-	
+
+	public ArrayList<YearbookElement> getElementsInRectangle(Rectangle r, int pageWidth, int pageHeight) {
+		ArrayList<YearbookElement> ret = new ArrayList<YearbookElement>();
+		for (YearbookElement e : elements) {
+			Rectangle bounds = e.getBounds(pageWidth, pageHeight);
+
+			if (rectCheckOverlap(bounds, r)) {
+				ret.add(e);
+			}
+		}
+		return ret;
+	}
+
+	private boolean rectCheckOverlap(Rectangle r1, Rectangle r2) { 
+		return !(r1.x + r1.width < r2.x || r1.y + r1.height < r2.y || r1.x > r2.x + r2.width || r1.y > r2.y + r2.height);
+	}
+
 	/*
 	 * Serialization methods
 	 */
-	
+
 	private void writeObject(ObjectOutputStream out) throws IOException {
 		if (this.backgroundImageData == null) {
 			this.noBackground = true;
@@ -208,7 +225,7 @@ public class YearbookPage implements Serializable {
 	}
 
 	private void readObject(ObjectInputStream in) throws IOException,
-			ClassNotFoundException {
+	ClassNotFoundException {
 		in.defaultReadObject();
 		int length = in.readInt();
 		byte[] buffer = new byte[length];
@@ -225,17 +242,17 @@ public class YearbookPage implements Serializable {
 	public void removeElement(YearbookElement selectedElement) {
 		if (this.findElementIndex(selectedElement) >= 0) this.elements.remove(this.findElementIndex(selectedElement));
 	}
-	
+
 	public void setBackgroundImageData(ImageData imageData) {
 		if (this.backgroundImage != null) {
 			if (!this.backgroundImage.isDisposed()) backgroundImage.dispose();
 		}
-		
-		
+
+
 		this.noBackground = false;
 		this.backgroundImageData = imageData;
 	}
-	
+
 	public void clearBackgroundImage() {
 		if (this.backgroundImage != null) {
 			if (!this.backgroundImage.isDisposed()) backgroundImage.dispose();
@@ -247,7 +264,7 @@ public class YearbookPage implements Serializable {
 	public ImageData getBackgroundImageData() {
 		return backgroundImageData;
 	}
-	
+
 	public void setInactive() {
 		if (this.backgroundImage != null) {
 			if (!backgroundImage.isDisposed()) backgroundImage.dispose();

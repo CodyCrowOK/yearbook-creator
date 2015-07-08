@@ -1083,6 +1083,12 @@ public class Creator {
 						if (Math.abs(xDiff) < 15 && Math.abs(yDiff) < 15) xDiff = yDiff = 0;
 
 					selectionRectangle = new Rectangle(startX, startY, xDiff, yDiff);
+					
+					ArrayList<YearbookElement> selected = yearbook.page(yearbook.activePage).getElementsInRectangle(selectionRectangle, yearbook.settings.width, yearbook.settings.height);
+					for (YearbookElement e : selected) {
+						selectAnotherElement(e);
+					}
+					
 					startX = startY = xDiff = yDiff = 0;
 
 					refresh();
@@ -2386,7 +2392,6 @@ public class Creator {
 					box.open();
 					return;
 				}
-				System.out.println(clipboard.elements.size());
 				for (YearbookElement selectedElement : clipboard.elements) {
 					if ((settings.cursorMode != CursorMode.SELECT || selectionRectangle == null) && clipboard.elements.size() == 0) {
 						MessageBox box = new MessageBox(shell, SWT.ICON_INFORMATION);
@@ -2394,7 +2399,7 @@ public class Creator {
 						box.setMessage("Please select an area of the page to link to the video.");
 						box.open();
 						return;
-					} else if (selectedElement != null && selectionRectangle == null && selectedElement.isImage()) {
+					} else if (selectedElement != null && selectedElement.isImage()) {
 						try {
 							attachVideoToImage((YearbookImageElement) selectedElement);
 						} catch (IOException e) {
@@ -2823,6 +2828,7 @@ public class Creator {
 		e.scale = element.scale;
 		e.rotation = element.rotation;
 		e.imageData = element.imageData;
+		e.border = element.border;
 
 		FileDialog dialog = new FileDialog(shell, SWT.OPEN);
 		String[] allowedExtensions = {"*.webm;*.mkv;*.flv;*.vob;*.ogv;*.ogg;*.drc;*.avi;*.mov;*.qt;*.wmv;*.rm;*.mp4;*.m4p;*.m4v;*.mpg;*.3gp;*.3g2", "*.*"};
