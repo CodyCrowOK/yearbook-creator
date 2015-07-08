@@ -769,6 +769,15 @@ public class Creator {
 							@Override
 							public void handleEvent(Event event) {
 								openAddBorderDialog((YearbookImageElement) yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY));
+								if (clipboard.elements.size() > 1) {
+									ArrayList<YearbookImageElement> images = new ArrayList<YearbookImageElement>();
+									for (YearbookElement ye : clipboard.elements) {
+										if (ye.isImage()) images.add((YearbookImageElement) ye);
+									}
+									for (YearbookImageElement e : images) {
+										e.border = ((YearbookImageElement) yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY)).border;
+									}
+								}
 							}
 							
 						});
@@ -3291,6 +3300,20 @@ public class Creator {
 			tr.rotate(element.rotation);
 			gc.setTransform(tr);
 			gc.drawImage(element.getImage(display), 0, 0, element.getImage(display).getBounds().width, element.getImage(display).getBounds().height, element.getBounds(pageWidth, pageHeight).x, element.getBounds(pageWidth, pageHeight).y, element.getBounds(pageWidth, pageHeight).width, element.getBounds(pageWidth, pageHeight).height);
+			
+			if (!element.border.noBorder) {
+				gc.setLineWidth(element.border.getWidthInPixels(pageWidth));
+				Color c = new Color(display, element.border.rgb);
+				gc.setForeground(c);
+				gc.setLineStyle(SWT.LINE_SOLID);
+				
+				gc.drawRectangle(element.getBounds(pageWidth, pageHeight));
+				
+				gc.setLineWidth(1);
+				gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
+				c.dispose();
+			}
+			
 			if (selectedElements.contains(element)) {
 				YearbookElement selectedElement = selectedElements.get(selectedElements.indexOf(element));
 				if (element == selectedElement) {
@@ -3305,19 +3328,6 @@ public class Creator {
 					gc.setLineWidth(3);
 					gc.drawRectangle(element.getBounds(pageWidth, pageHeight).x, element.getBounds(pageWidth, pageHeight).y, element.getBounds(pageWidth, pageHeight).width, element.getBounds(pageWidth, pageHeight).height);
 				}
-			}
-			
-			if (!element.border.noBorder) {
-				gc.setLineWidth(element.border.getWidthInPixels(pageWidth));
-				Color c = new Color(display, element.border.rgb);
-				gc.setForeground(c);
-				gc.setLineStyle(SWT.LINE_SOLID);
-				
-				gc.drawRectangle(element.getBounds(pageWidth, pageHeight));
-				
-				gc.setLineWidth(1);
-				gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
-				c.dispose();
 			}
 			
 			tr.dispose();
