@@ -682,6 +682,12 @@ public class Creator {
 						if (Math.abs(xDiff) < 15 && Math.abs(yDiff) < 15) xDiff = yDiff = 0;
 
 					selectionRectangle = new Rectangle(startX, startY, xDiff, yDiff);
+					
+					ArrayList<YearbookElement> selected = yearbook.page(yearbook.activePage).getElementsInRectangle(selectionRectangle, yearbook.settings.width, yearbook.settings.height);
+					for (YearbookElement e : selected) {
+						selectAnotherElement(e);
+					}
+					
 					startX = startY = xDiff = yDiff = 0;
 
 					refresh();
@@ -760,10 +766,10 @@ public class Creator {
 					int trueX = event.x;
 					int trueY = event.y;
 					Menu menu = new Menu(shell);
+					MenuItem addBorderItem = new MenuItem(menu, SWT.PUSH);
+					addBorderItem.setText("Add &Border");
 					
-					if (yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).isImage()) {
-						MenuItem addBorderItem = new MenuItem(menu, SWT.PUSH);
-						addBorderItem.setText("Add &Border");
+					//if (yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).isImage()) {
 						addBorderItem.addListener(SWT.Selection, new Listener() {
 
 							@Override
@@ -783,7 +789,9 @@ public class Creator {
 						});
 						
 						new MenuItem(menu, SWT.SEPARATOR);
-					}
+					/*} else if (yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).isText()) {
+						
+					}*/
 					
 					MenuItem properties = new MenuItem(menu, SWT.PUSH);
 					properties.setText("Properties");
@@ -1301,7 +1309,7 @@ public class Creator {
 	}
 
 	private void openAddBorderDialog(YearbookImageElement element) {
-		YearbookImageElementBorder orig = element.border;
+		YearbookElementBorder orig = element.border;
 		element.border.noBorder = false;
 		
 		final Shell dialog = new Shell(shell, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
@@ -3340,7 +3348,7 @@ public class Creator {
 		}
 
 		//If the user has selected an area, we should do something about that.
-		if (selectionRectangle != null && settings.cursorMode == CursorMode.SELECT) {
+		if (selectionRectangle != null && settings.cursorMode == CursorMode.SELECT && yearbook.activePage == activePage) {
 			gc.setLineStyle(SWT.LINE_DASHDOTDOT);
 			gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
 			gc.setLineWidth(2);

@@ -4,7 +4,7 @@ import java.io.Serializable;
 
 import org.eclipse.swt.graphics.RGB;
 
-public class YearbookImageElementBorder implements Serializable {
+public class YearbookElementBorder implements Serializable {
 	private static final long serialVersionUID = 2683068411425055262L;
 
 	public boolean noBorder;
@@ -26,18 +26,18 @@ public class YearbookImageElementBorder implements Serializable {
 		return (int) Math.ceil(width * pageWidth);
 	}
 
-	public YearbookImageElementBorder() {
+	public YearbookElementBorder() {
 		noBorder = true;
 		this.rgb = new RGB(0, 0, 0);
 	}
 	
-	public YearbookImageElementBorder(RGB rgb, double width) {
+	public YearbookElementBorder(RGB rgb, double width) {
 		noBorder = false;
 		this.width = width;
 		this.rgb = rgb;
 	}
 	
-	public YearbookImageElementBorder(RGB rgb, int width, int pageWidth) {
+	public YearbookElementBorder(RGB rgb, int width, int pageWidth) {
 		noBorder = false;
 		this.width = (int) Math.ceil((double) width / pageWidth);
 		this.rgb = rgb;

@@ -13,6 +13,7 @@ import org.eclipse.swt.widgets.Display;
 public class YearbookTextElement extends YearbookElement implements Serializable {
 	private static final long serialVersionUID = 6972127757271364075L;
 	
+	
 	public String text;
 	public String fontFamily;
 	public int size; //In points
@@ -46,6 +47,7 @@ public class YearbookTextElement extends YearbookElement implements Serializable
 		copy.rgb = this.rgb;
 		copy.width = this.width;
 		copy.height = this.height;
+		copy.border = this.border;
 		return copy;
 	}
 
@@ -60,6 +62,7 @@ public class YearbookTextElement extends YearbookElement implements Serializable
 		this.fontFamily = "Arial";
 		this.pageWidth = pageWidth;
 		this.pageHeight = pageHeight;
+		this.border = new YearbookElementBorder();
 	}
 	
 	public YearbookTextElement(int x, int y, int pageWidth, int pageHeight) {

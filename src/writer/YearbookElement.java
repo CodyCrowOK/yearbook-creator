@@ -29,6 +29,8 @@ abstract public class YearbookElement implements Serializable {
 	public int pageWidth;
 	public int pageHeight;
 	
+	public YearbookElementBorder border;
+	
 	
 	
 	public boolean isImage() {
