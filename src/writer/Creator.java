@@ -18,14 +18,11 @@ import org.eclipse.swt.dnd.TextTransfer;
 import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.DeviceData;
-import org.eclipse.swt.graphics.Drawable;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
-import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Path;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.Transform;
@@ -377,8 +374,50 @@ public class Creator {
 
 				if (event.button == 3 && yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y)) {
 					int trueX = event.x;
-					int trueY = event.y;
-					Menu menu = new Menu(shell);
+					int trueY = event.y;Menu menu = new Menu(shell);
+					MenuItem addBorderItem = new MenuItem(menu, SWT.PUSH);
+					addBorderItem.setText("Add &Border");
+					
+					if (yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).isImage()) addBorderItem.addListener(SWT.Selection, new Listener() {
+
+						@Override
+						public void handleEvent(Event event) {
+							openAddBorderDialog((YearbookImageElement) yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY));
+							if (clipboard.elements.size() > 1) {
+								ArrayList<YearbookImageElement> images = new ArrayList<YearbookImageElement>();
+								for (YearbookElement ye : clipboard.elements) {
+									if (ye.isImage()) images.add((YearbookImageElement) ye);
+								}
+								for (YearbookImageElement e : images) {
+									e.border = ((YearbookImageElement) yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY)).border;
+								}
+							}
+						}
+						
+					});
+					
+					else if (yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).isText()) addBorderItem.addListener(SWT.Selection, new Listener() {
+
+						@Override
+						public void handleEvent(Event event) {
+							openAddBorderDialog((YearbookTextElement) yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY));
+						}
+						
+					});
+					
+					MenuItem removeBorderItem = new MenuItem(menu, SWT.PUSH);
+					removeBorderItem.setText("Remove B&order");
+					
+					removeBorderItem.addListener(SWT.Selection, new Listener() {
+
+						@Override
+						public void handleEvent(Event event) {
+							yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).border.noBorder = true;
+							refreshNoPageList();
+						}
+						
+					});
+					
 					MenuItem properties = new MenuItem(menu, SWT.PUSH);
 					properties.setText("Properties");
 
@@ -501,10 +540,14 @@ public class Creator {
 							color.setLayoutData(data);
 
 							Label rgb = new Label(properties, SWT.LEFT);
-							String rString = String.format("%02d", Integer.parseInt(Integer.toHexString(element.getRgb().red)), 16);
-							String gString = String.format("%02d", Integer.parseInt(Integer.toHexString(element.getRgb().green)), 16);
-							String bString = String.format("%02d", Integer.parseInt(Integer.toHexString(element.getRgb().blue)), 16);
-							rgb.setText("#" + rString + gString + bString);
+							try {
+								String rString = String.format("%02d", Integer.parseInt(Integer.toHexString(element.getRgb().red)), 16);
+								String gString = String.format("%02d", Integer.parseInt(Integer.toHexString(element.getRgb().green)), 16);
+								String bString = String.format("%02d", Integer.parseInt(Integer.toHexString(element.getRgb().blue)), 16);
+								rgb.setText("#" + rString + gString + bString);
+							} catch (NumberFormatException e) {
+								rgb.setText("#FFFFFF");
+							}
 							rgb.setLayoutData(data2);
 
 							Label size = new Label(properties, SWT.LEFT);
@@ -762,36 +805,54 @@ public class Creator {
 				makeRightActive();
 				xDiff = yDiff = 0;
 
-				if (event.button == 3 && yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y)) {
+				if (event.button == 3 && yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y, yearbook.settings.height, yearbook.settings.height)) {
 					int trueX = event.x;
 					int trueY = event.y;
 					Menu menu = new Menu(shell);
 					MenuItem addBorderItem = new MenuItem(menu, SWT.PUSH);
 					addBorderItem.setText("Add &Border");
 					
-					//if (yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).isImage()) {
-						addBorderItem.addListener(SWT.Selection, new Listener() {
+					if (yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).isImage()) addBorderItem.addListener(SWT.Selection, new Listener() {
 
-							@Override
-							public void handleEvent(Event event) {
-								openAddBorderDialog((YearbookImageElement) yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY));
-								if (clipboard.elements.size() > 1) {
-									ArrayList<YearbookImageElement> images = new ArrayList<YearbookImageElement>();
-									for (YearbookElement ye : clipboard.elements) {
-										if (ye.isImage()) images.add((YearbookImageElement) ye);
-									}
-									for (YearbookImageElement e : images) {
-										e.border = ((YearbookImageElement) yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY)).border;
-									}
+						@Override
+						public void handleEvent(Event event) {
+							openAddBorderDialog((YearbookImageElement) yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY));
+							if (clipboard.elements.size() > 1) {
+								ArrayList<YearbookImageElement> images = new ArrayList<YearbookImageElement>();
+								for (YearbookElement ye : clipboard.elements) {
+									if (ye.isImage()) images.add((YearbookImageElement) ye);
+								}
+								for (YearbookImageElement e : images) {
+									e.border = ((YearbookImageElement) yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY)).border;
 								}
 							}
-							
-						});
+						}
 						
-						new MenuItem(menu, SWT.SEPARATOR);
-					/*} else if (yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).isText()) {
+					});
+					
+					else if (yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).isText()) addBorderItem.addListener(SWT.Selection, new Listener() {
+
+						@Override
+						public void handleEvent(Event event) {
+							openAddBorderDialog((YearbookTextElement) yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY));
+						}
 						
-					}*/
+					});
+					
+					MenuItem removeBorderItem = new MenuItem(menu, SWT.PUSH);
+					removeBorderItem.setText("Remove B&order");
+					
+					removeBorderItem.addListener(SWT.Selection, new Listener() {
+
+						@Override
+						public void handleEvent(Event event) {
+							yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).border.noBorder = true;
+							refreshNoPageList();
+						}
+						
+					});
+						
+					new MenuItem(menu, SWT.SEPARATOR);
 					
 					MenuItem properties = new MenuItem(menu, SWT.PUSH);
 					properties.setText("Properties");
@@ -1308,7 +1369,7 @@ public class Creator {
 		
 	}
 
-	private void openAddBorderDialog(YearbookImageElement element) {
+	private void openAddBorderDialog(YearbookElement element) {
 		YearbookElementBorder orig = element.border;
 		element.border.noBorder = false;
 		
@@ -2467,8 +2528,6 @@ public class Creator {
 
 			@Override
 			public void handleEvent(Event event) {
-				//TODO: implement UI.
-				//Assume horizontal for now.
 				int mirrorPage = yearbook.activePage + 1;
 
 				if (mirrorPage >= yearbook.size() || mirrorPage < 0 || yearbook.page(yearbook.activePage).getBackgroundImageData() == null) return;
@@ -3464,7 +3523,7 @@ public class Creator {
 			 * Inform the text element of its bounds.
 			 * This must be done here, regrettably.
 			 */
-			//e.setBounds(new Rectangle(x, y, gc.stringExtent(e.text).x, gc.stringExtent(e.text).y));
+			e.setBounds(new Rectangle(e.getBounds(pageWidth, pageHeight).x, e.getBounds(pageWidth, pageHeight).y, gc.stringExtent(e.text).x, gc.stringExtent(e.text).y));
 			
 			gc.drawText(e.text, e.getBounds(pageWidth, pageHeight).x, e.getBounds(pageWidth, pageHeight).y, true);
 
@@ -3495,6 +3554,25 @@ public class Creator {
 					gc.drawRectangle(e.getBounds(pageWidth, pageHeight).x, e.getBounds(pageWidth, pageHeight).y, e.getBounds(pageWidth, pageHeight).width, e.getBounds(pageWidth, pageHeight).height);
 				}
 			}
+			
+			/*
+			 * Text outlines
+			 */
+			if (!e.border.noBorder) {
+				Path path = new Path(display);
+				path.addString(e.text, e.getBounds(pageWidth, pageHeight).x, e.getBounds(pageWidth, pageHeight).y, gc.getFont());
+				Color c = new Color(display, e.border.rgb);
+				gc.setForeground(c);
+				gc.setLineWidth(e.border.getWidthInPixels(pageWidth));
+				gc.setLineStyle(SWT.LINE_SOLID);
+				gc.drawPath(path);
+				
+				path.dispose();
+				gc.setLineWidth(1);
+				gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
+				c.dispose();
+			}
+			
 			tr.dispose();
 
 		}

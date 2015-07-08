@@ -44,9 +44,9 @@ public class YearbookImages {
 	 * @return ImageData
 	 */
 	static ImageData bogusBackgroundData() {
-		PaletteData paletteData = new PaletteData(new RGB[] {new RGB(151,245,76), new RGB(9,70,121)});
+		PaletteData paletteData = new PaletteData(new RGB[] {new RGB(0xff, 0xff, 0xff), new RGB(0xff, 0xff, 0xff)});
 		ImageData tmp = new ImageData(1,1,1,paletteData);
-		tmp.alpha = 17;
+		tmp.alpha = 0xff;
 		return tmp;
 	}
 }
