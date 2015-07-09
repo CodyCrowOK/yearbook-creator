@@ -765,7 +765,6 @@ public class Creator {
 		});
 
 		rightCanvas.addMouseListener(new MouseListener() {
-
 			int xDiff = 0;
 			int yDiff = 0;
 			int startX = 0;
@@ -1170,7 +1169,7 @@ public class Creator {
 			}
 
 		});
-
+		
 		//Handle arrow key movement.
 		canvas.addListener(SWT.KeyUp, new Listener() {
 
