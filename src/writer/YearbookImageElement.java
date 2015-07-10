@@ -203,4 +203,8 @@ public class YearbookImageElement extends YearbookElement implements Serializabl
 	public Image getImage() {
 		return image;
 	}
+	
+	public boolean isPSPA() {
+		return false;
+	}
 }

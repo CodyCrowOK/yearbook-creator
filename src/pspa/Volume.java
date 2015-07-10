@@ -183,15 +183,17 @@ public class Volume implements Serializable {
 		//Assume that the width of each image is two-thirds of the height.
 		
 		//2 inch vertical margins
-		int adjustedHeight = (int) ((10.0 / 11.0) * pageHeight);
+		//int adjustedHeight = (int) ((10.0 / 11.0) * pageHeight);
+		int adjustedHeight = pageHeight;
+		int adjustedWidth = pageWidth;
 		//1 and 1/4 inch horizontal margins
-		int adjustedWidth = (int) ((7.5 / 8.5) * pageWidth);
+		//int adjustedWidth = (int) ((7.5 / 8.5) * pageWidth);
 		
-		int photoXWidth = (int) ((double) adjustedWidth / (grid.x + 1));
-		int photoYWidth = (int) ((double) adjustedHeight / (grid.y + 1));
+		int photoXWidth = (int) ((double) adjustedWidth / (grid.x));
+		int photoYWidth = (int) ((double) adjustedHeight / (grid.y));
 		
-		int marginX = (int) (1 * (double) photoXWidth / (grid.x - 1)); 
-		int marginY = (int) (1 * (double) photoYWidth / (grid.y - 1));
+		int marginX = (int) (1 * (double) photoXWidth / (grid.x)); 
+		int marginY = (int) (1 * (double) photoYWidth / (grid.y));
 		
 		return new Point(marginX, marginY);
 	}

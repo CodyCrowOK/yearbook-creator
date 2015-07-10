@@ -32,8 +32,13 @@ public class YearbookPSPAElement extends YearbookImageElement implements Seriali
 	private void computeBounds(Volume volume, int pageWidth, int pageHeight) {
 		Point margins = Volume.photoSpacing(volume.grid, pageWidth, pageHeight);
 		int width = margins.x * (volume.grid.x - 1);
-		this.setScaleRelative((double) 1.2 * width / pageWidth);
+		this.setScaleRelative((double) 1.4 * width / pageWidth);
 		
+	}
+	
+	@Override
+	public boolean isPSPA() {
+		return true;
 	}
 
 }

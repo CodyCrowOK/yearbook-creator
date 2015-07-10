@@ -2965,8 +2965,8 @@ public class Creator {
 	
 	private void generatePSPAPages(Volume volume, ArrayList<String> items) {
 		
-		int initialXOffset = (int) ((1.25 / 8.5) * yearbook.settings.width);
-		int initialYOffset = (int) ((2.0 / 11.0) * yearbook.settings.height);
+		int initialXOffset = (int) ((1.25 / 8.5) * yearbook.settings.width) / 2;
+		int initialYOffset = (int) ((2.0 / 11.0) * yearbook.settings.height) / 2;
 		
 		for (String gradeName : items) {
 			Grade grade = volume.getGradeByName(gradeName);
@@ -2997,7 +2997,7 @@ public class Creator {
 						YearbookPSPAElement element = new YearbookPSPAElement(display, path, yearbook.settings.width, yearbook.settings.height, volume);
 						int row = j / volume.grid.x;
 						int col = j % volume.grid.x;
-						int yOffset = (initialYOffset / 2) + (row * Volume.photoSpacing(volume.grid, yearbook.settings.width, yearbook.settings.height).y) + ((row + 1) * element.getBounds(yearbook.settings.width, yearbook.settings.height).height);
+						int yOffset = initialYOffset + (row * Volume.photoSpacing(volume.grid, yearbook.settings.width, yearbook.settings.height).y) + ((row + 1) * element.getBounds(yearbook.settings.width, yearbook.settings.height).height);
 						int xOffset = initialXOffset + (col * Volume.photoSpacing(volume.grid, yearbook.settings.width, yearbook.settings.height).x) + ((col + 1) * element.getBounds(yearbook.settings.width, yearbook.settings.height).width);
 						element.setLocationRelative(xOffset, yOffset);
 						page.addElement(element);
@@ -3025,7 +3025,7 @@ public class Creator {
 					YearbookPSPAElement element = new YearbookPSPAElement(display, path, yearbook.settings.width, yearbook.settings.height, volume);
 					int row = j / volume.grid.x;
 					int col = j % volume.grid.x;
-					int yOffset = (initialYOffset / 2) + (row * Volume.photoSpacing(volume.grid, yearbook.settings.width, yearbook.settings.height).y) + ((row + 1) * element.getBounds(yearbook.settings.width, yearbook.settings.height).height);
+					int yOffset = initialYOffset + (row * Volume.photoSpacing(volume.grid, yearbook.settings.width, yearbook.settings.height).y) + ((row + 1) * element.getBounds(yearbook.settings.width, yearbook.settings.height).height);
 					int xOffset = initialXOffset + (col * Volume.photoSpacing(volume.grid, yearbook.settings.width, yearbook.settings.height).x) + ((col + 1) * element.getBounds(yearbook.settings.width, yearbook.settings.height).width);
 					element.setLocationRelative(xOffset, yOffset);
 					page.addElement(element);
