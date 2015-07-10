@@ -31,7 +31,9 @@ import org.eclipse.swt.layout.*;
 import org.eclipse.swt.widgets.*;
 
 import pspa.Grade;
+import pspa.HomeRoom;
 import pspa.PSPAIndexNotFoundException;
+import pspa.Person;
 import pspa.Volume;
 
 /**
@@ -169,6 +171,7 @@ public class Creator {
 		pagesList = new List(content, SWT.BORDER | SWT.V_SCROLL);
 		listGridData = new GridData(SWT.FILL, SWT.FILL, true, true);
 		listGridData.horizontalSpan = 1;
+		listGridData.heightHint = 150;
 		pagesList.setLayoutData(listGridData);
 
 		this.initializeCanvas();
@@ -2700,8 +2703,6 @@ public class Creator {
 							return;
 						}
 						
-						System.out.println("Text stuff (PSPA)");
-						
 						try {
 							volume.processRoot(root);
 							
@@ -2963,13 +2964,75 @@ public class Creator {
 	}
 	
 	private void generatePSPAPages(Volume volume, ArrayList<String> items) {
+		
+		int initialXOffset = (int) ((1.25 / 8.5) * yearbook.settings.width);
+		int initialYOffset = (int) ((2.0 / 11.0) * yearbook.settings.height);
+		
 		for (String gradeName : items) {
 			Grade grade = volume.getGradeByName(gradeName);
 			
 			//First, add a blank page for the grade.
 			yearbook.addPage("Grade " + gradeName);
 			
-			
+			for (HomeRoom h : grade.homeRooms) {
+				int photosPerPage = volume.grid.x * volume.grid.y;
+				int pageCount = (int) Math.ceil((double) h.people.size() / photosPerPage);
+
+				for (int i = 0; i < pageCount; i++) {
+					YearbookPage page = new YearbookPage(h.name);
+					
+					//YearbookImageElement element = new YearbookImageElement(display, fileName, yearbook.settings.width, yearbook.settings.height);
+					//yearbook.page(yearbook.activePage).addElement(element);
+					
+					for (int j = 0; j < photosPerPage && j < h.people.size() - 1; j++) {
+						
+						int index = j + (i * photosPerPage);
+						if (index > h.people.size() - 1) break;
+						
+						Person p = h.people.get(index);
+						//System.out.println(volume.path);
+						//System.out.println(p.folderName);
+						//System.out.println(p.fileName);
+						String path = volume.path + "/" + p.folderName + "/" + p.fileName;
+						YearbookPSPAElement element = new YearbookPSPAElement(display, path, yearbook.settings.width, yearbook.settings.height, volume);
+						int row = j / volume.grid.x;
+						int col = j % volume.grid.x;
+						int yOffset = (initialYOffset / 2) + (row * Volume.photoSpacing(volume.grid, yearbook.settings.width, yearbook.settings.height).y) + ((row + 1) * element.getBounds(yearbook.settings.width, yearbook.settings.height).height);
+						int xOffset = initialXOffset + (col * Volume.photoSpacing(volume.grid, yearbook.settings.width, yearbook.settings.height).x) + ((col + 1) * element.getBounds(yearbook.settings.width, yearbook.settings.height).width);
+						element.setLocationRelative(xOffset, yOffset);
+						page.addElement(element);
+					}
+					
+					yearbook.addPage(page);
+				}
+			}
+
+			int photosPerPage = volume.grid.x * volume.grid.y;
+			int pageCount = (int) Math.ceil((double) grade.people.size() / photosPerPage);
+			for (int i = 0; i < pageCount; i++) {
+				YearbookPage page = new YearbookPage("No home room");
+				
+				//YearbookImageElement element = new YearbookImageElement(display, fileName, yearbook.settings.width, yearbook.settings.height);
+				//yearbook.page(yearbook.activePage).addElement(element);
+				
+				for (int j = 0; j < photosPerPage && j < grade.people.size() - 1; j++) {
+					
+					int index = j + (i * photosPerPage);
+					if (index > grade.people.size() - 1) break; 
+					
+					Person p = grade.people.get(index);
+					String path = volume.path + "/" + p.folderName + "/" + p.fileName;
+					YearbookPSPAElement element = new YearbookPSPAElement(display, path, yearbook.settings.width, yearbook.settings.height, volume);
+					int row = j / volume.grid.x;
+					int col = j % volume.grid.x;
+					int yOffset = (initialYOffset / 2) + (row * Volume.photoSpacing(volume.grid, yearbook.settings.width, yearbook.settings.height).y) + ((row + 1) * element.getBounds(yearbook.settings.width, yearbook.settings.height).height);
+					int xOffset = initialXOffset + (col * Volume.photoSpacing(volume.grid, yearbook.settings.width, yearbook.settings.height).x) + ((col + 1) * element.getBounds(yearbook.settings.width, yearbook.settings.height).width);
+					element.setLocationRelative(xOffset, yOffset);
+					page.addElement(element);
+				}
+				
+				yearbook.addPage(page);
+			}
 			
 			
 		}

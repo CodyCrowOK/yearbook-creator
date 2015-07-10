@@ -16,6 +16,7 @@ public class Volume implements Serializable {
 	private static final long serialVersionUID = 6310827207245198135L;
 	public String name;
 	public String fileName;
+	public String path;
 	public Point grid;
 	public ArrayList<Grade> grades;
 	public YearbookTextElement textElement;
@@ -48,6 +49,7 @@ public class Volume implements Serializable {
 	}
 	
 	public void processRoot(File root) throws IOException, PSPAIndexNotFoundException {
+		path = root.getAbsolutePath();
 		fileName = root.getName();
 		columns = new HashMap<String, Integer>();
 		boolean hasMaster = false;
@@ -175,6 +177,23 @@ public class Volume implements Serializable {
 			if (grade.name.equalsIgnoreCase(s)) return true;
 		}
 		return false;
+	}
+	
+	public static Point photoSpacing(Point grid, int pageWidth, int pageHeight) {
+		//Assume that the width of each image is two-thirds of the height.
+		
+		//2 inch vertical margins
+		int adjustedHeight = (int) ((10.0 / 11.0) * pageHeight);
+		//1 and 1/4 inch horizontal margins
+		int adjustedWidth = (int) ((7.5 / 8.5) * pageWidth);
+		
+		int photoXWidth = (int) ((double) adjustedWidth / (grid.x + 1));
+		int photoYWidth = (int) ((double) adjustedHeight / (grid.y + 1));
+		
+		int marginX = (int) (1 * (double) photoXWidth / (grid.x - 1)); 
+		int marginY = (int) (1 * (double) photoYWidth / (grid.y - 1));
+		
+		return new Point(marginX, marginY);
 	}
 	
 	@Override
