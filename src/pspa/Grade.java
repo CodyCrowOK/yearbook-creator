@@ -1,8 +1,10 @@
 package pspa;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
-public class Grade {
+public class Grade implements Serializable {
+	private static final long serialVersionUID = 8203183133859865476L;
 	public String name;
 	public ArrayList<HomeRoom> homeRooms;
 	public ArrayList<Person> people;

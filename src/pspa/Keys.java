@@ -1,5 +1,7 @@
 package pspa;
 
+import java.io.Serializable;
+
 public enum Keys {
 	HOMEROOM("Home Room"),
 	FILENAME("Image File Name"),

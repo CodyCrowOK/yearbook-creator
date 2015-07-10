@@ -1,6 +1,9 @@
 package pspa;
 
-public abstract class Person {
+import java.io.Serializable;
+
+public abstract class Person implements Serializable {
+	private static final long serialVersionUID = 8514919930554919520L;
 	public String firstName;
 	public String lastName;
 	public String folderName;

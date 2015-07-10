@@ -2,20 +2,29 @@ package pspa;
 
 import java.io.*;
 import java.util.*;
-import java.util.Map.Entry;
 
 import org.eclipse.swt.graphics.Point;
+
+import writer.YearbookTextElement;
 
 /**
  * Data model for a volume from a PSPA disk.
  * @author Cody Crow
  *
  */
-public class Volume {
+public class Volume implements Serializable {
+	private static final long serialVersionUID = 6310827207245198135L;
+	public String name;
+	public String fileName;
 	public Point grid;
 	public ArrayList<Grade> grades;
-	//public ArrayList<Faculty> faculty;
-	public HashMap<String, Integer> columns;
+	public YearbookTextElement textElement;
+	HashMap<String, Integer> columns;
+	
+	public Volume() {
+		name = "";
+		grades = new ArrayList<Grade>();
+	}
 	
 	/**
 	 * 
@@ -24,7 +33,22 @@ public class Volume {
 	 * @throws PSPAIndexNotFoundException
 	 */
 	public Volume(File root) throws IOException, PSPAIndexNotFoundException {
-		grades = new ArrayList<Grade>();
+		this();
+		processRoot(root);
+	}
+	
+	public Volume(int pageWidth, int pageHeight) {
+		this();
+		textElement = new YearbookTextElement(pageWidth, pageHeight);
+	}
+	
+	public Volume(File root, int pageWidth, int pageHeight) throws IOException, PSPAIndexNotFoundException {
+		this(root);
+		textElement = new YearbookTextElement(pageWidth, pageHeight);
+	}
+	
+	public void processRoot(File root) throws IOException, PSPAIndexNotFoundException {
+		fileName = root.getName();
 		columns = new HashMap<String, Integer>();
 		boolean hasMaster = false;
 		boolean hasIndex = false;
@@ -116,6 +140,12 @@ public class Volume {
 			i++;
 		}
 		return -1;
+	}
+	
+	public Grade getGradeByName(String string) {
+		int i = findGrade(string);
+		if (i < 0) return null;
+		return grades.get(i);
 	}
 
 	private void parseReadme(File readme) throws IOException {

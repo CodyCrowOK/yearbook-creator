@@ -23,11 +23,16 @@ import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.Path;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.Transform;
 import org.eclipse.swt.layout.*;
 import org.eclipse.swt.widgets.*;
+
+import pspa.Grade;
+import pspa.PSPAIndexNotFoundException;
+import pspa.Volume;
 
 /**
  * The yearbook editor
@@ -71,7 +76,8 @@ public class Creator {
 	private MenuItem insertTextItem;
 	private MenuItem insertImageItem;
 	private MenuItem insertVideoItem;
-	private MenuItem insertLinkItem;
+	private MenuItem insertPSPAItem;
+	private MenuItem insertGeneratePSPAItem;
 	private MenuItem insertPageNumbersItem;
 	private MenuItem insertToCItem;
 	private MenuItem pageMenuItem;
@@ -211,6 +217,7 @@ public class Creator {
 							@Override
 							public void widgetSelected(SelectionEvent e) {
 								dialog.close();
+								dialog.dispose();
 							}
 						});
 
@@ -239,6 +246,7 @@ public class Creator {
 
 								refresh();
 								dialog.close();
+								dialog.dispose();
 							}
 						});
 
@@ -1322,6 +1330,7 @@ public class Creator {
 				elementAtPoint.rotation = originalRotation;
 				refreshNoPageList();
 				dialog.close();
+				dialog.dispose();
 			}
 		});
 
@@ -1359,6 +1368,7 @@ public class Creator {
 				elementAtPoint.rotation = Float.valueOf(text.getText());
 				dialog.close();
 				refreshNoPageList();
+				dialog.dispose();
 			}
 		});
 
@@ -1399,6 +1409,7 @@ public class Creator {
 				element.border = orig;
 				refreshNoPageList();
 				dialog.close();
+				dialog.dispose();
 			}
 		});
 
@@ -1439,6 +1450,7 @@ public class Creator {
 			@Override
 			public void widgetSelected (SelectionEvent e) {
 				dialog.close();
+				dialog.dispose();
 				refreshNoPageList();
 			}
 		});
@@ -1894,8 +1906,13 @@ public class Creator {
 		insertVideoItem = new MenuItem(insertMenu, SWT.PUSH);
 		insertVideoItem.setText("&Video");
 
-		insertLinkItem = new MenuItem(insertMenu, SWT.PUSH);
-		insertLinkItem.setText("&Link");
+		new MenuItem(insertMenu, SWT.SEPARATOR);
+		
+		insertPSPAItem = new MenuItem(insertMenu, SWT.PUSH);
+		insertPSPAItem.setText("Photos from PSPA Disk...");
+		
+		insertGeneratePSPAItem = new MenuItem(insertMenu, SWT.PUSH);
+		insertGeneratePSPAItem.setText("Generate Pages from Volume...");
 
 		new MenuItem(insertMenu, SWT.SEPARATOR);
 
@@ -2098,6 +2115,7 @@ public class Creator {
 					@Override
 					public void widgetSelected(SelectionEvent e) {
 						dialog.close();
+						dialog.dispose();
 					}
 				});
 
@@ -2123,6 +2141,7 @@ public class Creator {
 						saveFileName = null;
 						createNewYearbook(text.getText());
 						dialog.close();
+						dialog.dispose();
 						refresh();
 					}
 				});
@@ -2164,6 +2183,7 @@ public class Creator {
 					@Override
 					public void widgetSelected(SelectionEvent e) {
 						dialog.close();
+						dialog.dispose();
 					}
 				});
 
@@ -2188,6 +2208,7 @@ public class Creator {
 					public void widgetSelected (SelectionEvent e) {
 						createNewPage(text.getText());
 						dialog.close();
+						dialog.dispose();
 					}
 				});
 
@@ -2382,6 +2403,7 @@ public class Creator {
 					@Override
 					public void widgetSelected(SelectionEvent e) {
 						dialog.close();
+						dialog.dispose();
 					}
 				});
 
@@ -2406,6 +2428,7 @@ public class Creator {
 					public void widgetSelected (SelectionEvent e) {
 						yearbook.name = text.getText();
 						dialog.close();
+						dialog.dispose();
 						refreshYearbookName();
 					}
 				});
@@ -2501,6 +2524,263 @@ public class Creator {
 
 			}
 
+		});
+		
+		insertPSPAItem.addListener(SWT.Selection, new Listener() {
+			File root;
+			Volume volume;
+
+			@Override
+			public void handleEvent(Event event) {
+				volume = new Volume(yearbook.settings.width, yearbook.settings.height);
+				Shell window = new Shell(shell, SWT.SHELL_TRIM);
+				window.setText("Load PSPA Volume");
+				
+				GridLayout layout = new GridLayout();
+				layout.makeColumnsEqualWidth = true;
+				layout.numColumns = 6;
+				window.setLayout(layout);
+				
+				Label rows = new Label(window, SWT.LEFT);
+				rows.setText("Rows:");
+				GridData data = new GridData(SWT.BEGINNING, SWT.BEGINNING, true, false);
+				data.horizontalSpan = 3;
+				rows.setLayoutData(data);
+				
+				FontData[] fontData = rows.getFont().getFontData();
+				for(int i = 0; i < fontData.length; ++i)
+				    fontData[i].setHeight(16);
+
+				final Font newFont = new Font(display, fontData);
+				rows.setFont(newFont);
+
+				rows.addDisposeListener(new DisposeListener() {
+				    public void widgetDisposed(DisposeEvent e) {
+				        newFont.dispose();
+				    }
+				});
+				
+				Combo rowsCombo = new Combo(window, SWT.DROP_DOWN);
+				String[] rowsOptions = new String[] {
+					"3",
+					"4",
+					"5",
+					"6",
+					"7",
+					"8"
+				};
+				for (String s : rowsOptions) {
+					rowsCombo.add(s);
+				}
+				
+				data = new GridData(SWT.FILL, SWT.BEGINNING, true, true);
+				data.horizontalSpan = 3;
+				rowsCombo.setLayoutData(data);
+				
+				Label columns = new Label(window, SWT.LEFT);
+				columns.setText("Columns:");
+				data = new GridData(SWT.BEGINNING, SWT.BEGINNING, true, false);
+				data.horizontalSpan = 3;
+				columns.setLayoutData(data);
+				columns.setFont(newFont);
+				
+				Combo columnsCombo = new Combo(window, SWT.DROP_DOWN);
+				String[] columnsOptions = new String[] {
+					"1",
+					"2",
+					"3",
+					"4",
+					"5",
+					"6",
+					"7",
+					"8",
+					"9"
+				};
+				
+				data = new GridData(SWT.FILL, SWT.BEGINNING, true, true);
+				data.horizontalSpan = 3;
+				
+				for (String s : columnsOptions) {
+					columnsCombo.add(s);
+				}
+				
+				columnsCombo.setLayoutData(data);
+				
+				Label name = new Label(window, SWT.LEFT);
+				name.setText("Name:");
+				data = new GridData(SWT.BEGINNING, SWT.BEGINNING, true, false);
+				data.horizontalSpan = 3;
+				name.setLayoutData(data);
+				name.setFont(newFont);
+				
+				Text nameText = new Text(window, SWT.SINGLE);
+				data = new GridData(SWT.FILL, SWT.BEGINNING, true, true);
+				data.horizontalSpan = 3;
+				nameText.setLayoutData(data);
+				
+				
+				Button fontBtn = new Button(window, SWT.PUSH);
+				fontBtn.setText("Set Font");
+				
+				data = new GridData(SWT.FILL, SWT.BEGINNING, true, true);
+				data.horizontalSpan = 3;
+				fontBtn.setLayoutData(data);
+				
+				Button chooseBtn = new Button(window, SWT.PUSH);
+				chooseBtn.setText("Choose PSPA Volume");
+				
+				data = new GridData(SWT.FILL, SWT.BEGINNING, true, true);
+				data.horizontalSpan = 3;
+				chooseBtn.setLayoutData(data);
+				
+				Label blank = new Label(window, SWT.NONE);
+				
+				data = new GridData(SWT.FILL, SWT.BEGINNING, true, true);
+				data.horizontalSpan = 2;
+				blank.setLayoutData(data);
+				
+				Button ok = new Button(window, SWT.PUSH);
+				ok.setText("OK");
+				
+				data = new GridData(SWT.FILL, SWT.BEGINNING, true, true);
+				data.horizontalSpan = 2;
+				ok.setLayoutData(data);
+				
+				Button cancel = new Button(window, SWT.PUSH);
+				cancel.setText("Cancel");
+				
+				data = new GridData(SWT.FILL, SWT.BEGINNING, true, true);
+				data.horizontalSpan = 2;
+				cancel.setLayoutData(data);
+				
+				fontBtn.addListener(SWT.Selection, new Listener() {
+
+					@Override
+					public void handleEvent(Event event) {
+						openPSPATextDialog(volume.textElement);
+						
+					}
+					
+				});
+				
+				chooseBtn.addListener(SWT.Selection, new Listener() {
+
+					@Override
+					public void handleEvent(Event event) {
+						DirectoryDialog picker = new DirectoryDialog(shell, SWT.NONE);
+						String fileName = picker.open();
+						if (fileName == null) return;
+						
+						root = new File(fileName);
+						
+					}
+					
+				});
+				
+				cancel.addListener(SWT.Selection, new Listener() {
+
+					@Override
+					public void handleEvent(Event event) {
+						window.close();
+						window.dispose();
+						
+					}
+					
+				});
+				
+				ok.addListener(SWT.Selection, new Listener() {
+
+					@Override
+					public void handleEvent(Event event) {
+						if (root == null) {
+							MessageBox box = new MessageBox(window, SWT.OK);
+							box.setText("Invalid Folder");
+							box.setMessage("Please select a PSPA volume.");
+							box.open();
+							return;
+						}
+						
+						System.out.println("Text stuff (PSPA)");
+						
+						try {
+							volume.processRoot(root);
+							
+							int rows = Integer.parseInt(rowsOptions[rowsCombo.getSelectionIndex()]);
+							int cols = Integer.parseInt(columnsOptions[columnsCombo.getSelectionIndex()]);
+							volume.grid = new Point(rows, cols);
+							
+							if (!nameText.getText().isEmpty()) volume.name = nameText.getText();
+							
+							yearbook.pspaVolumes.add(volume);
+							
+						} catch (IOException
+								| PSPAIndexNotFoundException e) {
+							MessageBox box = new MessageBox(window, SWT.ICON_ERROR);
+							box.setText("Error");
+							box.setMessage("The selected directory is not a valid PSPA volume.");
+							box.open();
+						}
+						window.close();
+						window.dispose();
+					}
+					
+				});
+				
+				window.setSize(300, 180);
+				window.open();
+			}
+			
+		});
+		
+		insertGeneratePSPAItem.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				Shell window = new Shell(shell, SWT.SHELL_TRIM);
+				window.setText("Generate Pages");
+				GridLayout layout = new GridLayout();
+				layout.makeColumnsEqualWidth = true;
+				layout.numColumns = 1;
+				window.setLayout(layout);
+				
+				List list = new List(window, SWT.MULTI);
+				for (Volume v : yearbook.pspaVolumes) {
+					list.add(v.name + " (" + v.fileName + ")");
+				}
+				
+				GridData data = new GridData(SWT.FILL, SWT.FILL, true, true);
+				data.horizontalSpan = 1;
+				list.setLayoutData(data);
+				
+				Button genBtn = new Button(window, SWT.PUSH);
+				genBtn.setText("Generate Pages");
+				data = new GridData(SWT.FILL, SWT.END, true, false);
+				data.horizontalSpan = 1;
+				genBtn.setLayoutData(data);
+
+				genBtn.addListener(SWT.Selection, new Listener() {
+
+					@Override
+					public void handleEvent(Event event) {
+						try {
+							Volume volume = yearbook.pspaVolumes.get(list.getSelectionIndex());
+							
+							getPSPAGradeOrder(volume);
+							
+							window.close();
+							window.dispose();
+						} catch (Exception e) {
+							//Do nothing.
+						}
+						
+					}
+					
+				});
+				
+				window.setSize(300, 300);
+				window.open();
+			}
+			
 		});
 		
 		insertPageNumbersItem.addListener(SWT.Selection, new Listener() {
@@ -2603,6 +2883,98 @@ public class Creator {
 		});
 
 	}
+	
+	private void getPSPAGradeOrder(Volume volume) {
+		Shell window = new Shell(shell, SWT.SHELL_TRIM);
+		window.setText("Order Grades");
+		window.setLayout(new ColumnLayout());
+		
+		List list = new List(window, SWT.MULTI);
+		for (Grade g : volume.grades) {
+			list.add(g.name);
+		}
+		
+		Composite moveComposite = new Composite(window, SWT.NONE);
+		GridLayout moveLayout = new GridLayout();
+		moveLayout.makeColumnsEqualWidth = true;
+		moveLayout.numColumns = 2;
+		moveComposite.setLayout(moveLayout);
+		
+		Button up = new Button(moveComposite, SWT.PUSH);
+		up.setText("Move Up");
+		up.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+		
+		Button down = new Button(moveComposite, SWT.PUSH);
+		down.setText("Move Down");
+		down.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+		
+		Button btn = new Button(window, SWT.PUSH);
+		btn.setText("Set Grade Order");
+		
+		up.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				int selectedIndex = list.getSelectionIndex();
+				if (selectedIndex == 0) return;
+				
+				String tmp = list.getItem(selectedIndex - 1);
+				list.remove(selectedIndex - 1);
+				list.add(tmp, selectedIndex);
+				
+			}
+			
+		});
+		
+		down.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				int selectedIndex = list.getSelectionIndex();
+				if (selectedIndex == list.getItemCount() - 1) return;
+				
+				String tmp = list.getItem(selectedIndex);
+				list.remove(selectedIndex);
+				list.add(tmp, selectedIndex + 1);
+				list.setSelection(selectedIndex + 1);
+			}
+			
+		});
+		
+		btn.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				ArrayList<String> items = new ArrayList<String>();
+				while (list.getItemCount() > 0) {
+					String item = list.getItem(0);
+					list.remove(0);
+					items.add(item);
+				}
+				generatePSPAPages(volume, items);
+				window.close();
+				window.dispose();
+			}
+			
+		});
+		
+		window.pack();
+		window.open();
+	}
+	
+	private void generatePSPAPages(Volume volume, ArrayList<String> items) {
+		for (String gradeName : items) {
+			Grade grade = volume.getGradeByName(gradeName);
+			
+			//First, add a blank page for the grade.
+			yearbook.addPage("Grade " + gradeName);
+			
+			
+			
+			
+		}
+		refresh();
+	}
 
 	protected void openPageNumberDialog(YearbookPageNumberElement element) {
 		Shell textTool = new Shell(display, SWT.DIALOG_TRIM);
@@ -2612,13 +2984,6 @@ public class Creator {
 		layout.makeColumnsEqualWidth = true;
 		textTool.setLayout(layout);
 
-		/*
-		Text textbox = new Text(textTool, SWT.BORDER | SWT.MULTI);
-		textbox.setText(element.text);
-		GridData textboxData = new GridData(SWT.FILL, SWT.FILL, true, true);
-		textboxData.horizontalSpan = 10;
-		textbox.setLayoutData(textboxData);
-		*/
 		Canvas preview = new Canvas(textTool, SWT.BORDER | SWT.MULTI);
 		GridData previewData = new GridData(SWT.FILL, SWT.FILL, true, true);
 		previewData.horizontalSpan = 5;
@@ -2858,7 +3223,7 @@ public class Creator {
 			@Override
 			public void handleEvent(Event event) {
 				element.toggleShadow();
-				refresh();
+				refreshNoPageList();
 				preview.redraw();
 
 			}
@@ -2877,6 +3242,251 @@ public class Creator {
 		textTool.setSize(250, 200);
 		textTool.open();
 
+	}
+	
+	protected void openPSPATextDialog(YearbookTextElement element) {
+		Shell textTool = new Shell(display, SWT.DIALOG_TRIM);
+		textTool.setText("Page Number Tool");
+		GridLayout layout = new GridLayout();
+		layout.numColumns = 5;
+		layout.makeColumnsEqualWidth = true;
+		textTool.setLayout(layout);
+
+		Canvas preview = new Canvas(textTool, SWT.BORDER | SWT.MULTI);
+		GridData previewData = new GridData(SWT.FILL, SWT.FILL, true, true);
+		previewData.horizontalSpan = 5;
+		preview.setLayoutData(previewData);
+		
+
+		ColorDialog colorDialog = new ColorDialog(textTool, SWT.APPLICATION_MODAL | SWT.DIALOG_TRIM);
+		colorDialog.setText("Color Picker");
+		Button colorButton = new Button(textTool, SWT.PUSH);
+		colorButton.setText("Pick color...");
+		GridData buttonData = new GridData(SWT.FILL, SWT.FILL, true, false);
+		buttonData.horizontalSpan = 3;
+		colorButton.setLayoutData(buttonData);
+
+		Combo sizeCombo = new Combo(textTool, SWT.DROP_DOWN);
+		GridData sizeData = new GridData(SWT.FILL, SWT.FILL, true, false);
+		sizeData.horizontalSpan = 2;
+		sizeCombo.setLayoutData(sizeData);
+		String[] fontSizes = {
+				"8",
+				"9",
+				"10",
+				"11",
+				"12",
+				"14",
+				"16",
+				"18",
+				"20",
+				"22",
+				"24",
+				"26",
+				"28",
+				"36",
+				"48",
+				"72"
+		};
+		for (String size : fontSizes) {
+			sizeCombo.add(size);
+		}
+		int index = Arrays.binarySearch(fontSizes, Integer.toString(element.size));
+		if (index >= 0) sizeCombo.select(index);
+		else sizeCombo.select(4);
+
+		Composite styleWrapper = new Composite(textTool, SWT.NONE);
+		styleWrapper.setLayout(new FillLayout());
+		GridData styleData = new GridData(SWT.FILL, SWT.FILL, true, false);
+		styleData.horizontalSpan = 2;
+		styleWrapper.setLayoutData(styleData);
+
+		Button bold = new Button(styleWrapper, SWT.PUSH);
+		bold.setText("B");
+		FontData fd = bold.getFont().getFontData()[0];
+		fd.setStyle(SWT.BOLD);
+		Font f = new Font(display, fd);
+		bold.setFont(f);
+		f.dispose();
+
+		Button italic = new Button(styleWrapper, SWT.PUSH);
+		italic.setText("I");
+		fd = italic.getFont().getFontData()[0];
+		fd.setStyle(SWT.ITALIC);
+		f = new Font(display, fd);
+		italic.setFont(f);
+		f.dispose();
+
+		Button shadow = new Button(styleWrapper, SWT.PUSH);
+		shadow.setText("S");
+		
+		Button borderBtn = new Button(textTool, SWT.PUSH);
+		borderBtn.setText("Set Border");
+		styleData = new GridData(SWT.FILL, SWT.FILL, true, false);
+		styleData.horizontalSpan = 3;
+		borderBtn.setLayoutData(styleData);
+		
+		
+		String[] fontNames = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
+		Combo fontCombo = new Combo(textTool, SWT.DROP_DOWN);
+		GridData fontData  = new GridData(SWT.FILL, SWT.FILL, true, false);
+		fontData.horizontalSpan = 5;
+		fontCombo.setLayoutData(fontData);
+		for (String fontName : fontNames) {
+			fontCombo.add(fontName);
+		}
+		for (index = 0; index < fontNames.length; index++) {
+			if (fontNames[index].equalsIgnoreCase(element.fontFamily)) break;
+		}
+		if (index >= 0) fontCombo.select(index);
+		
+		preview.addPaintListener(new PaintListener() {
+
+			@Override
+			public void paintControl(PaintEvent e) {
+				e.gc.setAdvanced(true);
+				e.gc.setAntialias(SWT.ON);
+				e.gc.setFont(element.getFont(e.display));
+				
+				if (element.shadow) {
+					int offset = element.size >= 72 ? 4 : element.size >= 36 ? 2 : 1;
+					e.gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
+					e.gc.setAlpha(0x8f);
+					e.gc.drawText("John Smith", preview.getBounds().x + offset, preview.getBounds().y + offset, true);
+					e.gc.setAlpha(0xff);
+				}
+				
+				e.gc.setForeground(element.getColor(e.display));
+				e.gc.drawText("John Smith", preview.getBounds().x, preview.getBounds().y);
+				
+				if (element.underline) {
+					//Determine the line width
+					int width;
+					width = element.size / 12;
+					if (width <= 0) width = 1;
+
+					if (element.bold) width *= 1.8;
+					e.gc.setLineWidth(width);
+					e.gc.drawLine(element.getBounds().x + 1, element.getBounds().y + element.getBounds().height - (int) (element.getBounds().height * .1), element.getBounds().x + element.getBounds().width - 1, element.getBounds().y + element.getBounds().height - (int) (element.getBounds().height * .1));
+
+				}
+				
+				if (!element.border.noBorder) {
+					Path path = new Path(display);
+					path.addString("John Smith", preview.getBounds().x, preview.getBounds().y, e.gc.getFont());
+					Color c = new Color(display, element.border.rgb);
+					e.gc.setForeground(c);
+					e.gc.setLineWidth(element.border.getWidthInPixels(yearbook.settings.width));
+					e.gc.setLineStyle(SWT.LINE_SOLID);
+					e.gc.drawPath(path);
+					
+					path.dispose();
+					e.gc.setLineWidth(1);
+					e.gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
+					c.dispose();
+				}
+			}
+			
+		});
+
+		colorButton.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				RGB rgb = colorDialog.open();
+				if (rgb != null) element.setRGB(rgb);
+				refresh();
+				preview.redraw();
+			}
+
+		});
+
+
+		sizeCombo.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				element.size = Integer.parseInt(sizeCombo.getItem(sizeCombo.getSelectionIndex()));
+				refresh();
+				preview.redraw();
+			}
+
+		});
+
+		sizeCombo.addListener(SWT.KeyUp, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				int size = element.size;
+				try {
+					size = Integer.parseInt(sizeCombo.getText());
+				} catch (NumberFormatException e) {
+					return;
+				}
+				element.size = size;
+				refresh();
+				preview.redraw();
+			}
+
+		});
+
+		fontCombo.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				element.fontFamily = fontNames[fontCombo.getSelectionIndex()];
+				refresh();
+				preview.redraw();
+			}
+
+		});
+		
+		bold.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				element.toggleBold();
+				refresh();
+				preview.redraw();
+			}
+
+		});
+
+		italic.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				element.toggleItalic();
+				refresh();
+				preview.redraw();
+			}
+
+		});
+
+		shadow.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				element.toggleShadow();
+				refreshNoPageList();
+				preview.redraw();
+
+			}
+
+		});
+		
+		borderBtn.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				openAddBorderDialog(element);
+				
+			}
+			
+		});
+
+		textTool.setSize(250, 200);
+		textTool.open();
 	}
 
 	protected String imagePicker() {

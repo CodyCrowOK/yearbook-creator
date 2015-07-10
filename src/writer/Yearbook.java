@@ -25,10 +25,13 @@ import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.ImageLoader;
 import org.eclipse.swt.widgets.Display;
 
+import pspa.Volume;
+
 
 public class Yearbook implements Serializable {
 	private static final long serialVersionUID = 4099869425438846538L;
 	private ArrayList<YearbookPage> pages;
+	public ArrayList<Volume> pspaVolumes;
 	transient private Image defaultBackground;
 	transient private ImageData defaultBackgroundData;
 	public boolean noBackground;
@@ -41,6 +44,7 @@ public class Yearbook implements Serializable {
 	public YearbookPageNumberElement pageNumber;
 
 	public Yearbook() {
+		pspaVolumes = new ArrayList<Volume>();
 		pages = new ArrayList<YearbookPage>();
 		settings = new YearbookSettings();
 		activePage = 0;
@@ -64,6 +68,10 @@ public class Yearbook implements Serializable {
 
 	public void addPage(String name) {
 		pages.add(new YearbookPage(name));
+	}
+	
+	public void addPage(YearbookPage page) {
+		pages.add(page);
 	}
 
 	public void removePage(int index) {
