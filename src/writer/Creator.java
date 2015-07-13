@@ -429,6 +429,23 @@ public class Creator {
 						
 					});
 					
+					MenuItem shadowItem = new MenuItem(menu, SWT.CHECK);
+					shadowItem.setText("Show Drop &Shadow");
+					
+					shadowItem.setSelection(yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).shadow);
+					
+					shadowItem.addListener(SWT.Selection, new Listener() {
+
+						@Override
+						public void handleEvent(Event event) {
+							yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).shadow = !yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).shadow;
+							refreshNoPageList();
+						}
+						
+					});
+					
+					new MenuItem(menu, SWT.SEPARATOR);
+					
 					MenuItem properties = new MenuItem(menu, SWT.PUSH);
 					properties.setText("Properties");
 
@@ -862,7 +879,23 @@ public class Creator {
 						
 					});
 						
+					
+					MenuItem shadowItem = new MenuItem(menu, SWT.CHECK);
+					shadowItem.setText("Show Drop &Shadow");
+					
+					shadowItem.setSelection(yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).shadow);
+					
+					shadowItem.addListener(SWT.Selection, new Listener() {
+
+						@Override
+						public void handleEvent(Event event) {
+							yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).shadow = !yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).shadow;
+						}
+						
+					});
+					
 					new MenuItem(menu, SWT.SEPARATOR);
+					
 					
 					MenuItem properties = new MenuItem(menu, SWT.PUSH);
 					properties.setText("Properties");
@@ -4048,6 +4081,18 @@ public class Creator {
 			Transform tr = new Transform(display);
 			tr.rotate(element.rotation);
 			gc.setTransform(tr);
+			
+			if (element.shadow) {
+				gc.setAlpha(0xbf);
+				gc.setBackground(display.getSystemColor(SWT.COLOR_BLACK));
+				
+				int offset = (int) Math.ceil((1.0 / 250.0) * element.getBounds(pageWidth, pageHeight).width);
+				
+				//gc.fillRectangle(element.getBounds(pageWidth, pageHeight).x + offset, element.getBounds(pageWidth, pageHeight).y + offset, element.getBounds(pageWidth, pageHeight).width, element.getBounds(pageWidth, pageHeight).height);
+				gc.fillRoundRectangle(element.getBounds(pageWidth, pageHeight).x + offset, element.getBounds(pageWidth, pageHeight).y + offset, element.getBounds(pageWidth, pageHeight).width, element.getBounds(pageWidth, pageHeight).height, 2 * offset, 2 * offset);
+				gc.setAlpha(0xff);
+			}
+			
 			gc.drawImage(element.getImage(display), 0, 0, element.getImage(display).getBounds().width, element.getImage(display).getBounds().height, element.getBounds(pageWidth, pageHeight).x, element.getBounds(pageWidth, pageHeight).y, element.getBounds(pageWidth, pageHeight).width, element.getBounds(pageWidth, pageHeight).height);
 			
 			if (!element.border.noBorder) {

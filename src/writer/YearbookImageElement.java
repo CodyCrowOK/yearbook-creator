@@ -19,9 +19,8 @@ import org.eclipse.swt.widgets.Display;
 public class YearbookImageElement extends YearbookElement implements Serializable {
 	private static final long serialVersionUID = 8808543926557894799L;
 
-	//Percentage values
+	//Percentage value
 	public double scale;
-	
 	
 	public Image getImage(Display display) {
 		if (image == null) {
