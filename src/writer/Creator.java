@@ -2708,7 +2708,7 @@ public class Creator {
 							
 							int rows = Integer.parseInt(rowsOptions[rowsCombo.getSelectionIndex()]);
 							int cols = Integer.parseInt(columnsOptions[columnsCombo.getSelectionIndex()]);
-							volume.grid = new Point(rows, cols);
+							volume.grid = new Point(cols, rows);
 							
 							if (!nameText.getText().isEmpty()) volume.name = nameText.getText();
 							
@@ -3000,6 +3000,8 @@ public class Creator {
 						int yOffset = initialYOffset + (row * Volume.photoSpacing(volume.grid, yearbook.settings.width, yearbook.settings.height).y) + ((row + 1) * element.getBounds(yearbook.settings.width, yearbook.settings.height).height);
 						int xOffset = initialXOffset + (col * Volume.photoSpacing(volume.grid, yearbook.settings.width, yearbook.settings.height).x) + ((col + 1) * element.getBounds(yearbook.settings.width, yearbook.settings.height).width);
 						element.setLocationRelative(xOffset, yOffset);
+						//element.text.text = p.firstName + " " + p.lastName;
+						element.person = p;
 						page.addElement(element);
 					}
 					
@@ -3028,6 +3030,8 @@ public class Creator {
 					int yOffset = initialYOffset + (row * Volume.photoSpacing(volume.grid, yearbook.settings.width, yearbook.settings.height).y) + ((row + 1) * element.getBounds(yearbook.settings.width, yearbook.settings.height).height);
 					int xOffset = initialXOffset + (col * Volume.photoSpacing(volume.grid, yearbook.settings.width, yearbook.settings.height).x) + ((col + 1) * element.getBounds(yearbook.settings.width, yearbook.settings.height).width);
 					element.setLocationRelative(xOffset, yOffset);
+					//element.text.text = p.firstName + " " + p.lastName;
+					element.person = p;
 					page.addElement(element);
 				}
 				
@@ -4073,6 +4077,64 @@ public class Creator {
 					gc.setLineWidth(3);
 					gc.drawRectangle(element.getBounds(pageWidth, pageHeight).x, element.getBounds(pageWidth, pageHeight).y, element.getBounds(pageWidth, pageHeight).width, element.getBounds(pageWidth, pageHeight).height);
 				}
+			}
+			
+			if (element.isPSPA()) {
+				YearbookPSPAElement e = (YearbookPSPAElement) element;
+				
+				Font f = e.text.getFont(display);
+				Color c = e.text.getColor(display);
+				gc.setFont(f);
+				String name = e.person.firstName + " " + e.person.lastName;
+				
+				Point nameExtent = gc.textExtent(name);
+				
+				int nameX = e.getBounds(pageWidth, pageHeight).x + ((e.getBounds(pageWidth, pageHeight).width - nameExtent.x) / 2);
+				int nameY = (e.getBounds(pageWidth, pageHeight).y + e.getBounds(pageWidth, pageHeight).height) + ((e.margins.y - nameExtent.y) / 2);
+				e.text.setBounds(new Rectangle(nameX, nameY, nameExtent.x, nameExtent.y));
+				
+				if (e.text.shadow) {
+					int offset = e.text.size >= 72 ? 3 : e.text.size >= 36 ? 2 : 1;
+					gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
+					gc.setAlpha(0x8f);
+					gc.drawText(name, e.text.getBounds(pageWidth, pageHeight).x + offset, e.text.getBounds(pageWidth, pageHeight).y + offset, true);
+					gc.setAlpha(0xff);
+				}
+				
+				gc.setForeground(c);
+				
+				gc.drawText(name, e.text.getBounds(pageWidth, pageHeight).x, e.text.getBounds(pageWidth, pageHeight).y, true);
+
+				if (e.text.underline) {
+					//Determine the line width
+					int width;
+					width = e.text.size / 12;
+					if (width <= 0) width = 1;
+
+					if (e.text.bold) width *= 1.8;
+					gc.setLineWidth(width);
+					gc.drawLine(e.text.getBounds(pageWidth, pageHeight).x + 1, e.text.getBounds(pageWidth, pageHeight).y + e.text.getBounds(pageWidth, pageHeight).height - (int) (e.text.getBounds(pageWidth, pageHeight).height * .1), e.text.getBounds(pageWidth, pageHeight).x + e.text.getBounds(pageWidth, pageHeight).width - 1, e.text.getBounds(pageWidth, pageHeight).y + e.text.getBounds(pageWidth, pageHeight).height - (int) (e.text.getBounds(pageWidth, pageHeight).height * .1));
+
+				}
+				
+				c.dispose();
+				
+				if (!e.text.border.noBorder) {
+					Path path = new Path(display);
+					path.addString(name, e.text.getBounds(pageWidth, pageHeight).x, e.text.getBounds(pageWidth, pageHeight).y, gc.getFont());
+					c = new Color(display, e.text.border.rgb);
+					gc.setForeground(c);
+					gc.setLineWidth(e.text.border.getWidthInPixels(pageWidth));
+					gc.setLineStyle(SWT.LINE_SOLID);
+					gc.drawPath(path);
+					
+					path.dispose();
+					gc.setLineWidth(1);
+					gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
+					c.dispose();
+				}
+				
+				f.dispose();
 			}
 			
 			tr.dispose();

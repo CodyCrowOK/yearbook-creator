@@ -6,12 +6,15 @@ import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Display;
 
+import pspa.Person;
 import pspa.Volume;
 
 public class YearbookPSPAElement extends YearbookImageElement implements Serializable {
 	private static final long serialVersionUID = -1279859963196943365L;
 	
 	public YearbookTextElement text;
+	public Person person;
+	public Point margins;
 
 	public YearbookPSPAElement(Display display, String fileName, int pageWidth, int pageHeight) {
 		super(display, fileName, pageWidth, pageHeight);
@@ -30,7 +33,7 @@ public class YearbookPSPAElement extends YearbookImageElement implements Seriali
 	}
 
 	private void computeBounds(Volume volume, int pageWidth, int pageHeight) {
-		Point margins = Volume.photoSpacing(volume.grid, pageWidth, pageHeight);
+		margins = Volume.photoSpacing(volume.grid, pageWidth, pageHeight);
 		int width = margins.x * (volume.grid.x - 1);
 		this.setScaleRelative((double) 1.4 * width / pageWidth);
 		
