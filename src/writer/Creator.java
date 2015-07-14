@@ -2,8 +2,10 @@ package writer;
 import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Deque;
 
 import org.apache.pdfbox.exceptions.COSVisitorException;
 import org.eclipse.swt.*;
@@ -410,6 +412,35 @@ public class Creator {
 
 		Tree tree = new Tree(composite, SWT.BORDER);
 		populateFileTree(tree, clipartFiles);
+		tree.addSelectionListener(new SelectionListener() {
+
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				try {
+					String path = (String) ((TreeItem) e.item).getData("path");
+					MessageBox box = new MessageBox(shell, SWT.ICON_QUESTION | SWT.OK | SWT.CANCEL);
+					box.setText("Insert Clip Art");
+					box.setMessage("Would you like to insert this clip art?");
+					int response = box.open();
+					if ((response & SWT.CANCEL) == SWT.CANCEL || path == null) return;
+					YearbookImageElement element = new YearbookImageElement(display, path, yearbook.settings.width, yearbook.settings.height);
+					yearbook.page(yearbook.activePage).addElement(element);
+					refreshNoPageList();
+				} catch (Exception ex) {
+					//Ignore
+				}
+				
+				
+			}
+
+			@Override
+			public void widgetDefaultSelected(SelectionEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+		});
+		
 		
 		ExpandItem item1 = new ExpandItem(bar, SWT.NONE, 1);
 		item1.setText("Clip Art");
@@ -424,6 +455,8 @@ public class Creator {
 		for (File f : files) {
 			TreeItem item = new TreeItem(tree, SWT.NONE);
 			item.setText(f.getName());
+			item.setData("path", f.getPath());
+			
 			if (f.isDirectory()) populateFileTree(item, f.listFiles());
 			else {
 				try {
@@ -446,17 +479,44 @@ public class Creator {
 					}
 					image.dispose();
 				} catch (SWTException e) {
-					//Ignore
+					continue;
 				}
+				
 			}
 		}
 	}
-	
+
 	private void populateFileTree(Tree tree, File[] files) {
 		for (File f : files) {
 			TreeItem item = new TreeItem(tree, SWT.NONE);
 			item.setText(f.getName());
+			item.setData("path", f.getPath());
 			if (f.isDirectory()) populateFileTree(item, f.listFiles());
+			else {
+				try {
+					Image image = new Image(display, new ImageData(f.getPath()));
+					Image thumb;
+					if (image.getBounds().height <= image.getBounds().width) {
+						int height = (int) Math.floor(100.0 * ((double) image.getBounds().height / image.getBounds().width));
+						thumb = new Image(display, 100, height);
+						GC gc = new GC(thumb);
+						gc.drawImage(image, 0, 0, image.getBounds().width, image.getBounds().height, 0, 0, 100, height);
+						gc.dispose();
+						item.setImage(thumb);
+					} else {
+						int width = (int) Math.floor(100.0 * ((double) image.getBounds().width / image.getBounds().height));
+						thumb = new Image(display, width, 100);
+						GC gc = new GC(thumb);
+						gc.drawImage(image, 0, 0, image.getBounds().width, image.getBounds().height, 0, 0, width, 100);
+						gc.dispose();
+						item.setImage(thumb);
+					}
+					image.dispose();
+				} catch (SWTException e) {
+					continue;
+				}
+				
+			}
 		}
 	}
 
@@ -2666,10 +2726,7 @@ public class Creator {
 				if (fileName == null) return;
 				YearbookImageElement element = new YearbookImageElement(display, fileName, yearbook.settings.width, yearbook.settings.height);
 				yearbook.page(yearbook.activePage).addElement(element);
-				//refresh();
-				GC gc = new GC(canvas);
-				gc.drawImage(element.getImage(display), 0, 0, element.getImage(display).getBounds().width, element.getImage(display).getBounds().height, 0, 0, element.getBounds().width, element.getBounds().height);
-				gc.dispose();
+				refreshNoPageList();
 			}
 
 		});
