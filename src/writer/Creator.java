@@ -21,6 +21,7 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.Path;
 import org.eclipse.swt.graphics.Point;
@@ -43,10 +44,20 @@ import pspa.Volume;
  */
 public class Creator {
 
+	//Meta information
 	public static final String VERSION = "0.08";
 	public static final String COMPANY_NAME = "Digital Express";
 	public static final String SOFTWARE_NAME = "Yearbook Designer";
+	
+	//Constants
+	public static final String RESOURCE_DIR = "resources";
+	public static final String BACKGROUNDS_DIR = RESOURCE_DIR + File.separator + "backgrounds";
+	public static final String CLIPART_DIR = RESOURCE_DIR + File.separator + "clipart";
+	public static final String LAYOUTS_DIR = RESOURCE_DIR + File.separator + "layouts";
 
+	//Used for way too many things
+	int canvasHeight;
+	
 	//Used so we don't "Save As..." every time.
 	public String saveFileName;
 
@@ -150,6 +161,8 @@ public class Creator {
 		setWindowTitle(SWT.DEFAULT);
 		//clipboard.elements = new ArrayList<YearbookElement>();
 		clipboard = new Clipboard();
+		
+		canvasHeight = (int) (.80 * display.getClientArea().height);
 
 		shell.setSize(800, 600);
 
@@ -164,7 +177,7 @@ public class Creator {
 
 		this.buildToolbar();	
 
-		gridLayout = new GridLayout(7, true);
+		gridLayout = new GridLayout(8, true);
 		content = new Composite(shell, SWT.NONE);
 		content.setLayout(gridLayout);
 
@@ -284,6 +297,8 @@ public class Creator {
 
 		this.buildPagesListDnD();
 		
+		this.buildExpandBar();
+		
 		this.finalPrep();
 
 		shell.setMaximized(true);
@@ -292,6 +307,157 @@ public class Creator {
 		}
 		display.dispose();
 
+	}
+
+	private void buildExpandBar() {
+		ExpandBar bar = new ExpandBar(content, SWT.V_SCROLL);
+		
+		GridData data = new GridData(SWT.BEGINNING, SWT.FILL, true, true);
+		data.horizontalSpan = 2;
+		data.minimumWidth = 250;
+		bar.setLayoutData(data);
+		
+		bar.setLayout(new FillLayout());
+
+		Composite composite = new Composite(bar, SWT.NONE);
+		composite.setLayout(new ColumnLayout());
+
+		//Load backgrounds into list.
+		File backgroundsRoot = new File(BACKGROUNDS_DIR);
+		File[] backgroundsList = backgroundsRoot.listFiles();
+		
+		//Convert them to thumbnails to save RAM.
+		int i = 0;
+		for (File f : backgroundsList) {
+			try {
+				Image large = new Image(display, new ImageData(f.getAbsolutePath()));
+				Image thumbnail = new Image(display, 116, 150);
+				GC gc = new GC(thumbnail);
+				gc.drawImage(large, 0, 0, large.getBounds().width, large.getBounds().height, 0, 0, thumbnail.getBounds().width, thumbnail.getBounds().height);
+				gc.dispose();
+				large.dispose();
+				Label label = new Label(composite, SWT.NONE);
+				label.setText(Integer.toString(i));
+				label.setImage(thumbnail);
+				
+				label.addMouseTrackListener(new MouseTrackListener() {
+
+					@Override
+					public void mouseEnter(MouseEvent e) {
+						shell.setCursor(display.getSystemCursor(SWT.CURSOR_HAND));
+						
+					}
+
+					@Override
+					public void mouseExit(MouseEvent e) {
+						shell.setCursor(display.getSystemCursor(SWT.CURSOR_ARROW));
+						
+					}
+
+					@Override
+					public void mouseHover(MouseEvent e) {
+						
+					}
+					
+				});
+				
+				label.addMouseListener(new MouseListener() {
+
+					@Override
+					public void mouseDoubleClick(MouseEvent e) {
+						
+					}
+
+					@Override
+					public void mouseDown(MouseEvent e) {
+						int index = Integer.parseInt(label.getText());
+						MessageBox box = new MessageBox(shell, SWT.ICON_QUESTION | SWT.OK | SWT.CANCEL);
+						box.setText("Change Background");
+						box.setMessage("Set this as the background for page " + Integer.toString(yearbook.activePage + 1) + "?");
+						int result = box.open();
+						if ((result & SWT.CANCEL) == SWT.CANCEL) return;
+						Image bg = new Image(display, new ImageData(backgroundsList[index].getAbsolutePath()));
+						yearbook.page(yearbook.activePage).setBackgroundImageData(bg.getImageData());
+						bg.dispose();
+						refreshNoPageList();
+					}
+
+					@Override
+					public void mouseUp(MouseEvent e) {
+						
+					}
+					
+				});
+				
+			} catch (SWTException e) {
+				//Ignore
+			}
+			i++;
+		}
+		
+		ExpandItem item0 = new ExpandItem(bar, SWT.NONE, 0);
+		item0.setText("Backgrounds");
+		item0.setHeight(composite.computeSize(SWT.DEFAULT, SWT.DEFAULT).y);
+		item0.setControl(composite);
+		
+		//Clip art tree
+		
+		composite = new Composite(bar, SWT.NONE);
+		composite.setLayout(new FillLayout());
+
+		File clipartRoot = new File(CLIPART_DIR);
+		File[] clipartFiles = clipartRoot.listFiles();
+
+		Tree tree = new Tree(composite, SWT.BORDER);
+		populateFileTree(tree, clipartFiles);
+		
+		ExpandItem item1 = new ExpandItem(bar, SWT.NONE, 1);
+		item1.setText("Clip Art");
+		//item1.setHeight(composite.computeSize(SWT.DEFAULT, SWT.DEFAULT).y);
+		item1.setHeight((int) Math.ceil(.92 * canvasHeight));
+		item1.setControl(composite);
+		
+		bar.setSpacing(8);
+	}
+	
+	private void populateFileTree(TreeItem tree, File[] files) {
+		for (File f : files) {
+			TreeItem item = new TreeItem(tree, SWT.NONE);
+			item.setText(f.getName());
+			if (f.isDirectory()) populateFileTree(item, f.listFiles());
+			else {
+				try {
+					Image image = new Image(display, new ImageData(f.getPath()));
+					Image thumb;
+					if (image.getBounds().height <= image.getBounds().width) {
+						int height = (int) Math.floor(100.0 * ((double) image.getBounds().height / image.getBounds().width));
+						thumb = new Image(display, 100, height);
+						GC gc = new GC(thumb);
+						gc.drawImage(image, 0, 0, image.getBounds().width, image.getBounds().height, 0, 0, 100, height);
+						gc.dispose();
+						item.setImage(thumb);
+					} else {
+						int width = (int) Math.floor(100.0 * ((double) image.getBounds().width / image.getBounds().height));
+						thumb = new Image(display, width, 100);
+						GC gc = new GC(thumb);
+						gc.drawImage(image, 0, 0, image.getBounds().width, image.getBounds().height, 0, 0, width, 100);
+						gc.dispose();
+						item.setImage(thumb);
+					}
+					image.dispose();
+				} catch (SWTException e) {
+					//Ignore
+				}
+			}
+		}
+	}
+	
+	private void populateFileTree(Tree tree, File[] files) {
+		for (File f : files) {
+			TreeItem item = new TreeItem(tree, SWT.NONE);
+			item.setText(f.getName());
+			if (f.isDirectory()) populateFileTree(item, f.listFiles());
+		}
 	}
 
 	private void finalPrep() {
@@ -323,7 +489,7 @@ public class Creator {
 
 		Composite bigCanvasWrapper = new Composite(content, SWT.NONE);
 		canvasGridData = new GridData(SWT.FILL, SWT.FILL, true, true);
-		canvasGridData.horizontalSpan = 6;
+		canvasGridData.horizontalSpan = 5;
 		bigCanvasWrapper.setLayoutData(canvasGridData);
 		bigCanvasWrapper.setLayout(new GridLayout(2, false));
 
@@ -3026,7 +3192,7 @@ public class Creator {
 						//System.out.println(volume.path);
 						//System.out.println(p.folderName);
 						//System.out.println(p.fileName);
-						String path = volume.path + "/" + p.folderName + "/" + p.fileName;
+						String path = volume.path + File.separator + p.folderName + File.separator + p.fileName;
 						YearbookPSPAElement element = new YearbookPSPAElement(display, path, yearbook.settings.width, yearbook.settings.height, volume);
 						int row = j / volume.grid.x;
 						int col = j % volume.grid.x;
@@ -3056,7 +3222,7 @@ public class Creator {
 					if (index > grade.people.size() - 1) break; 
 					
 					Person p = grade.people.get(index);
-					String path = volume.path + "/" + p.folderName + "/" + p.fileName;
+					String path = volume.path + File.separator + p.folderName + File.separator + p.fileName;
 					YearbookPSPAElement element = new YearbookPSPAElement(display, path, yearbook.settings.width, yearbook.settings.height, volume);
 					int row = j / volume.grid.x;
 					int col = j % volume.grid.x;
@@ -3928,8 +4094,6 @@ public class Creator {
 	}
 
 	private void createNewYearbook() {
-
-		int canvasHeight = display.getClientArea().height - 150;
 
 		yearbook.settings.height = canvasHeight;
 		yearbook.settings.width = (int) ((8.5 / 11.0) * canvasHeight);
