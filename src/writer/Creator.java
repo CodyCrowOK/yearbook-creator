@@ -417,7 +417,10 @@ public class Creator {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				try {
-					String path = (String) ((TreeItem) e.item).getData("path");
+					TreeItem item = ((TreeItem) e.item);
+					String path = (String) item.getData("path");
+					File f = new File(path);
+					if (f.isDirectory()) return;
 					MessageBox box = new MessageBox(shell, SWT.ICON_QUESTION | SWT.OK | SWT.CANCEL);
 					box.setText("Insert Clip Art");
 					box.setMessage("Would you like to insert this clip art?");
@@ -447,6 +450,33 @@ public class Creator {
 		//item1.setHeight(composite.computeSize(SWT.DEFAULT, SWT.DEFAULT).y);
 		item1.setHeight((int) Math.ceil(.92 * canvasHeight));
 		item1.setControl(composite);
+		
+		//Layouts
+		
+		composite = new Composite(bar, SWT.NONE);
+		GridLayout layout = new GridLayout();
+		
+		composite.setLayout(layout);
+		
+		Button addBtn = new Button(composite, SWT.PUSH);
+		addBtn.setText("Create New Layout");
+		
+		
+		File layoutRoot = new File(LAYOUTS_DIR);
+		File[] layoutFiles = layoutRoot.listFiles();
+		
+		Tree layoutTree = new Tree(composite, SWT.BORDER);
+		populateFileTree(layoutTree, layoutFiles);
+		
+		layoutTree.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+		
+		ExpandItem item2 = new ExpandItem(bar, SWT.NONE, 2);
+		item2.setText("Layouts");
+		item2.setHeight((int) Math.ceil(.9 * canvasHeight));
+		item2.setControl(composite);
+		
+
+		composite.pack();
 		
 		bar.setSpacing(8);
 	}
