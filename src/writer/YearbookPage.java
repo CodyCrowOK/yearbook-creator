@@ -5,7 +5,9 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
@@ -26,6 +28,7 @@ public class YearbookPage implements Serializable {
 	transient private ImageData backgroundImageData;
 	transient private Image backgroundImage;
 	public boolean noBackground;
+	public Deque<YearbookLayout> layouts;
 
 	public YearbookPage(Image backgroundImage) {
 		this();
@@ -49,6 +52,7 @@ public class YearbookPage implements Serializable {
 
 	public YearbookPage() {
 		elements = new ArrayList<YearbookElement>();
+		layouts = new ArrayDeque<YearbookLayout>();
 	}
 
 	public YearbookPage(String name) {
@@ -269,5 +273,19 @@ public class YearbookPage implements Serializable {
 		if (this.backgroundImage != null) {
 			if (!backgroundImage.isDisposed()) backgroundImage.dispose();
 		}
+	}
+	
+	public boolean isInLayout(int x, int y, int pageWidth, int pageHeight) {
+		for (YearbookLayout layout : layouts) {
+			if (layout.isPrototypeAtPoint(x, y, pageWidth, pageHeight)) return true;
+		}
+		return false;
+	}
+
+	public YearbookElementPrototype getPrototype(int x, int y, int pageWidth, int pageHeight) {
+		for (YearbookLayout layout : layouts) {
+			if (layout.isPrototypeAtPoint(x, y, pageWidth, pageHeight)) return layout.getPrototypeAtPoint(x, y, pageWidth, pageHeight);
+		}
+		return null;
 	}
 }
