@@ -34,6 +34,8 @@ import org.eclipse.swt.graphics.Transform;
 import org.eclipse.swt.layout.*;
 import org.eclipse.swt.widgets.*;
 
+import com.itextpdf.text.DocumentException;
+
 import pspa.Grade;
 import pspa.HomeRoom;
 import pspa.PSPAIndexNotFoundException;
@@ -2785,7 +2787,11 @@ public class Creator {
 
 				try {
 					Yearbook.exportToPDF(yearbook, fileName, display);
-				} catch (COSVisitorException | IOException e) {
+				} catch (Throwable e) {
+					MessageBox box = new MessageBox(shell, SWT.ERROR | SWT.OK);
+					box.setText("Error");
+					box.setMessage("PDF export was unsuccessful. Please restart " + Creator.SOFTWARE_NAME + " and try again.");
+					box.open();
 					e.printStackTrace();
 				}
 			}
@@ -4530,9 +4536,6 @@ public class Creator {
 			tr.translate(element.getBounds(pageWidth, pageHeight).x + element.getBounds(pageWidth, pageHeight).width / 2, element.getBounds(pageWidth, pageHeight).y + element.getBounds(pageWidth, pageHeight).height / 2);
 			tr.rotate(element.rotation);
 			tr.translate(-element.getBounds(pageWidth, pageHeight).x - element.getBounds(pageWidth, pageHeight).width / 2, element.getBounds(pageWidth, -pageHeight).y - element.getBounds(pageWidth, pageHeight).height / 2);
-			//float cos = (float) Math.cos(Math.toRadians(element.rotation));
-			//float sin = (float) Math.sin(Math.toRadians(element.rotation));
-	                //tr.setElements(cos, sin, -sin, cos, element.getBounds(pageWidth, pageHeight).x + element.getBounds(pageWidth, pageHeight).width / 2, element.getBounds(pageWidth, pageHeight).y + element.getBounds(pageWidth, pageHeight).height / 2);
 			
 			gc.setTransform(tr);
 			

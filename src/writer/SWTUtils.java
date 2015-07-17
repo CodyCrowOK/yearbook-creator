@@ -196,7 +196,7 @@ public class SWTUtils {
 		return null;
 	}
 
-	static BufferedImage convertToAWT(ImageData data) {
+	public static BufferedImage convertToAWT(ImageData data) {
 		ColorModel colorModel = null;
 		PaletteData palette = data.palette;
 		if (palette.isDirect) {

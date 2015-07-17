@@ -10,14 +10,18 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 
 import org.apache.pdfbox.exceptions.COSVisitorException;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.edit.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.graphics.xobject.PDJpeg;
 import org.apache.pdfbox.pdmodel.graphics.xobject.PDPixelMap;
+import org.apache.pdfbox.util.ImageIOUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
@@ -25,6 +29,9 @@ import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.ImageLoader;
 import org.eclipse.swt.widgets.Display;
 
+import com.itextpdf.text.DocumentException;
+
+import pdf.PDFUtils;
 import pspa.Volume;
 
 
@@ -140,39 +147,60 @@ public class Yearbook implements Serializable {
 		}
 		return null;
 	}
+	
+	public static void exportToPDF(Yearbook yearbook, String fileName, Display display) throws IOException, COSVisitorException, DocumentException {
+		Deque<ImageData> list = new ArrayDeque<ImageData>();
+		ArrayList<YearbookElement> dummyList = new ArrayList<YearbookElement>();
+		UserSettings dummySettings = new UserSettings();
+		for (int i = 0; i < yearbook.size(); i++) {
+			Image image = new Image(display, yearbook.settings.publishWidth(), yearbook.settings.publishHeight());
+			GC gc = new GC(image);
+			Creator.paintPage(gc, display, yearbook, dummyList, null, dummySettings, i, yearbook.settings.publishWidth(), yearbook.settings.publishHeight(), true);
+			gc.dispose();
+			System.out.println(list.size());
+			list.add(image.getImageData());
+			image.dispose();
+		}
+		
+		PDFUtils.SWTImagesToPDF(fileName, list);
+	}
 
-	public static void exportToPDF(Yearbook yearbook, String fileName, Display display) throws IOException, COSVisitorException {
-		ArrayList<java.awt.image.BufferedImage> images = new ArrayList<java.awt.image.BufferedImage>();
+	public static void exportToPDFOLD(Yearbook yearbook, String fileName, Display display) throws IOException, COSVisitorException {
+		PDDocument document = new PDDocument();
+		
+		//PDPage page1 = new PDPage();
+		//System.out.println(page1.getMediaBox());
+		//if (!false) return;
+		
+		//ArrayList<java.awt.image.BufferedImage> images = new ArrayList<java.awt.image.BufferedImage>();
 		for (int i = 0; i < yearbook.size(); i++) {
 			Image image = new Image(display, yearbook.settings.publishWidth(), yearbook.settings.publishHeight());
 			GC gc = new GC(image);
 			Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), i, yearbook.settings.publishWidth(), yearbook.settings.publishHeight(), true);
-			images.add(SWTUtils.convertToAWT(image.getImageData()));
-			gc.dispose();
-			image.dispose();
-		}
-		
-		PDDocument document = new PDDocument();
-		
-		for (java.awt.image.BufferedImage image : images) {
-			PDPage page = new PDPage();
+			//images.add(SWTUtils.convertToAWT(image.getImageData()));
+			PDRectangle rect = new PDRectangle((float) 2550, (float) 3300);
+			PDPage page = new PDPage(rect);
 			document.addPage(page);
+			//ImageIOUtil.writeImage(SWTUtils.convertToAWT(image.getImageData()), "out-" + i + ".png", 300);
 			
 			//Images will be too large normally, so we need to scale them.
-			int newWidth = (int) page.getMediaBox().getWidth();
-			int newHeight = (int) page.getMediaBox().getHeight();
+			//int newWidth = (int) page.getMediaBox().getWidth();
+			//int newHeight = (int) page.getMediaBox().getHeight();
+			/*int newWidth = imageAWT.getWidth();
+			int newHeight = imageAWT.getHeight();
 			
 			
 			BufferedImage newImage = new BufferedImage(newWidth, newHeight, BufferedImage.SCALE_SMOOTH);
 			Graphics g = newImage.getGraphics();
 			g.drawImage(image, 0, 0, newWidth, newHeight, null);
 			g.dispose();
-			
-			PDPixelMap jpeg = new PDPixelMap(document, newImage);
+			*/
+			PDPixelMap jpeg = new PDPixelMap(document, SWTUtils.convertToAWT(image.getImageData()));
 			PDPageContentStream stream = new PDPageContentStream(document, page);
 			stream.drawImage(jpeg, 0, 0);
 			stream.close();
-			
+			gc.dispose();
+			image.dispose();
 		}
 		
 		document.save(fileName);
