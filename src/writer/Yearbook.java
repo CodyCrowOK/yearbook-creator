@@ -19,9 +19,7 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.edit.PDPageContentStream;
-import org.apache.pdfbox.pdmodel.graphics.xobject.PDJpeg;
 import org.apache.pdfbox.pdmodel.graphics.xobject.PDPixelMap;
-import org.apache.pdfbox.util.ImageIOUtil;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
@@ -149,6 +147,7 @@ public class Yearbook implements Serializable {
 	}
 	
 	public static void exportToPDF(Yearbook yearbook, String fileName, Display display) throws IOException, COSVisitorException, DocumentException {
+		/*
 		Deque<ImageData> list = new ArrayDeque<ImageData>();
 		ArrayList<YearbookElement> dummyList = new ArrayList<YearbookElement>();
 		UserSettings dummySettings = new UserSettings();
@@ -157,12 +156,13 @@ public class Yearbook implements Serializable {
 			GC gc = new GC(image);
 			Creator.paintPage(gc, display, yearbook, dummyList, null, dummySettings, i, yearbook.settings.publishWidth(), yearbook.settings.publishHeight(), true);
 			gc.dispose();
-			System.out.println(list.size());
 			list.add(image.getImageData());
 			image.dispose();
 		}
 		
 		PDFUtils.SWTImagesToPDF(fileName, list);
+		*/
+		PDFUtils.convertYearbookToPDF(fileName, yearbook, display);
 	}
 
 	public static void exportToPDFOLD(Yearbook yearbook, String fileName, Display display) throws IOException, COSVisitorException {
