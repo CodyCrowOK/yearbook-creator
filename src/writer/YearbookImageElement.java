@@ -24,7 +24,6 @@ public class YearbookImageElement extends YearbookElement implements Serializabl
 	
 	public Image getImage(Display display) {
 		if (image == null) {
-			System.out.println("nthsoeua");
 			image = new Image(display, imageData);
 		}
 		return image;

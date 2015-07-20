@@ -17,14 +17,27 @@ package pdf;
 
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Deque;
 
+import javax.imageio.ImageIO;
+
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.PaintEvent;
+import org.eclipse.swt.events.PaintListener;
+import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.ImageData;
+import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.layout.FillLayout;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Shell;
 
 import writer.Creator;
 import writer.SWTUtils;
@@ -94,6 +107,27 @@ public class PDFUtils {
 	}
 	
 	public static void convertYearbookToPDF(String path, Yearbook yearbook, Display display) throws DocumentException, IOException {
+		Shell wait = new Shell(display);
+		wait.setSize(300, 300);
+		
+		wait.addPaintListener(new PaintListener() {
+
+			@Override
+			public void paintControl(
+					PaintEvent e) {
+				Font font = new Font(display,"Arial",14,SWT.BOLD | SWT.ITALIC); 
+				e.gc.setFont(font);
+				int x = (300 - e.gc.textExtent("Please wait.").x) / 2;
+				int y = (300 - e.gc.textExtent("Please wait.").y) / 2;
+				e.gc.drawText("Please wait.", x, y, true);
+				font.dispose();
+			}
+			
+		});
+		
+		wait.open();
+		
+		
 		Document document = new Document();
 		document.setMargins(0, 0, 0, 0);
 		FileOutputStream os = new FileOutputStream(path);
@@ -107,15 +141,26 @@ public class PDFUtils {
 		UserSettings dummySettings = new UserSettings();
 		
 		for (int i = 0; i < yearbook.size(); i++) {
+			String str = "Page " + (i + 1) + " of " + yearbook.size();
+			GC gc1 = new GC(wait);
+			gc1.setBackground(display.getSystemColor(SWT.COLOR_WIDGET_BACKGROUND));
+			gc1.fillRectangle(new Rectangle(0, 0, 300, 300));
+			Font font = new Font(display,"Arial",14,SWT.BOLD | SWT.ITALIC); 
+			gc1.setFont(font);
+			int x = (300 - gc1.textExtent(str).x) / 2;
+			int y = (300 - gc1.textExtent(str).y) / 2;
+			gc1.drawText(str, x, y, true);
+			font.dispose();
+			gc1.dispose();
+			
 			org.eclipse.swt.graphics.Image image = new org.eclipse.swt.graphics.Image(display, yearbook.settings.publishWidth(), yearbook.settings.publishHeight());
 			GC gc = new GC(image);
-			Creator.paintPage(gc, display, yearbook, dummyList, null, dummySettings, i, yearbook.settings.publishWidth(), yearbook.settings.publishHeight(), true);
+			Creator.paintPage(gc, display, yearbook, dummyList, null, dummySettings, i, yearbook.settings.publishWidth(), yearbook.settings.publishHeight(), true, true);
 			gc.dispose();
 
 			ImageData imageData = image.getImageData();
 			image.dispose();
 			BufferedImage bi = SWTUtils.convertToAWT(imageData);
-
 			Image large = Image.getInstance(bi, null);
 			large.scaleToFit(document.getPageSize());
 
@@ -126,5 +171,7 @@ public class PDFUtils {
 		document.close();
 		writer.close();
 		
+		wait.close();
+		wait.dispose();
 	}
 }

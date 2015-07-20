@@ -547,11 +547,11 @@ public class Reader {
 		if (DEMO) return;
 		Image image = new Image(display, canvas.getBounds().width, canvas.getBounds().height);
 		GC gc = new GC(image);
-		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), current, yearbook.settings.width, yearbook.settings.height, true);
+		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), current, yearbook.settings.width, yearbook.settings.height, true, false);
 		gc.dispose();
 		Image pageTwo = new Image(display, canvas.getBounds().width, canvas.getBounds().height);
 		gc = new GC(pageTwo);
-		if (next != MagicNumber.FIRST_PAGE) Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), next, yearbook.settings.width, yearbook.settings.height, true);
+		if (next != MagicNumber.FIRST_PAGE) Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), next, yearbook.settings.width, yearbook.settings.height, true, false);
 		else {
 			int x = canvasWrapper.getBounds().x + bigCanvasWrapper.getBounds().x;
 			int y = canvasWrapper.getBounds().y + bigCanvasWrapper.getBounds().y;
@@ -608,22 +608,22 @@ public class Reader {
 	private void smoothPageTurnRight(int current, int next) {
 		Image nextRight = new Image(display, rightCanvas.getBounds().width, rightCanvas.getBounds().height);
 		GC gc = new GC(nextRight);
-		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), next, yearbook.settings.width, yearbook.settings.height, true);
+		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), next, yearbook.settings.width, yearbook.settings.height, true, false);
 		gc.dispose();
 
 		Image currentRight = new Image(display, rightCanvas.getBounds().width, rightCanvas.getBounds().height);
 		gc = new GC(currentRight);
-		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), current, yearbook.settings.width, yearbook.settings.height, true);
+		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), current, yearbook.settings.width, yearbook.settings.height, true, false);
 		gc.dispose();
 
 		Image nextLeft = new Image(display, rightCanvas.getBounds().width, rightCanvas.getBounds().height);
 		gc = new GC(nextLeft);
-		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), current + 1, yearbook.settings.width, yearbook.settings.height, true);
+		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), current + 1, yearbook.settings.width, yearbook.settings.height, true, false);
 		gc.dispose();
 		
 		Image currentLeft = new Image(display, rightCanvas.getBounds().width, rightCanvas.getBounds().height);
 		gc = new GC(currentLeft);
-		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), current - 1, yearbook.settings.width, yearbook.settings.height, true);
+		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), current - 1, yearbook.settings.width, yearbook.settings.height, true, false);
 		gc.dispose();
 		
 		int i = 0;
@@ -678,14 +678,14 @@ public class Reader {
 		if (DEMO) return;
 		Image image = new Image(display, rightCanvas.getBounds().width, rightCanvas.getBounds().height);
 		GC gc = new GC(image);
-		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), current, yearbook.settings.width, yearbook.settings.height, true);
+		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), current, yearbook.settings.width, yearbook.settings.height, true, false);
 		gc.dispose();
 		Image pageTwo = new Image(display, rightCanvas.getBounds().width, rightCanvas.getBounds().height);
 		gc = new GC(pageTwo);
 
 		
 		
-		if (next != MagicNumber.LAST_PAGE) Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), next, yearbook.settings.width, yearbook.settings.height, true);
+		if (next != MagicNumber.LAST_PAGE) Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), next, yearbook.settings.width, yearbook.settings.height, true, false);
 		else {
 			int x = canvasWrapper2.getBounds().x + bigCanvasWrapper.getBounds().x;
 			int y = canvasWrapper2.getBounds().y + bigCanvasWrapper.getBounds().y;
@@ -704,7 +704,7 @@ public class Reader {
 		
 		Image leftOriginal = new Image(display, canvas.getBounds().width, canvas.getBounds().height);
 		gc = new GC(leftOriginal);
-		if (current != 0) Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), current - 1, yearbook.settings.width, yearbook.settings.height, true);
+		if (current != 0) Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), current - 1, yearbook.settings.width, yearbook.settings.height, true, false);
 		else {
 			int x = canvasWrapper.getBounds().x + bigCanvasWrapper.getBounds().x;
 			int y = canvasWrapper.getBounds().y + bigCanvasWrapper.getBounds().y;
@@ -722,7 +722,7 @@ public class Reader {
 		
 		Image newLeft = new Image(display, canvas.getBounds().width, canvas.getBounds().height);
 		gc = new GC(newLeft);
-		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), current + 1, yearbook.settings.width, yearbook.settings.height, true);
+		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), current + 1, yearbook.settings.width, yearbook.settings.height, true, false);
 		gc.dispose();
 		
 		int i = 0;
@@ -872,7 +872,7 @@ public class Reader {
 			gc.fillRectangle(0, 0, rightCanvas.getBounds().width, rightCanvas.getBounds().height);
 		}
 		
-		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), activePage, yearbook.settings.width, yearbook.settings.height, true);
+		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), activePage, yearbook.settings.width, yearbook.settings.height, true, false);
 		gc.dispose();
 		
 		canvas.addMouseMoveListener(new MouseMoveListener() {
@@ -898,7 +898,7 @@ public class Reader {
 	private void loadRightCanvas(int activePage) {
 		//blankRightCanvas();
 		GC gc = new GC(rightCanvas);
-		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), activePage, yearbook.settings.width, yearbook.settings.height, true);
+		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), activePage, yearbook.settings.width, yearbook.settings.height, true, false);
 		gc.dispose();
 		
 		rightCanvas.addMouseMoveListener(new MouseMoveListener() {
@@ -964,7 +964,7 @@ public class Reader {
 			gc.fillRectangle(0, 0, rightCanvas.getBounds().width, rightCanvas.getBounds().height);
 		}
 		
-		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), 0, yearbook.settings.width, yearbook.settings.height, true);
+		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), 0, yearbook.settings.width, yearbook.settings.height, true, false);
 		gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
 		gc.setLineWidth(3);
 		gc.drawRectangle(rightCanvas.getBounds());
@@ -980,7 +980,7 @@ public class Reader {
 			gc.fillRectangle(0, 0, rightCanvas.getBounds().width, rightCanvas.getBounds().height);
 		}
 		
-		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), yearbook.size() - 1, yearbook.settings.width, yearbook.settings.height, true);
+		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), yearbook.size() - 1, yearbook.settings.width, yearbook.settings.height, true, false);
 		gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
 		gc.setLineWidth(3);
 		gc.drawRectangle(rightCanvas.getBounds());

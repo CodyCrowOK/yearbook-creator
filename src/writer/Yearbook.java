@@ -173,7 +173,7 @@ public class Yearbook implements Serializable {
 		for (int i = 0; i < yearbook.size(); i++) {
 			Image image = new Image(display, yearbook.settings.publishWidth(), yearbook.settings.publishHeight());
 			GC gc = new GC(image);
-			Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), i, yearbook.settings.publishWidth(), yearbook.settings.publishHeight(), true);
+			Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), i, yearbook.settings.publishWidth(), yearbook.settings.publishHeight(), true, true);
 			//images.add(SWTUtils.convertToAWT(image.getImageData()));
 			PDRectangle rect = new PDRectangle((float) 2550, (float) 3300);
 			PDPage page = new PDPage(rect);

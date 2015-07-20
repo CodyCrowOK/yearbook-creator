@@ -4511,14 +4511,14 @@ public class Creator {
 	private void loadLeftCanvas(int index) {
 		GC gc;
 		gc = new GC(canvas);
-		paintPage(gc, display, yearbook, clipboard.elements, selectionRectangle, settings, index, yearbook.settings.width, yearbook.settings.height, false);
+		paintPage(gc, display, yearbook, clipboard.elements, selectionRectangle, settings, index, yearbook.settings.width, yearbook.settings.height, false, false);
 		gc.dispose();
 	}
 	
 	private void loadRightCanvas(int index) {
 		GC gc;
 		gc = new GC(rightCanvas);
-		paintPage(gc, display, yearbook, clipboard.elements, selectionRectangle, settings, index, yearbook.settings.width, yearbook.settings.height, false);
+		paintPage(gc, display, yearbook, clipboard.elements, selectionRectangle, settings, index, yearbook.settings.width, yearbook.settings.height, false, false);
 		gc.dispose();
 	}
 	
@@ -4568,14 +4568,14 @@ public class Creator {
 	private void loadActivePage(int activePage) {
 		GC gc;
 		gc = new GC(canvas);
-		paintPage(gc, display, yearbook, clipboard.elements, selectionRectangle, settings, activePage, yearbook.settings.width, yearbook.settings.height, false);
+		paintPage(gc, display, yearbook, clipboard.elements, selectionRectangle, settings, activePage, yearbook.settings.width, yearbook.settings.height, false, false);
 		gc.dispose();
 	}
 
 	public static void paintPage(GC gc, Display display, Yearbook yearbook, 
 			ArrayList<YearbookElement> selectedElements, 
 			Rectangle selectionRectangle, UserSettings settings,
-			int activePage, int pageWidth, int pageHeight, boolean isReader) {
+			int activePage, int pageWidth, int pageHeight, boolean isReader, boolean isExport) {
 
 		Color uglyYellowColor = display.getSystemColor(SWT.COLOR_GRAY);
 
@@ -4650,29 +4650,43 @@ public class Creator {
 			
 			if (element.isPSPA()) {
 				YearbookPSPAElement e = (YearbookPSPAElement) element;
+				double multiplicand = (double) pageWidth / e.pageWidth;
 				
 				Font f = e.text.getFont(display);
+				/*if (isExport) {
+					FontData fd = f.getFontData()[0];
+					fd.setHeight((int) (fd.getHeight() * (300.0 / 72.0)));
+					f.dispose();
+					f = new Font(display, fd);
+				}*/
+				FontData fd = f.getFontData()[0];
+				fd.setHeight((int) (fd.getHeight() * multiplicand));
+				f.dispose();
+				f = new Font(display, fd);
+				
 				Color c = e.text.getColor(display);
 				gc.setFont(f);
 				String name = e.person.firstName + " " + e.person.lastName;
 				
+				
 				Point nameExtent = gc.textExtent(name);
 				
 				int nameX = e.getBounds(pageWidth, pageHeight).x + ((e.getBounds(pageWidth, pageHeight).width - nameExtent.x) / 2);
-				int nameY = (e.getBounds(pageWidth, pageHeight).y + e.getBounds(pageWidth, pageHeight).height) + ((e.margins.y - nameExtent.y) / 2);
+				int nameY = (e.getBounds(pageWidth, pageHeight).y + e.getBounds(pageWidth, pageHeight).height) + Math.abs((e.margins.y - nameExtent.y) / 2);
 				e.text.setBounds(new Rectangle(nameX, nameY, nameExtent.x, nameExtent.y));
+				//e.text.setBounds(new Rectangle(0,0,30,30));
 				
 				if (e.text.shadow) {
 					int offset = e.text.size >= 72 ? 3 : e.text.size >= 36 ? 2 : 1;
 					gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
 					gc.setAlpha(0x8f);
-					gc.drawText(name, e.text.getBounds(pageWidth, pageHeight).x + offset, e.text.getBounds(pageWidth, pageHeight).y + offset, true);
+					gc.drawText(name, nameX + offset, nameY + offset, true);
 					gc.setAlpha(0xff);
 				}
 				
 				gc.setForeground(c);
 				
-				gc.drawText(name, e.text.getBounds(pageWidth, pageHeight).x, e.text.getBounds(pageWidth, pageHeight).y, true);
+				gc.drawText(name, nameX, nameY, true);
 
 				if (e.text.underline) {
 					//Determine the line width
