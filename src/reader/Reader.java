@@ -174,6 +174,8 @@ public class Reader {
 	}
 
 	private void initialize() {
+		
+		showExpandingLogo();
 
 		if (!DEMO) canvasHeight = display.getClientArea().height - 120;
 		if (DEMO) canvasHeight = display.getClientArea().height - 50;
@@ -524,6 +526,40 @@ public class Reader {
 		
 		
 		
+	}
+
+	private void showExpandingLogo() {
+		shell.setSize(display.getClientArea().width, display.getClientArea().height);
+		shell.setMaximized(true);
+		shell.setVisible(true);
+		GC gc = new GC(shell);
+		Image logo = YearbookImages.logoWhiteBackground(display);
+		for (int i = 0; i < 1000; i++) {
+			int destX, destY, destWidth, destHeight;
+			
+			//Expensive operation
+			double eToTheX = (Math.exp((double) i / 1000) - 1);
+			
+			destWidth = (int) (eToTheX * logo.getBounds().width);
+			destHeight = (int) (eToTheX * logo.getBounds().height);
+			destX = (shell.getBounds().width - destWidth) / 2;
+			destY = (shell.getBounds().height - destHeight) / 2;
+			
+			try {
+				Thread.sleep(1);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			gc.drawImage(logo, 0, 0, logo.getBounds().width, logo.getBounds().height, destX, destY, destWidth, destHeight);
+		}
+		logo.dispose();
+		gc.dispose();
+		try {
+			Thread.sleep(300);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	protected void openFromBack() {

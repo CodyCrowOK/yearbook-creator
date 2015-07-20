@@ -80,6 +80,7 @@ public class Creator {
 	private MenuItem fileSaveItem;
 	private MenuItem fileSaveAsItem;
 	private MenuItem fileExportItem;
+	private MenuItem fileExportJPEGItem;
 	private MenuItem fileCloseItem;
 	private MenuItem editMenuItem;
 	private Menu editMenu;
@@ -2338,8 +2339,13 @@ public class Creator {
 		fileSaveAsItem.setText("Save &As...\tCtrl+Shift+S");
 		fileSaveAsItem.setAccelerator(SWT.MOD1 | SWT.MOD2 | 'S');
 
+		new MenuItem(fileMenu, SWT.SEPARATOR);
+		
 		fileExportItem = new MenuItem(fileMenu, SWT.PUSH);
-		fileExportItem.setText("&Export...");
+		fileExportItem.setText("&Export to PDF (Print)");
+		
+		fileExportJPEGItem = new MenuItem(fileMenu, SWT.PUSH);
+		fileExportJPEGItem.setText("Export to &PNG (Screen)");
 
 		new MenuItem(fileMenu, SWT.SEPARATOR);
 
@@ -2794,12 +2800,35 @@ public class Creator {
 				} catch (Throwable e) {
 					MessageBox box = new MessageBox(shell, SWT.ERROR | SWT.OK);
 					box.setText("Error");
-					box.setMessage("PDF export was unsuccessful. Please restart " + Creator.SOFTWARE_NAME + " and try again.");
+					box.setMessage("PDF export was unsuccessful. Please save and restart " + Creator.SOFTWARE_NAME + " and then try again.");
 					box.open();
 					e.printStackTrace();
 				}
 			}
 
+		});
+		
+		fileExportJPEGItem.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				DirectoryDialog picker = new DirectoryDialog(shell);
+				picker.setText("Select Folder");
+				String folder = picker.open();
+				if (folder == null) return;
+				
+				try {
+					Yearbook.exportToPNG(yearbook, folder, display);
+				} catch (Throwable e) {
+					MessageBox box = new MessageBox(shell, SWT.ERROR | SWT.OK);
+					box.setText("Error");
+					box.setMessage("PNG export was unsuccessful. Please save and restart " + Creator.SOFTWARE_NAME + " and then try again.");
+					box.open();
+					e.printStackTrace();
+				}
+				
+			}
+			
 		});
 
 		fileCloseItem.addListener(SWT.Selection, new Listener() {
@@ -4275,6 +4304,15 @@ public class Creator {
 
 		});
 		
+		previewBtn.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				fileExportItem.getListeners(SWT.Selection)[0].handleEvent(event);
+			}
+			
+		});
+		
 		cutBtn.addListener(SWT.Selection, new Listener() {
 
 			@Override
@@ -4816,6 +4854,7 @@ public class Creator {
 
 		//...and display those in some manner.
 		for (YearbookTextElement e : texts) {
+			double multiplicand = (double) pageWidth / e.pageWidth;
 			Transform tr = new Transform(display);
 			tr.translate(e.getBounds(pageWidth, pageHeight).x + e.getBounds(pageWidth, pageHeight).width / 2, e.getBounds(pageWidth, pageHeight).y + e.getBounds(pageWidth, pageHeight).height / 2);
 			tr.rotate(e.rotation);
@@ -4823,16 +4862,23 @@ public class Creator {
 			gc.setTransform(tr);
 			gc.setAdvanced(true);
 			gc.setTextAntialias(SWT.ON);
-			gc.setFont(e.getFont(display, pageWidth, pageHeight));
+			Font f = e.getFont(display, pageWidth, pageHeight);
+			FontData fd = f.getFontData()[0];
+			f.dispose();
+			fd.setHeight((int) (fd.getHeight() * multiplicand));
+			f = new Font(display, fd);
+			gc.setFont(f);
 			
-			//int x = (int) (e.x * pageWidth);
-			//int y = (int) (e.y * pageHeight);
+			int x = (int) (e.x * pageWidth);
+			int y = (int) (e.y * pageHeight);
+			
+			Point textExtent = gc.textExtent(e.text);
 
 			if (e.shadow) {
 				int offset = e.size >= 72 ? 3 : e.size >= 36 ? 2 : 1;
 				gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
 				gc.setAlpha(0x8f);
-				gc.drawText(e.text, e.getBounds(pageWidth, pageHeight).x + offset, e.getBounds(pageWidth, pageHeight).y + offset, true);
+				gc.drawText(e.text, x + offset, y + offset, true);
 				gc.setAlpha(0xff);
 			}
 
@@ -4846,7 +4892,7 @@ public class Creator {
 			 */
 			e.setBounds(new Rectangle(e.getBounds(pageWidth, pageHeight).x, e.getBounds(pageWidth, pageHeight).y, gc.stringExtent(e.text).x, gc.stringExtent(e.text).y));
 			
-			gc.drawText(e.text, e.getBounds(pageWidth, pageHeight).x, e.getBounds(pageWidth, pageHeight).y, true);
+			gc.drawText(e.text, x, y, true);
 
 			/*
 			 * Handle underlining (SWT has no native GC underlining)
@@ -4860,7 +4906,7 @@ public class Creator {
 
 				if (e.bold) width *= 1.8;
 				gc.setLineWidth(width);
-				gc.drawLine(e.getBounds(pageWidth, pageHeight).x + 1, e.getBounds(pageWidth, pageHeight).y + e.getBounds(pageWidth, pageHeight).height - (int) (e.getBounds(pageWidth, pageHeight).height * .1), e.getBounds(pageWidth, pageHeight).x + e.getBounds(pageWidth, pageHeight).width - 1, e.getBounds(pageWidth, pageHeight).y + e.getBounds(pageWidth, pageHeight).height - (int) (e.getBounds(pageWidth, pageHeight).height * .1));
+				gc.drawLine(x + 1, y + textExtent.y - (int) (textExtent.y * .1), x + textExtent.x - 1, y + textExtent.y - (int) (textExtent.y * .1));
 
 			}
 
