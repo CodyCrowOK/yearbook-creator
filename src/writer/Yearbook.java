@@ -45,7 +45,7 @@ public class Yearbook implements Serializable {
 	public String name;
 	public YearbookSettings settings;
 	public int activePage;
-	
+
 	public YearbookPageNumberElement pageNumber;
 
 	public Yearbook() {
@@ -74,7 +74,7 @@ public class Yearbook implements Serializable {
 	public void addPage(String name) {
 		pages.add(new YearbookPage(name));
 	}
-	
+
 	public void addPage(YearbookPage page) {
 		pages.add(page);
 	}
@@ -93,7 +93,7 @@ public class Yearbook implements Serializable {
 		pages.remove(source);
 		pages.add(destination, page);
 	}
-	
+
 	public void removeElement(YearbookElement element) {
 		for (YearbookPage page : pages) {
 			page.removeElement(element);
@@ -135,7 +135,7 @@ public class Yearbook implements Serializable {
 				yearbook.pages.add(new YearbookPage(image));
 				image.dispose();
 			}
-			*/
+			 */
 
 			return yearbook;
 
@@ -145,33 +145,30 @@ public class Yearbook implements Serializable {
 		}
 		return null;
 	}
-	
+
 	public static void exportToPDF(Yearbook yearbook, String fileName, Display display) throws IOException, COSVisitorException, DocumentException {
-		/*
-		Deque<ImageData> list = new ArrayDeque<ImageData>();
-		ArrayList<YearbookElement> dummyList = new ArrayList<YearbookElement>();
-		UserSettings dummySettings = new UserSettings();
-		for (int i = 0; i < yearbook.size(); i++) {
-			Image image = new Image(display, yearbook.settings.publishWidth(), yearbook.settings.publishHeight());
-			GC gc = new GC(image);
-			Creator.paintPage(gc, display, yearbook, dummyList, null, dummySettings, i, yearbook.settings.publishWidth(), yearbook.settings.publishHeight(), true);
-			gc.dispose();
-			list.add(image.getImageData());
-			image.dispose();
-		}
-		
-		PDFUtils.SWTImagesToPDF(fileName, list);
-		*/
-		PDFUtils.convertYearbookToPDF(fileName, yearbook, display);
+		display.asyncExec(new Runnable() {
+
+			@Override
+			public void run() {
+				try {
+					PDFUtils.convertYearbookToPDF(fileName, yearbook, display);
+				} catch (DocumentException | IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			
+		});
 	}
 
 	public static void exportToPDFOLD(Yearbook yearbook, String fileName, Display display) throws IOException, COSVisitorException {
 		PDDocument document = new PDDocument();
-		
+
 		//PDPage page1 = new PDPage();
 		//System.out.println(page1.getMediaBox());
 		//if (!false) return;
-		
+
 		//ArrayList<java.awt.image.BufferedImage> images = new ArrayList<java.awt.image.BufferedImage>();
 		for (int i = 0; i < yearbook.size(); i++) {
 			Image image = new Image(display, yearbook.settings.publishWidth(), yearbook.settings.publishHeight());
@@ -182,19 +179,19 @@ public class Yearbook implements Serializable {
 			PDPage page = new PDPage(rect);
 			document.addPage(page);
 			//ImageIOUtil.writeImage(SWTUtils.convertToAWT(image.getImageData()), "out-" + i + ".png", 300);
-			
+
 			//Images will be too large normally, so we need to scale them.
 			//int newWidth = (int) page.getMediaBox().getWidth();
 			//int newHeight = (int) page.getMediaBox().getHeight();
 			/*int newWidth = imageAWT.getWidth();
 			int newHeight = imageAWT.getHeight();
-			
-			
+
+
 			BufferedImage newImage = new BufferedImage(newWidth, newHeight, BufferedImage.SCALE_SMOOTH);
 			Graphics g = newImage.getGraphics();
 			g.drawImage(image, 0, 0, newWidth, newHeight, null);
 			g.dispose();
-			*/
+			 */
 			PDPixelMap jpeg = new PDPixelMap(document, SWTUtils.convertToAWT(image.getImageData()));
 			PDPageContentStream stream = new PDPageContentStream(document, page);
 			stream.drawImage(jpeg, 0, 0);
@@ -202,7 +199,7 @@ public class Yearbook implements Serializable {
 			gc.dispose();
 			image.dispose();
 		}
-		
+
 		document.save(fileName);
 		document.close();
 	}
@@ -283,6 +280,6 @@ public class Yearbook implements Serializable {
 		for (int i = 0; i < this.size(); i++) {
 			if (Math.abs(this.activePage - i) > 2) this.page(i).setInactive();
 		}
-		
+
 	}
 }

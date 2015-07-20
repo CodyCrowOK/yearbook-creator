@@ -180,14 +180,9 @@ public class Volume implements Serializable {
 	}
 	
 	public static Point photoSpacing(Point grid, int pageWidth, int pageHeight) {
-		//Assume that the width of each image is two-thirds of the height.
 		
-		//2 inch vertical margins
-		//int adjustedHeight = (int) ((10.0 / 11.0) * pageHeight);
 		int adjustedHeight = pageHeight;
 		int adjustedWidth = pageWidth;
-		//1 and 1/4 inch horizontal margins
-		//int adjustedWidth = (int) ((7.5 / 8.5) * pageWidth);
 		
 		int photoXWidth = (int) ((double) adjustedWidth / (grid.x));
 		int photoYWidth = (int) ((double) adjustedHeight / (grid.y));

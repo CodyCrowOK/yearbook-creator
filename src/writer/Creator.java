@@ -105,6 +105,7 @@ public class Creator {
 	private MenuItem pageClearBackgroundItem;
 	private MenuItem pageUseCoverItem;
 	private MenuItem pageShowGridItem;
+	private MenuItem pageShowTextItem;
 	private MenuItem helpMenuItem;
 	private Menu helpMenu;
 	private MenuItem helpAboutItem;
@@ -2381,6 +2382,14 @@ public class Creator {
 		editYearbookNameItem = new MenuItem(editMenu, SWT.PUSH);
 		editYearbookNameItem.setText("Yearbook Name...");
 
+		new MenuItem(editMenu, SWT.SEPARATOR);
+
+		pageShowGridItem = new MenuItem(editMenu, SWT.CHECK);
+		pageShowGridItem.setText("Show &Grid");
+
+		pageShowTextItem = new MenuItem(editMenu, SWT.CHECK);
+		pageShowTextItem.setText("Show Text on Tool Bar");
+
 
 		//Create the insert menu.
 		insertMenuItem = new MenuItem(menubar, SWT.CASCADE);
@@ -2432,11 +2441,6 @@ public class Creator {
 
 		pageUseCoverItem = new MenuItem(pageMenu, SWT.CHECK);
 		pageUseCoverItem.setText("Show Cover");
-
-		new MenuItem(pageMenu, SWT.SEPARATOR);
-
-		pageShowGridItem = new MenuItem(pageMenu, SWT.CHECK);
-		pageShowGridItem.setText("Show &Grid");
 
 
 
@@ -3192,6 +3196,14 @@ public class Creator {
 							return;
 						}
 						
+						if (columnsCombo.getSelectionIndex() < 0 || rowsCombo.getSelectionIndex() < 0) {
+							MessageBox box = new MessageBox(window, SWT.OK);
+							box.setText("Invalid Option");
+							box.setMessage("Please choose a row and column height.");
+							box.open();
+							return;
+						}
+						
 						try {
 							volume.processRoot(root);
 							
@@ -3208,6 +3220,11 @@ public class Creator {
 							MessageBox box = new MessageBox(window, SWT.ICON_ERROR);
 							box.setText("Error");
 							box.setMessage("The selected directory is not a valid PSPA volume.");
+							box.open();
+						} catch (Exception e) {
+							MessageBox box = new MessageBox(window, SWT.ICON_ERROR);
+							box.setText("Error");
+							box.setMessage("An unknown error occurred.\n\t" + e);
 							box.open();
 						}
 						window.close();
@@ -3357,6 +3374,53 @@ public class Creator {
 			}
 
 		});
+		
+		pageShowTextItem.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				settings.showNavbarText = !settings.showNavbarText;
+				if (settings.showNavbarText) {
+					newBtn.setText("New Page");
+					openBtn.setText("Open Yearbook");
+					saveBtn.setText("Save");
+					previewBtn.setText("Export to PDF");
+					undoBtn.setText("Undo");
+					redoBtn.setText("Redo");
+					cutBtn.setText("Cut");
+					copyBtn.setText("Copy");
+					pasteBtn.setText("Paste");
+					textBtn.setText("Insert Text");
+					imageBtn.setText("Insert Image");
+					videoBtn.setText("Insert Video");
+					moveBtn.setText("Move Mode");
+					resizeBtn.setText("Resize Mode");
+					selectBtn.setText("Select Mode");
+					eraseBtn.setText("Erase Mode");
+					rotateBtn.setText("Rotate Mode");
+				} else {
+					newBtn.setText("");
+					openBtn.setText("");
+					saveBtn.setText("");
+					previewBtn.setText("");
+					undoBtn.setText("");
+					redoBtn.setText("");
+					cutBtn.setText("");
+					copyBtn.setText("");
+					pasteBtn.setText("");
+					textBtn.setText("");
+					imageBtn.setText("");
+					videoBtn.setText("");
+					moveBtn.setText("");
+					resizeBtn.setText("");
+					selectBtn.setText("");
+					eraseBtn.setText("");
+					rotateBtn.setText("");
+				}
+				toolbarWrapper.pack();
+			}
+			
+		});
 
 		helpAboutItem.addListener(SWT.Selection, new Listener() {
 
@@ -3454,8 +3518,8 @@ public class Creator {
 	
 	private void generatePSPAPages(Volume volume, ArrayList<String> items) {
 		
-		int initialXOffset = (int) ((1.25 / 8.5) * yearbook.settings.width) / 2;
-		int initialYOffset = (int) ((2.0 / 11.0) * yearbook.settings.height) / 2;
+		int initialXOffset = (int) ((1.0 / 8.5) * yearbook.settings.width) / 2;
+		int initialYOffset = (int) ((1.5 / 11.0) * yearbook.settings.height) / 2;
 		
 		for (String gradeName : items) {
 			Grade grade = volume.getGradeByName(gradeName);
@@ -3802,7 +3866,7 @@ public class Creator {
 	
 	protected void openPSPATextDialog(YearbookTextElement element) {
 		Shell textTool = new Shell(display, SWT.DIALOG_TRIM);
-		textTool.setText("Page Number Tool");
+		textTool.setText("PSPA Text Tool");
 		GridLayout layout = new GridLayout();
 		layout.numColumns = 5;
 		layout.makeColumnsEqualWidth = true;
@@ -3827,6 +3891,12 @@ public class Creator {
 		sizeData.horizontalSpan = 2;
 		sizeCombo.setLayoutData(sizeData);
 		String[] fontSizes = {
+				"2",
+				"3",
+				"4",
+				"5",
+				"6",
+				"7",
 				"8",
 				"9",
 				"10",
@@ -4100,17 +4170,14 @@ public class Creator {
 		saveBtn.setImage(YearbookIcons.save(display));
 		saveBtn.pack();
 
-		Label sep1 = new Label(toolbarWrapper, SWT.NONE);
-		sep1.setText("   ");
-
 		previewBtn = new Button(toolbarWrapper, SWT.PUSH);
-		previewBtn.setImage(YearbookIcons.printPreview(display));
+		previewBtn.setImage(YearbookIcons.exportPDF(display));
 		previewBtn.pack();
-
+		/*
 		printBtn = new Button(toolbarWrapper, SWT.PUSH);
 		printBtn.setImage(YearbookIcons.print(display));
 		printBtn.pack();
-
+*/
 		Label sep2 = new Label(toolbarWrapper, SWT.NONE);
 		sep2.setText("   ");
 

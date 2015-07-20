@@ -53,7 +53,7 @@ public class YearbookIcons {
 		return new Image(display, "icons/document-print.png");
 	}
 
-	static Image printPreview(Display display) {
+	static Image exportPDF(Display display) {
 		return new Image(display, "icons/document-print-preview.png");
 	}
 
