@@ -190,7 +190,7 @@ public class Creator {
 		content = new Composite(shell, SWT.NONE);
 		content.setLayout(gridLayout);
 
-		pagesList = new List(content, SWT.BORDER | SWT.V_SCROLL);
+		pagesList = new List(content, SWT.BORDER | SWT.V_SCROLL | SWT.MULTI);
 		listGridData = new GridData(SWT.FILL, SWT.FILL, true, true);
 		listGridData.horizontalSpan = 1;
 		listGridData.heightHint = 150;
@@ -209,8 +209,10 @@ public class Creator {
 				{
 					items[i].dispose();
 				}
-				int selectedPageIndex = pagesList.getSelectionIndex();
-				if (selectedPageIndex < 0 || selectedPageIndex > pagesList.getItemCount()) return;
+				int selectedPageIndices[] = pagesList.getSelectionIndices();
+				for (int i : selectedPageIndices) {
+					if (i < 0 || i > pagesList.getItemCount()) return;
+				}
 				MenuItem item1 = new MenuItem(pagesListMenu, SWT.NONE);
 				item1.setText("Rename");
 				item1.addListener(SWT.Selection, new Listener() {
@@ -265,9 +267,9 @@ public class Creator {
 						ok.addSelectionListener(new SelectionAdapter() {
 							@Override
 							public void widgetSelected (SelectionEvent e) {
-								//dialog.close();
-
-								yearbook.page(selectedPageIndex).name = text.getText(); 
+								for (int i : selectedPageIndices) {
+									yearbook.page(i).name = text.getText();
+								}
 
 								refresh();
 								dialog.close();
@@ -291,10 +293,11 @@ public class Creator {
 					public void handleEvent(Event event) {
 						MessageBox messageBox = new MessageBox(shell, SWT.ICON_WARNING | SWT.YES | SWT.NO);
 						messageBox.setText("Delete Page");
-						messageBox.setMessage("Are you sure you want to delete this page?\n\t" + yearbook.page(selectedPageIndex));
+						if (selectedPageIndices.length == 1) messageBox.setMessage("Are you sure you want to delete this page?\n\t" + yearbook.page(selectedPageIndices[0]));
+						else messageBox.setMessage("Are you sure you want to delete these pages?");
 						int yesno = messageBox.open();
 						if (yesno == SWT.YES) {
-							yearbook.removePage(selectedPageIndex);
+							yearbook.removePages(selectedPageIndices);
 							refresh();
 						}
 
@@ -303,7 +306,43 @@ public class Creator {
 				});
 			}
 		});
+		/*
+		pagesList.addKeyListener(new KeyListener() {
 
+			@Override
+			public void keyPressed(KeyEvent e) {
+				if (e.keyCode == SWT.DEL) {
+					MenuItem[] items = pagesListMenu.getItems();
+					for (int i = 0; i < items.length; i++)
+					{
+						items[i].dispose();
+					}
+					int selectedPageIndices[] = pagesList.getSelectionIndices();
+					for (int i : selectedPageIndices) {
+						if (i < 0 || i > pagesList.getItemCount()) return;
+					}
+					
+					MessageBox messageBox = new MessageBox(shell, SWT.ICON_WARNING | SWT.YES | SWT.NO);
+					messageBox.setText("Delete Page");
+					if (selectedPageIndices.length == 1) messageBox.setMessage("Are you sure you want to delete this page?\n\t" + yearbook.page(selectedPageIndices[0]));
+					else messageBox.setMessage("Are you sure you want to delete these pages?");
+					int yesno = messageBox.open();
+					if (yesno == SWT.YES) {
+						yearbook.removePages(selectedPageIndices);
+						refresh();
+					}
+				}
+			}
+
+			@Override
+			public void keyReleased(KeyEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+		});
+		*/
+		
 		this.buildPagesListDnD();
 		
 		this.buildExpandBar();

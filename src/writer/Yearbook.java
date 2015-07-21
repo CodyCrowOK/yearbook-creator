@@ -89,6 +89,16 @@ public class Yearbook implements Serializable {
 	public void removePage(int index) {
 		pages.remove(index);
 	}
+	
+	public void removePages(int[] indices) {
+		Deque<YearbookPage> pages = new ArrayDeque<YearbookPage>();
+		for (int i : indices) {
+			pages.add(this.pages.get(i));
+		}
+		for (YearbookPage p : pages) {
+			this.pages.removeAll(pages);
+		}
+	}
 
 	public int size() {
 		return pages.size();
@@ -125,24 +135,6 @@ public class Yearbook implements Serializable {
 			for (java.awt.Image awtImage : awtImages) {
 				yearbook.pages.add(new YearbookPage(SWTUtils.convertAWTImageToSWT(awtImage)));
 			}
-
-			/*
-			ArrayList<ImageData> imageData = new ArrayList<ImageData>();
-			for (java.awt.Image awtImage : awtImages) {
-				imageData.add(SWTUtils.convertAWTImageToSWT(awtImage));
-			}
-
-			ArrayList<Image> images = new ArrayList<Image>();
-			for (ImageData data : imageData) {
-				images.add(new Image(display, data));
-			}
-
-			Yearbook yearbook = new Yearbook();
-			for (Image image : images) {
-				yearbook.pages.add(new YearbookPage(image));
-				image.dispose();
-			}
-			 */
 
 			return yearbook;
 
