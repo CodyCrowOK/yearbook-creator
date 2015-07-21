@@ -36,6 +36,10 @@ import org.eclipse.swt.widgets.*;
 
 import com.itextpdf.text.DocumentException;
 
+import command.Command;
+import command.Commands;
+import command.ElementCommand;
+import command.Stack;
 import pspa.Grade;
 import pspa.HomeRoom;
 import pspa.PSPAIndexNotFoundException;
@@ -65,6 +69,9 @@ public class Creator {
 	
 	//Used so we don't "Save As..." every time.
 	public String saveFileName;
+	
+	//Command stack
+	public Stack stack;
 
 	//General SWT
 	private Display display;
@@ -170,6 +177,7 @@ public class Creator {
 		setWindowTitle(SWT.DEFAULT);
 		//clipboard.elements = new ArrayList<YearbookElement>();
 		clipboard = new Clipboard();
+		stack = new Stack();
 		
 		canvasHeight = (int) (.80 * display.getClientArea().height);
 
@@ -473,6 +481,7 @@ public class Creator {
 					int response = box.open();
 					if ((response & SWT.CANCEL) == SWT.CANCEL || path == null) return;
 					YearbookImageElement element = new YearbookImageElement(display, path, yearbook.settings.width, yearbook.settings.height);
+					stack.push(new ElementCommand(Commands.ADD_ELEMENT, null, element, yearbook.activePage));
 					yearbook.page(yearbook.activePage).addElement(element);
 					refreshNoPageList();
 				} catch (Exception ex) {
@@ -810,6 +819,7 @@ public class Creator {
 					String fileName = imagePicker();
 					if (fileName == null) return;
 					YearbookImageElement element = new YearbookImageElement(display, fileName, yearbook.settings.width, yearbook.settings.height);
+					stack.push(new ElementCommand(Commands.ADD_ELEMENT, null, element, yearbook.activePage));
 					element.x = yearbook.page(yearbook.activePage).getPrototype(event.x, event.y, yearbook.settings.width, yearbook.settings.height).x;
 					element.y = yearbook.page(yearbook.activePage).getPrototype(event.x, event.y, yearbook.settings.width, yearbook.settings.height).y;
 					element.rotation = yearbook.page(yearbook.activePage).getPrototype(event.x, event.y, yearbook.settings.width, yearbook.settings.height).rotation;
@@ -1118,11 +1128,12 @@ public class Creator {
 
 					refresh();
 					openTextDialog(element);
+					stack.push(new ElementCommand(Commands.ADD_ELEMENT, null, element, yearbook.activePage));
 				}
 
 			}
 
-						@Override
+			@Override
 			public void mouseUp(MouseEvent event) {
 				if (!leftIsActive()) return;
 				if (!isInsertingText) switch (settings.cursorMode) {
@@ -1274,6 +1285,7 @@ public class Creator {
 					String fileName = imagePicker();
 					if (fileName == null) return;
 					YearbookImageElement element = new YearbookImageElement(display, fileName, yearbook.settings.width, yearbook.settings.height);
+					stack.push(new ElementCommand(Commands.ADD_ELEMENT, null, element, yearbook.activePage));
 					element.x = yearbook.page(yearbook.activePage).getPrototype(event.x, event.y, yearbook.settings.width, yearbook.settings.height).x;
 					element.y = yearbook.page(yearbook.activePage).getPrototype(event.x, event.y, yearbook.settings.width, yearbook.settings.height).y;
 					element.rotation = yearbook.page(yearbook.activePage).getPrototype(event.x, event.y, yearbook.settings.width, yearbook.settings.height).rotation;
@@ -1574,6 +1586,7 @@ public class Creator {
 
 					refresh();
 					openTextDialog(element);
+					stack.push(new ElementCommand(Commands.ADD_ELEMENT, null, element, yearbook.activePage));
 				}
 
 			}
@@ -2884,7 +2897,7 @@ public class Creator {
 
 			@Override
 			public void handleEvent(Event event) {
-				System.out.println("Edit >> Undo not implemented.");
+				undo();
 
 			}
 
@@ -2894,7 +2907,7 @@ public class Creator {
 
 			@Override
 			public void handleEvent(Event event) {
-				System.out.println("Edit >> Redo not implemented.");
+				redo();
 
 			}
 
@@ -3030,6 +3043,7 @@ public class Creator {
 				String fileName = imagePicker();
 				if (fileName == null) return;
 				YearbookImageElement element = new YearbookImageElement(display, fileName, yearbook.settings.width, yearbook.settings.height);
+				stack.push(new ElementCommand(Commands.ADD_ELEMENT, null, element, yearbook.activePage));
 				yearbook.page(yearbook.activePage).addElement(element);
 				refreshNoPageList();
 			}
@@ -3077,6 +3091,7 @@ public class Creator {
 
 				try {
 					YearbookClickableElement e = new YearbookClickableElement(new Video(fileName), selectionRectangle, canvas.getBounds().height, canvas.getBounds().width);
+					stack.push(new ElementCommand(Commands.ADD_ELEMENT, null, e, yearbook.activePage));
 					yearbook.page(yearbook.activePage).addElement(e);
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -3506,6 +3521,35 @@ public class Creator {
 
 	}
 	
+	protected void redo() {
+		Command c = stack.redo();
+		if (c.isElement()) {
+			ElementCommand command = (ElementCommand) c;
+			switch (c.action) {
+			case ADD_ELEMENT:
+				yearbook.page(command.page).addElement(command.modified);
+			}
+		}
+		
+		
+		refresh();
+	}
+
+	protected void undo() {
+		Command c = stack.undo();
+		if (c.isElement()) {
+			ElementCommand command = (ElementCommand) c; 
+			switch (c.action) {
+			case ADD_ELEMENT:
+				yearbook.removeElement(command.modified);
+				break;
+			}
+		}
+		
+		
+		refresh();
+	}
+
 	private void getPSPAGradeOrder(Volume volume) {
 		Shell window = new Shell(shell, SWT.SHELL_TRIM);
 		window.setText("Order Grades");
@@ -4348,6 +4392,26 @@ public class Creator {
 			@Override
 			public void handleEvent(Event event) {
 				fileExportItem.getListeners(SWT.Selection)[0].handleEvent(event);
+			}
+			
+		});
+		
+		undoBtn.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				editUndoItem.getListeners(SWT.Selection)[0].handleEvent(event);
+				
+			}
+			
+		});
+		
+		redoBtn.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				editRedoItem.getListeners(SWT.Selection)[0].handleEvent(event);
+				
 			}
 			
 		});

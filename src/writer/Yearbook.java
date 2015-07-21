@@ -116,6 +116,12 @@ public class Yearbook implements Serializable {
 			page.removeElement(element);
 		}
 	}
+	
+	public void swapElement(YearbookElement elementOld, YearbookElement elementNew) {
+		for (YearbookPage page : pages) {
+			page.swapElement(elementOld, elementNew);
+		}
+	}
 
 	@SuppressWarnings("unchecked")
 	public static Yearbook importFromPDF(Display display, String fileName) {

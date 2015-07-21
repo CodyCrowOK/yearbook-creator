@@ -288,4 +288,11 @@ public class YearbookPage implements Serializable {
 		}
 		return null;
 	}
+
+	public void swapElement(YearbookElement element, YearbookElement elementNew) {
+		if (this.findElementIndex(element) >= 0) {
+			this.removeElement(element);
+			this.addElement(elementNew);
+		}
+	}
 }
