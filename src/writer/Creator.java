@@ -833,8 +833,10 @@ public class Creator {
 
 						@Override
 						public void handleEvent(Event event) {
+							YearbookElement orig = yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY); 
 							yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).border.noBorder = true;
 							refreshNoPageList();
+							stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).copy(), yearbook.activePage));
 						}
 						
 					});
@@ -848,8 +850,10 @@ public class Creator {
 
 						@Override
 						public void handleEvent(Event event) {
+							YearbookElement orig = yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).copy();
 							yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).shadow = !yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).shadow;
 							refreshNoPageList();
+							stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).copy(), yearbook.activePage));
 						}
 						
 					});
@@ -1045,7 +1049,11 @@ public class Creator {
 						box.setText("Delete Element");
 						box.setMessage("Are you sure you want to erase this element?");
 						int result = box.open();
-						if (result == SWT.YES) yearbook.page(yearbook.activePage).removeElement(clipboard.elements.get(0));
+						if (result == SWT.YES) {
+							YearbookElement e = clipboard.elements.get(0).copy();
+							yearbook.page(yearbook.activePage).removeElement(clipboard.elements.get(0));
+							stack.push(new ElementCommand(Commands.REMOVE_ELEMENT, e, null, yearbook.activePage));
+						}
 						refreshNoPageList();
 					}
 					break;
@@ -1127,7 +1135,6 @@ public class Creator {
 							newY = element.getBounds().y + yDiff;
 							element.setLocationRelative(newX, newY);
 							stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, element.copy(), yearbook.activePage));
-							//HERE
 						}
 					}
 
@@ -1145,11 +1152,13 @@ public class Creator {
 						int newX, newY;
 						
 						for (YearbookElement selectedElement : clipboard.elements) {
+							YearbookElement orig = selectedElement.copy();
 							newX = (int) (xPercent * selectedElement.getBounds(yearbook.settings.width, yearbook.settings.height).width);
 							newY = (int) (yPercent * selectedElement.getBounds(yearbook.settings.width, yearbook.settings.height).height);
 							
 							if (yearbook.page(yearbook.activePage).findElement(selectedElement) != null) {
 								yearbook.page(yearbook.activePage).findElement(selectedElement).resize(display, newX, newY);
+								stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, selectedElement.copy(), yearbook.activePage));
 							}
 						}
 						refreshNoPageList();
@@ -1203,7 +1212,6 @@ public class Creator {
 				default:
 					break;
 				}
-
 			}
 
 		});
@@ -1304,8 +1312,10 @@ public class Creator {
 
 						@Override
 						public void handleEvent(Event event) {
+							YearbookElement orig = yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).copy(); 
 							yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).border.noBorder = true;
 							refreshNoPageList();
+							stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).copy(), yearbook.activePage));
 						}
 						
 					});
@@ -1320,7 +1330,9 @@ public class Creator {
 
 						@Override
 						public void handleEvent(Event event) {
+							YearbookElement orig = yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).copy();
 							yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).shadow = !yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).shadow;
+							stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).copy(), yearbook.activePage));
 						}
 						
 					});
@@ -1508,7 +1520,11 @@ public class Creator {
 						box.setText("Delete Element");
 						box.setMessage("Are you sure you want to erase this element?");
 						int result = box.open();
-						if (result == SWT.YES) yearbook.page(yearbook.activePage).removeElement(clipboard.elements.get(0));
+						if (result == SWT.YES) {
+							YearbookElement e = clipboard.elements.get(0).copy();
+							yearbook.page(yearbook.activePage).removeElement(clipboard.elements.get(0));
+							stack.push(new ElementCommand(Commands.REMOVE_ELEMENT, e, null, yearbook.activePage));
+						}
 						refresh();
 					}
 					break;
@@ -1546,11 +1562,13 @@ public class Creator {
 						} else {
 							element = new YearbookTextElement(event.x, event.y, yearbook.settings.width, yearbook.settings.height);
 							yearbook.page(yearbook.activePage).addElement(element);
+							stack.push(new ElementCommand(Commands.ADD_ELEMENT, null, element.copy(), yearbook.activePage));
 						}
 					} else {
 						int startX = 0;
 						element = new YearbookTextElement(event.x, event.y, yearbook.settings.width, yearbook.settings.height);
 						yearbook.page(yearbook.activePage).addElement(element);
+						stack.push(new ElementCommand(Commands.ADD_ELEMENT, null, element.copy(), yearbook.activePage));
 					}
 
 					refresh();
@@ -1574,18 +1592,22 @@ public class Creator {
 					if (clipboard.elements.size() == 0) return;
 					if (clipboard.elements.size() == 1) {
 						YearbookElement selectedElement = clipboard.elements.get(0);
+						YearbookElement orig = selectedElement.copy();
 						if (yearbook.page(yearbook.activePage).findElement(selectedElement) != null && event.button == 1) {
 							int newX, newY;
 							newX = selectedElement.getBounds().x + xDiff;
 							newY = selectedElement.getBounds().y + yDiff;
 							yearbook.page(yearbook.activePage).findElement(selectedElement).setLocationRelative(newX, newY);
+							stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, yearbook.page(yearbook.activePage).findElement(selectedElement).copy(), yearbook.activePage));
 						}
 					} else {
 						int newX, newY;
 						for (YearbookElement element : clipboard.elements) {
+							YearbookElement orig = element.copy();
 							newX = element.getBounds().x + xDiff;
 							newY = element.getBounds().y + yDiff;
 							element.setLocationRelative(newX, newY);
+							stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, element.copy(), yearbook.activePage));
 						}
 					}
 
@@ -1603,12 +1625,15 @@ public class Creator {
 						int newX, newY;
 						
 						for (YearbookElement selectedElement : clipboard.elements) {
+							YearbookElement orig = selectedElement.copy();
 							newX = (int) (xPercent * selectedElement.getBounds(yearbook.settings.width, yearbook.settings.height).width);
 							newY = (int) (yPercent * selectedElement.getBounds(yearbook.settings.width, yearbook.settings.height).height);
 							
 							if (yearbook.page(yearbook.activePage).findElement(selectedElement) != null) {
 								yearbook.page(yearbook.activePage).findElement(selectedElement).resize(display, newX, newY);
 							}
+							
+							stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, selectedElement.copy(), yearbook.activePage));
 						}
 						refreshNoPageList();
 						startX = startY = xDiff = yDiff = 0;
@@ -1656,38 +1681,46 @@ public class Creator {
 				if (settings.cursorMode == CursorMode.MOVE) switch (event.keyCode) {
 				case SWT.ARROW_DOWN:
 					for (YearbookElement e : clipboard.elements) {
+						YearbookElement orig = e.copy();
 						int newY = e.getBounds().y + 1;
 						e.setLocationRelative(e.getBounds().x, newY);
 						if (e.getBounds().y < newY) {
 							e.setLocationRelative(e.getBounds().x, newY + 1);
 						}
+						stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, e.copy(), yearbook.activePage));
 					}
 					break;
 				case SWT.ARROW_UP:
 					for (YearbookElement e : clipboard.elements) {
+						YearbookElement orig = e.copy();
 						int newY = e.getBounds().y - 1;
 						e.setLocationRelative(e.getBounds().x, newY);
 						if (e.getBounds().y > newY) {
 							e.setLocationRelative(e.getBounds().x, newY + 1);
 						}
+						stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, e.copy(), yearbook.activePage));
 					}
 					break;
 				case SWT.ARROW_RIGHT:
 					for (YearbookElement e : clipboard.elements) {
+						YearbookElement orig = e.copy();
 						int newX = e.getBounds().x + 1;
 						e.setLocationRelative(newX, e.getBounds().y);
 						if (e.getBounds().x < newX) {
 							e.setLocationRelative(newX + 1, e.getBounds().y);
 						}
+						stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, e.copy(), yearbook.activePage));
 					}
 					break;
 				case SWT.ARROW_LEFT:
 					for (YearbookElement e : clipboard.elements) {
+						YearbookElement orig = e.copy();
 						int newX = e.getBounds().x - 1;
 						e.setLocationRelative(newX, e.getBounds().y);
 						if (e.getBounds().x > newX) {
 							e.setLocationRelative(newX - 1, e.getBounds().y);
 						}
+						stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, e.copy(), yearbook.activePage));
 					}
 					break;
 				}
@@ -1706,38 +1739,46 @@ public class Creator {
 				if (settings.cursorMode == CursorMode.MOVE) switch (event.keyCode) {
 				case SWT.ARROW_DOWN:
 					for (YearbookElement e : clipboard.elements) {
+						YearbookElement orig = e.copy();
 						int newY = e.getBounds().y + 1;
 						e.setLocationRelative(e.getBounds().x, newY);
 						if (e.getBounds().y < newY) {
 							e.setLocationRelative(e.getBounds().x, newY + 1);
 						}
+						stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, e.copy(), yearbook.activePage));
 					}
 					break;
 				case SWT.ARROW_UP:
 					for (YearbookElement e : clipboard.elements) {
+						YearbookElement orig = e.copy();
 						int newY = e.getBounds().y - 1;
 						e.setLocationRelative(e.getBounds().x, newY);
 						if (e.getBounds().y > newY) {
 							e.setLocationRelative(e.getBounds().x, newY + 1);
 						}
+						stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, e.copy(), yearbook.activePage));
 					}
 					break;
 				case SWT.ARROW_RIGHT:
 					for (YearbookElement e : clipboard.elements) {
+						YearbookElement orig = e.copy();
 						int newX = e.getBounds().x + 1;
 						e.setLocationRelative(newX, e.getBounds().y);
 						if (e.getBounds().x < newX) {
 							e.setLocationRelative(newX + 1, e.getBounds().y);
 						}
+						stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, e.copy(), yearbook.activePage));
 					}
 					break;
 				case SWT.ARROW_LEFT:
 					for (YearbookElement e : clipboard.elements) {
+						YearbookElement orig = e.copy();
 						int newX = e.getBounds().x - 1;
 						e.setLocationRelative(newX, e.getBounds().y);
 						if (e.getBounds().x > newX) {
 							e.setLocationRelative(newX - 1, e.getBounds().y);
 						}
+						stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, e.copy(), yearbook.activePage));
 					}
 					break;
 				}
@@ -1812,6 +1853,7 @@ public class Creator {
 	}
 	
 	private void openRotateDialog(YearbookElement elementAtPoint) {
+		YearbookElement orig = elementAtPoint.copy();
 		float originalRotation = elementAtPoint.rotation;
 		final Shell dialog = new Shell(shell, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
 		dialog.setText("Rotate Element");
@@ -1883,6 +1925,7 @@ public class Creator {
 				dialog.close();
 				refreshNoPageList();
 				dialog.dispose();
+				stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, elementAtPoint.copy(), yearbook.activePage));
 			}
 		});
 
@@ -1893,7 +1936,9 @@ public class Creator {
 	}
 
 	private void openAddBorderDialog(YearbookElement element) {
-		YearbookElementBorder orig = element.border;
+		YearbookElement orig = element.copy();
+		YearbookElementBorder originalBorder = element.border;
+		
 		element.border.noBorder = false;
 		
 		final Shell dialog = new Shell(shell, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
@@ -1920,7 +1965,7 @@ public class Creator {
 		cancel.addSelectionListener(new SelectionAdapter () {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				element.border = orig;
+				element.border = originalBorder;
 				refreshNoPageList();
 				dialog.close();
 				dialog.dispose();
@@ -1990,6 +2035,16 @@ public class Creator {
 			}
 
 		});
+		
+		dialog.addListener(SWT.Close, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, element.copy(), yearbook.activePage));
+				
+			}
+			
+		});
 
 		dialog.setDefaultButton (ok);
 		dialog.pack();
@@ -1997,7 +2052,7 @@ public class Creator {
 	}
 
 	protected void openTextDialog(YearbookTextElement element) {
-
+		YearbookElement orig = element.copy();
 		/*
 		 * Create layout for text tool.
 		 */
@@ -2208,6 +2263,7 @@ public class Creator {
 			@Override
 			public void handleEvent(Event event) {
 				modeReset();
+				stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, element.copy(), yearbook.activePage));
 			}
 
 		});
@@ -3501,6 +3557,9 @@ public class Creator {
 			case CHANGE_ELEMENT:
 				yearbook.swapElement(command.original, command.modified);
 				break;
+			case REMOVE_ELEMENT:
+				yearbook.page(command.page).removeElement(command.original);
+				break;
 			default:
 				break;
 			}
@@ -3511,9 +3570,6 @@ public class Creator {
 	}
 
 	protected void undo() {
-		System.out.println("-------------------------------------------");
-		System.out.println(stack);
-		
 		Command c = stack.undo();
 		if (c.isElement()) {
 			ElementCommand command = (ElementCommand) c;
@@ -3523,6 +3579,9 @@ public class Creator {
 				break;
 			case CHANGE_ELEMENT:
 				yearbook.swapElement(command.modified, command.original);
+				break;
+			case REMOVE_ELEMENT:
+				yearbook.page(command.page).addElement(command.original);
 				break;
 			default:
 				break;
@@ -4532,10 +4591,13 @@ public class Creator {
 					int result = box.open();
 					if (result == SWT.YES) {
 						for (YearbookElement element : clipboard.elements) {
+							YearbookElement orig = element.copy();
 							yearbook.page(yearbook.activePage).removeElement(element);
+							stack.push(new ElementCommand(Commands.REMOVE_ELEMENT, orig, null, yearbook.activePage));
 						}
 						clipboard.elements.clear();
 					}
+					((Button) e.widget).setSelection(false);
 				}
 				modeReset();
 				shell.setCursor(display.getSystemCursor(SWT.CURSOR_UPARROW));
