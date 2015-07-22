@@ -15,6 +15,7 @@ public class ElementCommand extends Command {
 		this(c);
 		this.original = original;
 		this.modified = modified;
+		this.page = page;
 	}
 	
 	@Override

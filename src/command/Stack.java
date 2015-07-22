@@ -35,4 +35,17 @@ public class Stack {
 		undoStack.push(c);
 		redoStack.clear();
 	}
+
+	@Override
+	public String toString() {
+		String str = "Undo Stack:\n";
+		for (Command c : undoStack) {
+			str += c.action + "\n";
+		}
+		str += "Redo Stack:";
+		for (Command c : redoStack) {
+			str += "\n" + c.action;
+		}
+		return str;
+	}
 }

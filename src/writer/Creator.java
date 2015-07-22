@@ -314,42 +314,6 @@ public class Creator {
 				});
 			}
 		});
-		/*
-		pagesList.addKeyListener(new KeyListener() {
-
-			@Override
-			public void keyPressed(KeyEvent e) {
-				if (e.keyCode == SWT.DEL) {
-					MenuItem[] items = pagesListMenu.getItems();
-					for (int i = 0; i < items.length; i++)
-					{
-						items[i].dispose();
-					}
-					int selectedPageIndices[] = pagesList.getSelectionIndices();
-					for (int i : selectedPageIndices) {
-						if (i < 0 || i > pagesList.getItemCount()) return;
-					}
-					
-					MessageBox messageBox = new MessageBox(shell, SWT.ICON_WARNING | SWT.YES | SWT.NO);
-					messageBox.setText("Delete Page");
-					if (selectedPageIndices.length == 1) messageBox.setMessage("Are you sure you want to delete this page?\n\t" + yearbook.page(selectedPageIndices[0]));
-					else messageBox.setMessage("Are you sure you want to delete these pages?");
-					int yesno = messageBox.open();
-					if (yesno == SWT.YES) {
-						yearbook.removePages(selectedPageIndices);
-						refresh();
-					}
-				}
-			}
-
-			@Override
-			public void keyReleased(KeyEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
-		});
-		*/
 		
 		this.buildPagesListDnD();
 		
@@ -1151,14 +1115,19 @@ public class Creator {
 							int newX, newY;
 							newX = selectedElement.getBounds().x + xDiff;
 							newY = selectedElement.getBounds().y + yDiff;
+							YearbookElement orig = selectedElement.copy();
 							yearbook.page(yearbook.activePage).findElement(selectedElement).setLocationRelative(newX, newY);
+							stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, selectedElement, yearbook.activePage));
 						}
 					} else {
 						int newX, newY;
 						for (YearbookElement element : clipboard.elements) {
+							YearbookElement orig = element.copy();
 							newX = element.getBounds().x + xDiff;
 							newY = element.getBounds().y + yDiff;
 							element.setLocationRelative(newX, newY);
+							stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, element, yearbook.activePage));
+							//HERE
 						}
 					}
 
@@ -3528,6 +3497,12 @@ public class Creator {
 			switch (c.action) {
 			case ADD_ELEMENT:
 				yearbook.page(command.page).addElement(command.modified);
+				break;
+			case CHANGE_ELEMENT:
+				yearbook.swapElement(command.original, command.modified);
+				break;
+			default:
+				break;
 			}
 		}
 		
@@ -3542,6 +3517,11 @@ public class Creator {
 			switch (c.action) {
 			case ADD_ELEMENT:
 				yearbook.removeElement(command.modified);
+				break;
+			case CHANGE_ELEMENT:
+				yearbook.swapElement(command.modified, command.original);
+				break;
+			default:
 				break;
 			}
 		}
