@@ -110,4 +110,33 @@ abstract public class YearbookElement implements Serializable {
 	public boolean isText() {
 		return false;
 	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if (o == null) return false;
+		try {
+			YearbookElement e = (YearbookElement) o;
+			if (e.x != this.x) {
+				return false;
+			}
+			if (e.y != this.y) {
+				return false;
+			}
+			if (e.rotation != this.rotation) {
+				return false;
+			}
+			if (e.isClickable() != this.isClickable()) {
+				return false;
+			}
+			if (e.isImage() != this.isImage()) {
+				return false;
+			}
+			if (e.isText() != this.isText()) {
+				return false;
+			}
+			return true;
+		} catch (Throwable t) {
+			return false;
+		}
+	}
 }

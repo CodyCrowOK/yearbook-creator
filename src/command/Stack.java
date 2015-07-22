@@ -40,7 +40,12 @@ public class Stack {
 	public String toString() {
 		String str = "Undo Stack:\n";
 		for (Command c : undoStack) {
-			str += c.action + "\n";
+			str += c.action;
+			if (c.isElement()) {
+				ElementCommand c1 = (ElementCommand) c;
+				str += ": " + c1.original + " " + c1.modified;
+			}
+			str += "\n";
 		}
 		str += "Redo Stack:";
 		for (Command c : redoStack) {

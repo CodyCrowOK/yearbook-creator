@@ -445,7 +445,7 @@ public class Creator {
 					int response = box.open();
 					if ((response & SWT.CANCEL) == SWT.CANCEL || path == null) return;
 					YearbookImageElement element = new YearbookImageElement(display, path, yearbook.settings.width, yearbook.settings.height);
-					stack.push(new ElementCommand(Commands.ADD_ELEMENT, null, element, yearbook.activePage));
+					stack.push(new ElementCommand(Commands.ADD_ELEMENT, null, element.copy(), yearbook.activePage));
 					yearbook.page(yearbook.activePage).addElement(element);
 					refreshNoPageList();
 				} catch (Exception ex) {
@@ -783,7 +783,7 @@ public class Creator {
 					String fileName = imagePicker();
 					if (fileName == null) return;
 					YearbookImageElement element = new YearbookImageElement(display, fileName, yearbook.settings.width, yearbook.settings.height);
-					stack.push(new ElementCommand(Commands.ADD_ELEMENT, null, element, yearbook.activePage));
+					stack.push(new ElementCommand(Commands.ADD_ELEMENT, null, element.copy(), yearbook.activePage));
 					element.x = yearbook.page(yearbook.activePage).getPrototype(event.x, event.y, yearbook.settings.width, yearbook.settings.height).x;
 					element.y = yearbook.page(yearbook.activePage).getPrototype(event.x, event.y, yearbook.settings.width, yearbook.settings.height).y;
 					element.rotation = yearbook.page(yearbook.activePage).getPrototype(event.x, event.y, yearbook.settings.width, yearbook.settings.height).rotation;
@@ -1092,7 +1092,7 @@ public class Creator {
 
 					refresh();
 					openTextDialog(element);
-					stack.push(new ElementCommand(Commands.ADD_ELEMENT, null, element, yearbook.activePage));
+					stack.push(new ElementCommand(Commands.ADD_ELEMENT, null, element.copy(), yearbook.activePage));
 				}
 
 			}
@@ -1117,7 +1117,7 @@ public class Creator {
 							newY = selectedElement.getBounds().y + yDiff;
 							YearbookElement orig = selectedElement.copy();
 							yearbook.page(yearbook.activePage).findElement(selectedElement).setLocationRelative(newX, newY);
-							stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, selectedElement, yearbook.activePage));
+							stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, selectedElement.copy(), yearbook.activePage));
 						}
 					} else {
 						int newX, newY;
@@ -1126,7 +1126,7 @@ public class Creator {
 							newX = element.getBounds().x + xDiff;
 							newY = element.getBounds().y + yDiff;
 							element.setLocationRelative(newX, newY);
-							stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, element, yearbook.activePage));
+							stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, element.copy(), yearbook.activePage));
 							//HERE
 						}
 					}
@@ -1254,7 +1254,7 @@ public class Creator {
 					String fileName = imagePicker();
 					if (fileName == null) return;
 					YearbookImageElement element = new YearbookImageElement(display, fileName, yearbook.settings.width, yearbook.settings.height);
-					stack.push(new ElementCommand(Commands.ADD_ELEMENT, null, element, yearbook.activePage));
+					stack.push(new ElementCommand(Commands.ADD_ELEMENT, null, element.copy(), yearbook.activePage));
 					element.x = yearbook.page(yearbook.activePage).getPrototype(event.x, event.y, yearbook.settings.width, yearbook.settings.height).x;
 					element.y = yearbook.page(yearbook.activePage).getPrototype(event.x, event.y, yearbook.settings.width, yearbook.settings.height).y;
 					element.rotation = yearbook.page(yearbook.activePage).getPrototype(event.x, event.y, yearbook.settings.width, yearbook.settings.height).rotation;
@@ -1555,7 +1555,7 @@ public class Creator {
 
 					refresh();
 					openTextDialog(element);
-					stack.push(new ElementCommand(Commands.ADD_ELEMENT, null, element, yearbook.activePage));
+					stack.push(new ElementCommand(Commands.ADD_ELEMENT, null, element.copy(), yearbook.activePage));
 				}
 
 			}
@@ -3012,7 +3012,7 @@ public class Creator {
 				String fileName = imagePicker();
 				if (fileName == null) return;
 				YearbookImageElement element = new YearbookImageElement(display, fileName, yearbook.settings.width, yearbook.settings.height);
-				stack.push(new ElementCommand(Commands.ADD_ELEMENT, null, element, yearbook.activePage));
+				stack.push(new ElementCommand(Commands.ADD_ELEMENT, null, element.copy(), yearbook.activePage));
 				yearbook.page(yearbook.activePage).addElement(element);
 				refreshNoPageList();
 			}
@@ -3060,7 +3060,7 @@ public class Creator {
 
 				try {
 					YearbookClickableElement e = new YearbookClickableElement(new Video(fileName), selectionRectangle, canvas.getBounds().height, canvas.getBounds().width);
-					stack.push(new ElementCommand(Commands.ADD_ELEMENT, null, e, yearbook.activePage));
+					stack.push(new ElementCommand(Commands.ADD_ELEMENT, null, e.copy(), yearbook.activePage));
 					yearbook.page(yearbook.activePage).addElement(e);
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -3511,9 +3511,12 @@ public class Creator {
 	}
 
 	protected void undo() {
+		System.out.println("-------------------------------------------");
+		System.out.println(stack);
+		
 		Command c = stack.undo();
 		if (c.isElement()) {
-			ElementCommand command = (ElementCommand) c; 
+			ElementCommand command = (ElementCommand) c;
 			switch (c.action) {
 			case ADD_ELEMENT:
 				yearbook.removeElement(command.modified);
@@ -3526,6 +3529,7 @@ public class Creator {
 			}
 		}
 		
+
 		
 		refresh();
 	}
