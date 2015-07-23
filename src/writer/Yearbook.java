@@ -43,7 +43,7 @@ import pspa.Volume;
 public class Yearbook implements Serializable {
 	private static final long serialVersionUID = 4099869425438846538L;
 	private ArrayList<YearbookPage> pages;
-	public ArrayList<Volume> pspaVolumes;
+	public ArrayList<Volume> volumes;
 	transient private Image defaultBackground;
 	transient private ImageData defaultBackgroundData;
 	public boolean noBackground;
@@ -53,15 +53,15 @@ public class Yearbook implements Serializable {
 	public YearbookSettings settings;
 	public int activePage;
 
-	public YearbookPageNumberElement pageNumber;
+	public YearbookPageNumberElement numbers;
 
 	public Yearbook() {
-		pspaVolumes = new ArrayList<Volume>();
+		volumes = new ArrayList<Volume>();
 		pages = new ArrayList<YearbookPage>();
 		settings = new YearbookSettings();
 		activePage = 0;
 		name = "Untitled";
-		pageNumber = new YearbookPageNumberElement(settings.width, settings.height);
+		numbers = new YearbookPageNumberElement(settings.width, settings.height);
 	}
 
 	public Yearbook(String name) {
@@ -85,9 +85,24 @@ public class Yearbook implements Serializable {
 	public void addPage(YearbookPage page) {
 		pages.add(page);
 	}
+	
+	public YearbookPage pageById(int id) {
+		for (YearbookPage page : pages) {
+			if (page.id == id) return page;
+		}
+		return null;
+	}
+	
+	public void insertPage(YearbookPage page, int position) {
+		pages.add(position, page);
+	}
 
 	public void removePage(int index) {
 		pages.remove(index);
+	}
+	
+	public void removePage(YearbookPage page) {
+		pages.remove(page);
 	}
 	
 	public void removePages(int[] indices) {

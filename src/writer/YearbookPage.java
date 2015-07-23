@@ -22,6 +22,8 @@ import org.eclipse.swt.widgets.Display;
  *
  */
 public class YearbookPage implements Serializable {
+	public final int id;
+	
 	private static final long serialVersionUID = -5090460491486388571L;
 	private ArrayList<YearbookElement> elements;
 	public String name;
@@ -53,6 +55,7 @@ public class YearbookPage implements Serializable {
 	public YearbookPage() {
 		elements = new ArrayList<YearbookElement>();
 		layouts = new ArrayDeque<YearbookLayout>();
+		id = (int) (1000000000.0 * Math.random());
 	}
 
 	public YearbookPage(String name) {

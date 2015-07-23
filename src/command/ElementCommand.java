@@ -5,7 +5,7 @@ import writer.YearbookElement;
 public class ElementCommand extends Command {
 	public YearbookElement original;
 	public YearbookElement modified;
-	public int page;
+	public int pageId;
 
 	public ElementCommand(Commands c) {
 		super(c);
@@ -15,7 +15,7 @@ public class ElementCommand extends Command {
 		this(c);
 		this.original = original;
 		this.modified = modified;
-		this.page = page;
+		this.pageId = page;
 	}
 	
 	@Override

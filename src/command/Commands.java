@@ -6,5 +6,6 @@ public enum Commands {
 	CHANGE_ELEMENT,
 	REMOVE_ELEMENT,
 	ADD_PAGE,
+	MOVE_PAGE,
 	REMOVE_PAGE;
 }
