@@ -1,5 +1,4 @@
 package writer;
-import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -13,15 +12,13 @@ import java.io.Serializable;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.List;
 
 import javax.imageio.ImageIO;
 
 import org.apache.pdfbox.exceptions.COSVisitorException;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
-import org.apache.pdfbox.pdmodel.common.PDRectangle;
-import org.apache.pdfbox.pdmodel.edit.PDPageContentStream;
-import org.apache.pdfbox.pdmodel.graphics.xobject.PDPixelMap;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
@@ -44,8 +41,8 @@ public class Yearbook implements Serializable {
 	private static final long serialVersionUID = 4099869425438846538L;
 	private ArrayList<YearbookPage> pages;
 	public ArrayList<Volume> volumes;
-	transient private Image defaultBackground;
-	transient private ImageData defaultBackgroundData;
+	transient private Image coverImage;
+	transient private ImageData coverImageData;
 	public boolean noBackground;
 	public boolean hasCover;
 
@@ -119,6 +116,18 @@ public class Yearbook implements Serializable {
 		return pages.size();
 	}
 
+	public Image cover(Display display) {
+		//Try not to leak too many resources...
+		if (display == null || this.coverImageData == null) return null; 
+		if (this.coverImage != null && !this.coverImage.isDisposed()) {
+			if (this.coverImage.getImageData() != this.coverImageData) {
+			}
+		} else {
+			this.coverImage = new Image(display, this.coverImageData);
+		}
+		return this.coverImage;
+	}
+
 	public void movePage(int source, int destination) {
 		if (destination > size()) return;
 		YearbookPage page = pages.get(source);
@@ -136,6 +145,10 @@ public class Yearbook implements Serializable {
 		for (YearbookPage page : pages) {
 			page.swapElement(elementOld, elementNew);
 		}
+	}
+	
+	public void setCover(ImageData data) {
+		this.coverImageData = data;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -160,10 +173,18 @@ public class Yearbook implements Serializable {
 			return yearbook;
 
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return null;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public static BufferedImage convertDoubleSpreadPDFToImage(String fileName) throws IOException {
+		PDDocument document = PDDocument.loadNonSeq(new File(fileName), null);
+		List<PDPage> pdPages = document.getDocumentCatalog().getAllPages();
+		BufferedImage bi = pdPages.get(0).convertToImage(BufferedImage.TYPE_INT_RGB, 300);
+		document.close();
+		return bi;
 	}
 
 	public static void exportToPDF(Yearbook yearbook, String fileName, Display display) throws IOException, COSVisitorException, DocumentException {
@@ -273,12 +294,12 @@ public class Yearbook implements Serializable {
 
 	private void writeObject(ObjectOutputStream out) throws IOException {
 		out.defaultWriteObject();
-		if (this.defaultBackgroundData == null) {
-			this.defaultBackgroundData = YearbookImages.bogusBackgroundData();
+		if (this.coverImageData == null) {
+			this.coverImageData = YearbookImages.bogusBackgroundData();
 			this.noBackground = true;
 		}
 		ImageLoader imageLoader = new ImageLoader();
-		imageLoader.data = new ImageData[] { this.defaultBackgroundData };
+		imageLoader.data = new ImageData[] { this.coverImageData };
 		ByteArrayOutputStream stream = new ByteArrayOutputStream();
 		imageLoader.save(stream, SWT.IMAGE_PNG);
 		byte[] bytes = stream.toByteArray();
@@ -295,9 +316,9 @@ public class Yearbook implements Serializable {
 		ImageLoader imageLoader = new ImageLoader();
 		ByteArrayInputStream stream = new ByteArrayInputStream(buffer);
 		ImageData[] data = imageLoader.load(stream);
-		this.defaultBackgroundData = data[0];
+		this.coverImageData = data[0];
 		if (this.noBackground) {
-			this.defaultBackgroundData = null;
+			this.coverImageData = null;
 		}
 	}
 

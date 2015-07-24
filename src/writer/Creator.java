@@ -2,12 +2,9 @@ package writer;
 import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Deque;
 
-import org.apache.pdfbox.exceptions.COSVisitorException;
 import org.eclipse.swt.*;
 import org.eclipse.swt.dnd.DND;
 import org.eclipse.swt.dnd.DragSource;
@@ -34,12 +31,9 @@ import org.eclipse.swt.graphics.Transform;
 import org.eclipse.swt.layout.*;
 import org.eclipse.swt.widgets.*;
 
-import com.itextpdf.text.DocumentException;
-
 import command.Command;
 import command.Commands;
 import command.ElementCommand;
-import command.PageCommand;
 import command.Stack;
 import pspa.Grade;
 import pspa.HomeRoom;
@@ -112,6 +106,7 @@ public class Creator {
 	private MenuItem pageMirrorItem;
 	private MenuItem pageBackgroundItem;
 	private MenuItem pageClearBackgroundItem;
+	private MenuItem pageAddCoverItem;
 	private MenuItem pageUseCoverItem;
 	private MenuItem pageShowGridItem;
 	private MenuItem pageShowTextItem;
@@ -2526,6 +2521,9 @@ public class Creator {
 
 		new MenuItem(pageMenu, SWT.SEPARATOR);
 
+		pageAddCoverItem = new MenuItem(pageMenu, SWT.PUSH);
+		pageAddCoverItem.setText("Add Cover (Double Spread)");
+
 		pageUseCoverItem = new MenuItem(pageMenu, SWT.CHECK);
 		pageUseCoverItem.setText("Show Cover");
 
@@ -3466,6 +3464,33 @@ public class Creator {
 
 			}
 
+		});
+		
+		pageAddCoverItem.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+
+				FileDialog picker = new FileDialog(shell, SWT.OPEN);
+				String[] allowedExtensions = {"*.jpg; *.jpeg; *.gif; *.tif; *.tiff; *.bpm; *.ico; *.png; *.pdf", "*.*"};
+				picker.setFilterExtensions(allowedExtensions);
+				String fileName = picker.open();
+				if (fileName == null) return;
+				try {
+					if (fileName.endsWith("pdf") || fileName.endsWith("PDF")) {
+						yearbook.setCover(SWTUtils.convertToSWT(Yearbook.convertDoubleSpreadPDFToImage(fileName)));
+					} else {
+						yearbook.setCover(new ImageData(fileName));
+					}
+				} catch (Throwable t) {
+					MessageBox box = new MessageBox(shell, SWT.OK | SWT.ERROR);
+					box.setText("Error");
+					box.setMessage("An error occurred:\n\t" + t);
+					box.open();
+				}
+				
+			}
+			
 		});
 		
 		pageUseCoverItem.addListener(SWT.Selection, new Listener() {
@@ -4773,7 +4798,14 @@ public class Creator {
 		gc = new GC(canvas);
 		gc.setBackground(display.getSystemColor(SWT.COLOR_WIDGET_BACKGROUND));
 		gc.fillRectangle(0, 0, canvas.getBounds().width, canvas.getBounds().height);
-		gc.drawText("Front Cover", (yearbook.settings.width / 2) - (gc.textExtent("Front Cover").x / 2), yearbook.settings.height / 2); 
+		if (yearbook.hasCover) {
+			gc.setAlpha(0x55);
+			Image image = yearbook.cover(display);
+			gc.drawImage(image, image.getBounds().width / 2, 0, (int) Math.floor(image.getBounds().width / 2), image.getBounds().height, 0, 0, canvas.getBounds().width, canvas.getBounds().height);
+			image.dispose();
+			gc.setAlpha(0xff);
+		}
+		gc.drawText("Front Cover", (yearbook.settings.width / 2) - (gc.textExtent("Front Cover").x / 2), yearbook.settings.height / 2, true);
 		gc.dispose();		
 	}
 	
@@ -4782,7 +4814,14 @@ public class Creator {
 		gc = new GC(rightCanvas);
 		gc.setBackground(display.getSystemColor(SWT.COLOR_WIDGET_BACKGROUND));
 		gc.fillRectangle(0, 0, rightCanvas.getBounds().width, rightCanvas.getBounds().height);
-		gc.drawText("Back Cover", (yearbook.settings.width / 2) - (gc.textExtent("Back Cover").x / 2), yearbook.settings.height / 2);
+		if (yearbook.hasCover) {
+			gc.setAlpha(0x55);
+			Image image = yearbook.cover(display);
+			gc.drawImage(image, 0, 0, (int) Math.floor(image.getBounds().width / 2), image.getBounds().height, 0, 0, canvas.getBounds().width, canvas.getBounds().height);
+			image.dispose();
+			gc.setAlpha(0xff);
+		}
+		gc.drawText("Back Cover", (yearbook.settings.width / 2) - (gc.textExtent("Back Cover").x / 2), yearbook.settings.height / 2, true);
 		gc.dispose();		
 	}
 
@@ -4790,7 +4829,9 @@ public class Creator {
 	 * This function handles the painting of the canvas for the currently
 	 * selected yearbook page.
 	 * @param activePage The page to draw on the canvas.
+	 * @deprecated Use updateCanvas() instead.
 	 */
+	@Deprecated
 	private void loadActivePage(int activePage) {
 		GC gc;
 		gc = new GC(canvas);

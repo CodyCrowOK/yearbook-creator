@@ -140,6 +140,35 @@ public class PDFUtils {
 		ArrayList<YearbookElement> dummyList = new ArrayList<YearbookElement>();
 		UserSettings dummySettings = new UserSettings();
 		
+		/*
+		 * Do front cover
+		 */
+		
+		org.eclipse.swt.graphics.Image front = new org.eclipse.swt.graphics.Image(display, (int) document.getPageSize().getWidth(), (int) document.getPageSize().getHeight());
+		org.eclipse.swt.graphics.Image back = new org.eclipse.swt.graphics.Image(display, (int) document.getPageSize().getWidth(), (int) document.getPageSize().getHeight());
+
+		org.eclipse.swt.graphics.Image cover = yearbook.cover(display);
+		
+		GC gc = new GC(front);
+		gc.drawImage(cover, cover.getBounds().width / 2, 0, (int) Math.floor(cover.getBounds().width / 2), cover.getBounds().height, 0, 0, front.getBounds().width, front.getBounds().height);
+		gc.dispose();
+		
+		gc = new GC(back);
+		gc.drawImage(cover, 0, 0, (int) Math.floor(cover.getBounds().width / 2), cover.getBounds().height, 0, 0, back.getBounds().width, back.getBounds().height);
+		gc.dispose();
+		
+		cover.dispose();
+		if (yearbook.hasCover) {
+			ImageData imageData = front.getImageData();
+			BufferedImage bi = SWTUtils.convertToAWT(imageData);
+			Image large = Image.getInstance(bi, null);
+			large.scaleToFit(document.getPageSize());
+			
+			document.add(large);
+			document.newPage();
+		}
+		front.dispose();
+			
 		for (int i = 0; i < yearbook.size(); i++) {
 			String str = "Page " + (i + 1) + " of " + yearbook.size();
 			GC gc1 = new GC(wait);
@@ -154,7 +183,7 @@ public class PDFUtils {
 			gc1.dispose();
 			
 			org.eclipse.swt.graphics.Image image = new org.eclipse.swt.graphics.Image(display, yearbook.settings.publishWidth(), yearbook.settings.publishHeight());
-			GC gc = new GC(image);
+			gc = new GC(image);
 			Creator.paintPage(gc, display, yearbook, dummyList, null, dummySettings, i, yearbook.settings.publishWidth(), yearbook.settings.publishHeight(), true, true);
 			gc.dispose();
 
@@ -165,9 +194,20 @@ public class PDFUtils {
 			large.scaleToFit(document.getPageSize());
 
 			document.add(large);
-			if (i < yearbook.size() - 1) document.newPage();
+			if (i < yearbook.size() - 1 || yearbook.hasCover) document.newPage();
 			
 		}
+		
+		if (yearbook.hasCover) {
+			ImageData imageData = back.getImageData();
+			BufferedImage bi = SWTUtils.convertToAWT(imageData);
+			Image large = Image.getInstance(bi, null);
+			large.scaleToFit(document.getPageSize());
+			
+			document.add(large);
+		}
+		back.dispose();
+		
 		document.close();
 		writer.close();
 		
