@@ -1,0 +1,17 @@
+## Configuration file for video yearbooks
+# Format:
+# key<TAB>value
+# Lines starting with a hash sign are comments
+# Blank lines are ignored.
+# All read lines _must_ have a tab delimiter.
+
+## Fully qualified URL for product key checks
+# Requests should POST the product key form data form:
+#	key: $PRODUCTKEY
+# Response will be 202 on success and 403 on failure.
+
+product_key_url	http://localhost:5000/product_key
+
+# range: Z
+# Returns a JSON array of Z new keys
+generate_product_key_url	http://localhost:5000/generate_keys

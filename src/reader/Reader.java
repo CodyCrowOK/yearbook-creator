@@ -3,6 +3,8 @@ package reader;
 import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.URL;
 import java.util.ArrayList;
 
 import javax.sound.sampled.*;
@@ -36,6 +38,7 @@ import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
+import writer.Config;
 import writer.Creator;
 import writer.UserSettings;
 import writer.Yearbook;
@@ -53,6 +56,8 @@ import writer.YearbookImages;
 public class Reader {
 	public static final boolean DEMO = false;
 	public static final boolean PRODUCTION = false;
+	
+	Config config;
 	
 	Display display;
 	Shell shell;
@@ -88,13 +93,13 @@ public class Reader {
 		if (!(DEMO || PRODUCTION)) {
 			FileDialog picker = new FileDialog(shell, SWT.OPEN);
 			picker.setText("Open Yearbook");
-			picker.setFilterExtensions(new String[] {"*.ctc"});
+			picker.setFilterExtensions(new String[] {"*.ctcs"});
 			fileName = picker.open();
 			if (fileName == null) return;
 		} else if (DEMO && !PRODUCTION) {
 			fileName = "demo.ctc";
 		} else {
-			fileName = "yearbook.ctc";
+			fileName = "yearbook.ctcs";
 		}
 		
 		/*
@@ -187,7 +192,7 @@ public class Reader {
 		
 		Composite topbar = new Composite(shell, SWT.NONE);
 		topbar.setBackground(barColor);
-		topbar.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+		topbar.setLayoutData(new GridData(SWT.FILL, SWT.BOTTOM, true, false));
 		RowLayout topbarLayout = new RowLayout();
 		topbarLayout.wrap = false;
 		topbarLayout.marginTop = 10;
@@ -557,7 +562,6 @@ public class Reader {
 		try {
 			Thread.sleep(300);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -642,71 +646,12 @@ public class Reader {
 	}
 
 	private void smoothPageTurnRight(int current, int next) {
-		Image nextRight = new Image(display, rightCanvas.getBounds().width, rightCanvas.getBounds().height);
-		GC gc = new GC(nextRight);
-		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), next, yearbook.settings.width, yearbook.settings.height, true, false);
+		Image oldLeft, oldRight, newLeft, newRight;
+		oldLeft = canvas.getBackgroundImage();
+		oldRight = (Image) rightCanvas.getData();
+		GC gc = new GC(canvas);
+		gc.drawImage(oldRight, 0, 0);
 		gc.dispose();
-
-		Image currentRight = new Image(display, rightCanvas.getBounds().width, rightCanvas.getBounds().height);
-		gc = new GC(currentRight);
-		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), current, yearbook.settings.width, yearbook.settings.height, true, false);
-		gc.dispose();
-
-		Image nextLeft = new Image(display, rightCanvas.getBounds().width, rightCanvas.getBounds().height);
-		gc = new GC(nextLeft);
-		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), current + 1, yearbook.settings.width, yearbook.settings.height, true, false);
-		gc.dispose();
-		
-		Image currentLeft = new Image(display, rightCanvas.getBounds().width, rightCanvas.getBounds().height);
-		gc = new GC(currentLeft);
-		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), current - 1, yearbook.settings.width, yearbook.settings.height, true, false);
-		gc.dispose();
-		
-		int i = 0;
-		int srcWidth, srcHeight, destX, destWidth, destHeight;
-		Image rightBuffer, leftBuffer;
-		while (i++ < MagicNumber.FRAMES) {
-			try {
-				Thread.sleep(1);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			rightCanvas.update();
-			
-			long k = (long) (Math.exp((double) i / 6) / MagicNumber.FRAMES * rightCanvas.getBounds().width);
-			//long k = (long) (Math.log((double) i / 6) / MagicNumber.FRAMES * rightCanvas.getBounds().width);
-			
-			
-			rightBuffer = new Image(display, nextRight.getImageData());
-			srcWidth = (int) k;
-			srcHeight = rightCanvas.getBounds().height;
-			destX = (int) ((long) rightCanvas.getBounds().width - k);
-			if (destX <= 0) break;
-			destWidth = srcWidth;
-			destHeight = srcHeight;
-			gc = new GC(rightBuffer);
-			gc.drawImage(nextLeft, 0, 0, srcWidth, srcHeight, destX, 0, destWidth, destHeight);
-			gc.dispose();
-			gc = new GC(rightCanvas);
-			gc.drawImage(rightBuffer, 0, 0);
-			gc.dispose();
-			rightBuffer.dispose();
-			
-			leftBuffer = new Image(display, currentLeft.getImageData());
-			
-			gc = new GC(leftBuffer);
-			gc.drawImage(nextLeft, 0, 0, srcWidth, srcHeight, destX, 0, destWidth, destHeight);
-			gc.dispose();
-			gc = new GC(canvas);
-			gc.drawImage(leftBuffer, 0, 0);
-			gc.dispose();
-			leftBuffer.dispose();
-		}
-		
-		nextRight.dispose();
-		nextLeft.dispose();
-		currentRight.dispose();
-		currentLeft.dispose();
 		
 	}
 
@@ -1088,6 +1033,32 @@ public class Reader {
 	}
 
 	public static void main(String[] args) {
+		/*
+		 * Check product key.
+		 */
+		try {
+			Config cfg = new Config("icons/product_key/product_key.rc");
+			Config mainCfg = new Config();
+			if (!cfg.validated) {
+				JFrame frame2 = new JFrame();
+				String key = JOptionPane.showInputDialog(frame2, "Enter Product Key:");
+				int res = ProductKey.productKeyQuery(new URL(mainCfg.productKeyURL), key);
+				if (res == 202) {
+					//Save validation
+					PrintWriter writer = new PrintWriter("icons/product_key/product_key.rc");
+					writer.println("validated	");
+					writer.close();
+				}
+				if (res == 403) {
+					JOptionPane.showMessageDialog(frame2, "Your product key has already been used or is invalid. The program will now exit.");
+					return;
+				}
+			}
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
 		try {
 			new Reader();
 		} catch (Exception e) {

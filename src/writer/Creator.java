@@ -83,6 +83,7 @@ public class Creator {
 	private MenuItem fileSaveAsItem;
 	private MenuItem fileExportItem;
 	private MenuItem fileExportJPEGItem;
+	private MenuItem fileExportVideoItem;
 	private MenuItem fileCloseItem;
 	private MenuItem editMenuItem;
 	private Menu editMenu;
@@ -2422,6 +2423,9 @@ public class Creator {
 		
 		fileExportJPEGItem = new MenuItem(fileMenu, SWT.PUSH);
 		fileExportJPEGItem.setText("Export to &PNG (Screen)");
+		
+		fileExportVideoItem = new MenuItem(fileMenu, SWT.PUSH);
+		fileExportVideoItem.setText("Export to &Video Yearbook");
 
 		new MenuItem(fileMenu, SWT.SEPARATOR);
 
@@ -2959,6 +2963,72 @@ public class Creator {
 					e.printStackTrace();
 				}
 				
+			}
+			
+		});
+		
+		fileExportVideoItem.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				FileDialog picker = new FileDialog(shell, SWT.SAVE);
+				picker.setText("Save As...");
+				picker.setFilterExtensions(new String[] {"*.ctcs"});
+				String fileName = picker.open();
+				if (fileName == null) return;
+				
+				/*
+				 * Add in the Digital Express logo.
+				 */
+				
+				Image logo = YearbookImages.logo(display);
+				Image pageBg = new Image(display, yearbook.settings.width, yearbook.settings.height);
+				GC gc = new GC(pageBg);
+
+				int x = (yearbook.settings.width - logo.getBounds().width) / 2;
+				int y = (yearbook.settings.height - logo.getBounds().height) / 2;
+				gc.drawImage(logo, x, y);
+				
+				gc.dispose();
+				logo.dispose();
+				
+				yearbook.insertPage(new YearbookPage(pageBg), 0);
+				yearbook.addPage(new YearbookPage(pageBg));
+				pageBg.dispose();
+				
+				
+				/*
+				 * Add in the covers, if they exist.
+				 */
+				if (yearbook.hasCover) {
+					Image image = yearbook.cover(display);
+					
+					Image front = new Image(display, yearbook.settings.width, yearbook.settings.height);
+					gc = new GC(front);
+					gc.drawImage(image, image.getBounds().width / 2, 0, (int) Math.floor(image.getBounds().width / 2), image.getBounds().height, 0, 0, canvas.getBounds().width, canvas.getBounds().height);
+					gc.dispose();
+					yearbook.insertPage(new YearbookPage(front), 0);
+					front.dispose();
+					
+					Image back = new Image(display, yearbook.settings.width, yearbook.settings.height);
+					gc = new GC(back);
+					gc.drawImage(image, 0, 0, (int) Math.floor(image.getBounds().width / 2), image.getBounds().height, 0, 0, canvas.getBounds().width, canvas.getBounds().height);
+					gc.dispose();
+					yearbook.addPage(new YearbookPage(back));
+					back.dispose();
+					
+					image.dispose();
+				}
+				
+				try {
+					Yearbook.saveToDisk(yearbook, fileName);
+				} catch (IOException e) {
+					MessageBox box = new MessageBox(shell, SWT.ERROR);
+					box.setText("Save Yearbook");
+					box.setMessage("Something went wrong while trying to export your video yearbook.\n\t" + e.getMessage());
+					box.open();
+					e.printStackTrace();
+				}
 			}
 			
 		});
@@ -5324,8 +5394,9 @@ public class Creator {
 	}
 
 	public static void main(String[] args) {
-		new Creator();
+		//new Creator();
 		//reader.Reader.main(null);
+		reader.ProductKey.main();
 	}
 
 }
