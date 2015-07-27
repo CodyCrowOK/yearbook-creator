@@ -2,6 +2,7 @@ package writer;
 import java.awt.GraphicsEnvironment;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -40,6 +41,7 @@ import pspa.HomeRoom;
 import pspa.PSPAIndexNotFoundException;
 import pspa.Person;
 import pspa.Volume;
+import reader.ProductKey;
 
 /**
  * The yearbook editor
@@ -114,6 +116,7 @@ public class Creator {
 	private MenuItem helpMenuItem;
 	private Menu helpMenu;
 	private MenuItem helpAboutItem;
+	private MenuItem helpGenerateKeysItem;
 
 	//Toolbar
 	Composite toolbarWrapper;
@@ -2542,6 +2545,11 @@ public class Creator {
 		helpAboutItem = new MenuItem(helpMenu, SWT.PUSH);
 		helpAboutItem.setText("&About " + Creator.SOFTWARE_NAME);
 		helpAboutItem.setAccelerator(SWT.MOD1 + 'Z');
+		
+		new MenuItem(helpMenu, SWT.SEPARATOR);
+		
+		helpGenerateKeysItem = new MenuItem(helpMenu, SWT.PUSH);
+		helpGenerateKeysItem.setText("&Generate Product Keys");
 	}
 
 	private void initialize() {
@@ -3694,6 +3702,84 @@ public class Creator {
 
 			}
 
+		});
+		
+		helpGenerateKeysItem.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				final Shell dialog = new Shell(shell, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
+				dialog.setText("Number of Product Keys to Generate");
+				dialog.setSize(400, 300);
+				FormLayout formLayout = new FormLayout();
+				formLayout.marginWidth = 10;
+				formLayout.marginHeight = 10;
+				formLayout.spacing = 10;
+				dialog.setLayout(formLayout);
+
+				Label label = new Label(dialog, SWT.NONE);
+				label.setText("Number of Product Keys to Generate:");
+				FormData data = new FormData();
+				label.setLayoutData(data);
+				
+				Button cancel = new Button(dialog, SWT.PUSH);
+				cancel.setText("Cancel");
+				data = new FormData();
+				data.width = 60;
+				data.right = new FormAttachment(100, 0);
+				data.bottom = new FormAttachment(100, 0);
+				cancel.setLayoutData(data);
+				cancel.setEnabled(false);
+
+				final Spinner text = new Spinner(dialog, SWT.BORDER);
+				data = new FormData();
+				data.width = 200;
+				data.left = new FormAttachment(label, 0, SWT.DEFAULT);
+				data.right = new FormAttachment(100, 0);
+				data.top = new FormAttachment(label, 0, SWT.CENTER);
+				data.bottom = new FormAttachment(cancel, 0, SWT.DEFAULT);
+				text.setLayoutData(data);
+
+				Button ok = new Button(dialog, SWT.PUSH);
+				ok.setText("OK");
+				data = new FormData();
+				data.width = 60;
+				data.right = new FormAttachment(cancel, 0, SWT.DEFAULT);
+				data.bottom = new FormAttachment(100, 0);
+				ok.setLayoutData(data);
+				ok.addSelectionListener(new SelectionAdapter() {
+					@Override
+					public void widgetSelected (SelectionEvent e) {
+						int n = Integer.parseInt(text.getText());
+						try {
+							String[] keys = ProductKey.parseJSONArray(ProductKey.generateKeys(new URL(new Config().generateProductKeyURL), n));
+							Shell keyShell = new Shell(display);
+							keyShell.setText("Product Keys");
+							keyShell.setLayout(new FillLayout());
+							Text text = new Text(keyShell, SWT.MULTI);
+							String textData = "";
+							for (String s : keys) {
+								textData += s + "\n";
+							}
+							text.setText(textData);
+							
+							keyShell.setSize(200, 500);
+							keyShell.open();
+						} catch (IOException e1) {
+							e1.printStackTrace();
+						}
+						
+						dialog.close();
+						dialog.dispose();
+					}
+				});
+
+				dialog.setDefaultButton (ok);
+				dialog.pack();
+				dialog.open();
+				
+			}
+			
 		});
 
 	}
@@ -5394,9 +5480,9 @@ public class Creator {
 	}
 
 	public static void main(String[] args) {
-		//new Creator();
+		new Creator();
 		//reader.Reader.main(null);
-		reader.ProductKey.main();
+		//ProductKey.main();
 	}
 
 }

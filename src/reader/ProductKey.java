@@ -16,76 +16,74 @@ import java.util.Map;
 import writer.Config;
 
 public class ProductKey {
-	
+
 	public static int productKeyQuery(URL url, String key) throws IOException {
-	        Map<String,Object> params = new LinkedHashMap<>();
-	        params.put("key", key);
+		Map<String,Object> params = new LinkedHashMap<>();
+		params.put("key", key);
 
-	        StringBuilder postData = new StringBuilder();
-	        for (Map.Entry<String,Object> param : params.entrySet()) {
-	            if (postData.length() != 0) postData.append('&');
-	            postData.append(URLEncoder.encode(param.getKey(), "UTF-8"));
-	            postData.append('=');
-	            postData.append(URLEncoder.encode(String.valueOf(param.getValue()), "UTF-8"));
-	        }
-	        byte[] postDataBytes = postData.toString().getBytes("UTF-8");
+		StringBuilder postData = new StringBuilder();
+		for (Map.Entry<String,Object> param : params.entrySet()) {
+			if (postData.length() != 0) postData.append('&');
+			postData.append(URLEncoder.encode(param.getKey(), "UTF-8"));
+			postData.append('=');
+			postData.append(URLEncoder.encode(String.valueOf(param.getValue()), "UTF-8"));
+		}
+		byte[] postDataBytes = postData.toString().getBytes("UTF-8");
 
-	        HttpURLConnection conn = (HttpURLConnection)url.openConnection();
-	        conn.setRequestMethod("POST");
-	        conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-	        conn.setRequestProperty("Content-Length", String.valueOf(postDataBytes.length));
-	        conn.setDoOutput(true);
+		HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+		conn.setRequestMethod("POST");
+		conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+		conn.setRequestProperty("Content-Length", String.valueOf(postDataBytes.length));
+		conn.setDoOutput(true);
 		conn.getOutputStream().write(postDataBytes);
 		return conn.getResponseCode();
 	}
-	
-	public static void generateKeys(URL url, int n) throws IOException {
-	        Map<String,Object> params = new LinkedHashMap<>();
-	        params.put("range", Integer.toString(n));
 
-	        StringBuilder postData = new StringBuilder();
-	        for (Map.Entry<String,Object> param : params.entrySet()) {
-	            if (postData.length() != 0) postData.append('&');
-	            postData.append(URLEncoder.encode(param.getKey(), "UTF-8"));
-	            postData.append('=');
-	            postData.append(URLEncoder.encode(String.valueOf(param.getValue()), "UTF-8"));
-	        }
-	        byte[] postDataBytes = postData.toString().getBytes("UTF-8");
+	public static String generateKeys(URL url, int n) throws IOException {
+		String json = "";
 
-	        HttpURLConnection conn = (HttpURLConnection)url.openConnection();
-	        conn.setRequestMethod("POST");
-	        conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-	        conn.setRequestProperty("Content-Length", String.valueOf(postDataBytes.length));
-	        conn.setDoOutput(true);
-	        conn.getOutputStream().write(postDataBytes);
+		Map<String,Object> params = new LinkedHashMap<>();
+		params.put("range", Integer.toString(n));
 
-	        BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream(), "UTF-8"));
-	        for (int c = in.read(); c != -1; c = in.read())
-	            System.out.print((char)c);
-	}
-	
-	public static void main() {
-		/*
-		try {
-			productKeyQuery(new URL("http://localhost:5000/product_key"), "1000006");
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		StringBuilder postData = new StringBuilder();
+		for (Map.Entry<String,Object> param : params.entrySet()) {
+			if (postData.length() != 0) postData.append('&');
+			postData.append(URLEncoder.encode(param.getKey(), "UTF-8"));
+			postData.append('=');
+			postData.append(URLEncoder.encode(String.valueOf(param.getValue()), "UTF-8"));
 		}
+		byte[] postDataBytes = postData.toString().getBytes("UTF-8");
+
+		HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+		conn.setRequestMethod("POST");
+		conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+		conn.setRequestProperty("Content-Length", String.valueOf(postDataBytes.length));
+		conn.setDoOutput(true);
+		conn.getOutputStream().write(postDataBytes);
+
+		BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream(), "UTF-8"));
+		for (int c = in.read(); c != -1; c = in.read())
+			json += (char) c;
+		return json;
+	}
+
+	public static String[] parseJSONArray(String json) {
+		String stripped = "";
+		for (int i = 0; i < json.length(); i++) {
+			char c = json.charAt(i);
+			if (!(c == '[' || c == ']' || c == '"')) {
+				stripped += c;
+			}
+		}
+		return stripped.split(",");
+	}
+
+	public static void main() {
 		try {
-			generateKeys(new URL("http://localhost:5000/generate_keys"), 4);
+			parseJSONArray(generateKeys(new URL(new Config().generateProductKeyURL), 5));
 		} catch (MalformedURLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		*/
-		
-		try {
-			Config config = new Config();
-			System.out.println(config.generateProductKeyURL);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
