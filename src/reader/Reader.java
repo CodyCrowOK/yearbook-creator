@@ -579,10 +579,98 @@ public class Reader {
 		if (DEMO) return;
 		if (current == yearbook.size() - 1 || Math.abs(next - current) > 2 || DEMO) {
 			coverTurnLeftAnimation(current, next);
+		} else {
+			smoothPageTurnLeft(current, next);
 		}
 
 	}
 	
+	/*
+	 * This is the exact same as smoothPageTurnRight, but the loops are ran
+	 * in reverse order.
+	 */
+	private void smoothPageTurnLeft(int current, int next) {
+		Image oldLeft, oldRight, newLeft, newRight;
+		Image rightBuffer, leftBuffer;
+		oldRight = new Image(display, rightCanvas.getBounds().width, rightCanvas.getBounds().height);
+		oldLeft = new Image(display, rightCanvas.getBounds().width, rightCanvas.getBounds().height);
+		newRight = new Image(display, rightCanvas.getBounds().width, rightCanvas.getBounds().height);
+		newLeft = new Image(display, rightCanvas.getBounds().width, rightCanvas.getBounds().height);
+		leftBuffer = new Image(display, rightCanvas.getBounds().width, rightCanvas.getBounds().height);
+		rightBuffer = new Image(display, rightCanvas.getBounds().width, rightCanvas.getBounds().height);
+		
+		/*
+		 * Get the appropriate pages.
+		 */
+		
+		GC rightBufferGc = new GC(oldRight);
+		Creator.paintPage(rightBufferGc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), current, rightBuffer.getBounds().width, rightBuffer.getBounds().height, true, false);
+		rightBufferGc.dispose();
+		
+		rightBufferGc = new GC(newLeft);
+		Creator.paintPage(rightBufferGc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), current + 1, rightBuffer.getBounds().width, rightBuffer.getBounds().height, true, false);
+		rightBufferGc.dispose();
+		
+		rightBufferGc = new GC(newRight);
+		Creator.paintPage(rightBufferGc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), current + 2, rightBuffer.getBounds().width, rightBuffer.getBounds().height, true, false);
+		rightBufferGc.dispose();
+		
+		rightBufferGc = new GC(rightBuffer);
+		GC leftBufferGc = new GC(leftBuffer);
+		GC rightCanvasGc = new GC(rightCanvas);
+		GC leftCanvasGc = new GC(canvas);
+		
+		for (int i = (MagicNumber.FRAMES * 2); i > MagicNumber.FRAMES; i--) {
+			int xLine = rightCanvas.getBounds().width - ((int) (((double) i / MagicNumber.FRAMES) * rightCanvas.getBounds().width));
+			int x2Line = xLine + ((rightCanvas.getBounds().width - xLine) / 2);
+			//int xLeftLine = rightCanvas.getBounds().width - (int) (((double) (i / 2) / MagicNumber.FRAMES) * rightCanvas.getBounds().width);
+			int xLeftLine = rightCanvas.getBounds().width - Math.abs(xLine);
+			
+			if ((x2Line - xLine) > 0) {
+				rightBufferGc.drawImage(newLeft, rightCanvas.getBounds().width - x2Line, 0, x2Line, oldRight.getBounds().height, 0, 0, x2Line, oldRight.getBounds().height);
+				rightBufferGc.drawImage(newRight, x2Line, 0, (int) Math.floor(newRight.getBounds().width - x2Line), newRight.getBounds().height, x2Line, 0, x2Line - xLine, newRight.getBounds().height);
+			}
+			
+			leftBufferGc.drawImage(oldLeft, 0, 0, xLeftLine, canvas.getBounds().height, 0, 0, xLeftLine, canvas.getBounds().height);
+			leftBufferGc.drawImage(newLeft, 0, 0, canvas.getBounds().width - xLeftLine, canvas.getBounds().height, xLeftLine, 0, canvas.getBounds().width - xLeftLine, canvas.getBounds().height);
+			
+			leftBufferGc.drawLine(xLeftLine, 0, xLeftLine, canvas.getBounds().height);
+			rightBufferGc.drawLine(x2Line, 0, x2Line, rightCanvas.getBounds().height);
+			
+			rightCanvasGc.drawImage(rightBuffer, 0, 0);
+			leftCanvasGc.drawImage(leftBuffer, 0, 0);
+		}
+		
+		for (int i = MagicNumber.FRAMES; i > 5; i--) {
+			int xLine = rightCanvas.getBounds().width - ((int) (((double) i / MagicNumber.FRAMES) * rightCanvas.getBounds().width));
+			int x2Line = xLine + ((rightCanvas.getBounds().width - xLine) / 2);
+			
+			rightBufferGc.drawImage(oldRight, 0, 0, xLine, oldRight.getBounds().height, 0, 0, xLine, oldRight.getBounds().height);
+			rightBufferGc.drawImage(newLeft, 0, 0, x2Line - xLine, newLeft.getBounds().height, xLine, 0, x2Line - xLine, newLeft.getBounds().height);
+			rightBufferGc.drawImage(newRight, x2Line, 0, (int) Math.floor(newRight.getBounds().width - x2Line), newRight.getBounds().height, x2Line, 0, x2Line - xLine, newRight.getBounds().height);
+			
+			rightBufferGc.drawLine(xLine, 0, xLine, rightCanvas.getBounds().height);
+			rightBufferGc.drawLine(x2Line, 0, x2Line, rightCanvas.getBounds().height);
+			
+			rightCanvasGc.drawImage(rightBuffer, 0, 0);
+		}
+		
+		leftCanvasGc.drawImage(newLeft, 0, 0);
+		rightCanvasGc.drawImage(newRight, 0, 0);
+		
+		oldLeft.dispose();
+		oldRight.dispose();
+		newLeft.dispose();
+		newRight.dispose();
+		rightBuffer.dispose();
+		leftBuffer.dispose();
+		
+		rightBufferGc.dispose();
+		rightCanvasGc.dispose();
+		leftCanvasGc.dispose();
+		
+	}
+
 	private void coverTurnLeftAnimation(int current, int next) {
 		if (DEMO) return;
 		Image image = new Image(display, canvas.getBounds().width, canvas.getBounds().height);
