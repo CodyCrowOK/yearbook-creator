@@ -680,10 +680,6 @@ public class Reader {
 			int xLine = rightCanvas.getBounds().width - ((int) (((double) i / MagicNumber.FRAMES) * rightCanvas.getBounds().width));
 			int x2Line = xLine + ((rightCanvas.getBounds().width - xLine) / 2);
 			
-			/*
-			 * Draw the pages in their places on the buffer.
-			 */
-			
 			rightBufferGc.drawImage(oldRight, 0, 0, xLine, oldRight.getBounds().height, 0, 0, xLine, oldRight.getBounds().height);
 			rightBufferGc.drawImage(newLeft, 0, 0, x2Line - xLine, newLeft.getBounds().height, xLine, 0, x2Line - xLine, newLeft.getBounds().height);
 			rightBufferGc.drawImage(newRight, x2Line, 0, (int) Math.floor(newRight.getBounds().width - x2Line), newRight.getBounds().height, x2Line, 0, x2Line - xLine, newRight.getBounds().height);
@@ -692,12 +688,6 @@ public class Reader {
 			rightBufferGc.drawLine(x2Line, 0, x2Line, rightCanvas.getBounds().height);
 			
 			rightCanvasGc.drawImage(rightBuffer, 0, 0);
-			
-			try {
-				Thread.sleep(1);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
 		}
 		
 		for (int i = MagicNumber.FRAMES; i < (MagicNumber.FRAMES * 2); i++) {
@@ -714,15 +704,15 @@ public class Reader {
 			leftBufferGc.drawImage(oldLeft, 0, 0, xLeftLine, canvas.getBounds().height, 0, 0, xLeftLine, canvas.getBounds().height);
 			leftBufferGc.drawImage(newLeft, 0, 0, canvas.getBounds().width - xLeftLine, canvas.getBounds().height, xLeftLine, 0, canvas.getBounds().width - xLeftLine, canvas.getBounds().height);
 			
+			leftBufferGc.drawLine(xLeftLine, 0, xLeftLine, canvas.getBounds().height);
+			rightBufferGc.drawLine(x2Line, 0, x2Line, rightCanvas.getBounds().height);
+			
 			rightCanvasGc.drawImage(rightBuffer, 0, 0);
 			leftCanvasGc.drawImage(leftBuffer, 0, 0);
-			
-			try {
-				Thread.sleep(1);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
 		}
+		
+		leftCanvasGc.drawImage(newLeft, 0, 0);
+		rightCanvasGc.drawImage(newRight, 0, 0);
 		
 		oldLeft.dispose();
 		oldRight.dispose();
