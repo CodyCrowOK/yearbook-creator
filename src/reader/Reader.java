@@ -804,26 +804,8 @@ public class Reader {
 		
 		i = 0;
 		subtrahend = 0;
-
-		while (i++ < MagicNumber.FRAMES) {
-			try {
-				Thread.sleep(1);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			canvas.update();
-			Image consolidated = new Image(display, canvas.getBounds().width, canvas.getBounds().height);
-			gc = new GC(consolidated);
-			gc.drawImage(leftOriginal, 0, 0);
-			gc.drawImage(newLeft, 0, 0, newLeft.getBounds().width, newLeft.getBounds().height, canvas.getBounds().width - subtrahend, 0, subtrahend, canvas.getBounds().height);
-			gc.dispose();
-			
-			gc = new GC(canvas);
-			gc.drawImage(consolidated, 0, 0);
-			gc.dispose();
-			consolidated.dispose();
-
-		}
+		
+		
 		canvasWrapper.setVisible(true);
 		
 		pageTwo.dispose();
@@ -917,7 +899,8 @@ public class Reader {
 	private void loadLeftCanvas(int activePage) {
 		//blankLeftCanvas();
 		
-		GC gc = new GC(canvas);
+		Image buffer = new Image(display, canvas.getBounds().width, canvas.getBounds().height);
+		GC gc = new GC(buffer);
 		
 		if (yearbook.page(activePage).noBackground) {
 			gc.setBackground(canvasBackgroundColor);
@@ -925,6 +908,9 @@ public class Reader {
 		}
 		
 		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), activePage, yearbook.settings.width, yearbook.settings.height, true, false);
+		gc.dispose();
+		gc = new GC(canvas);
+		gc.drawImage(buffer, 0, 0);
 		gc.dispose();
 		
 		canvas.addMouseMoveListener(new MouseMoveListener() {
@@ -949,8 +935,12 @@ public class Reader {
 	
 	private void loadRightCanvas(int activePage) {
 		//blankRightCanvas();
-		GC gc = new GC(rightCanvas);
+		Image buffer = new Image(display, canvas.getBounds().width, canvas.getBounds().height);
+		GC gc = new GC(buffer);
 		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), activePage, yearbook.settings.width, yearbook.settings.height, true, false);
+		gc.dispose();
+		gc = new GC(rightCanvas);
+		gc.drawImage(buffer, 0, 0);
 		gc.dispose();
 		
 		rightCanvas.addMouseMoveListener(new MouseMoveListener() {
