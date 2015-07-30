@@ -51,7 +51,7 @@ import reader.ProductKey;
 public class Creator {
 
 	//Meta information
-	public static final String VERSION = "0.09";
+	public static final String VERSION = "0.10";
 	public static final String COMPANY_NAME = "Digital Express";
 	public static final String SOFTWARE_NAME = "Yearbook Designer";
 	
@@ -169,6 +169,7 @@ public class Creator {
 	private boolean MOD1;
 	
 	private Tree layoutTree;
+	private String[] fontNames;
 
 	private Creator() {
 		display = new Display();
@@ -2110,7 +2111,6 @@ public class Creator {
 		else sizeCombo.select(4);
 
 
-		String[] fontNames = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
 		Combo fontCombo = new Combo(textTool, SWT.DROP_DOWN);
 		GridData fontData  = new GridData(SWT.FILL, SWT.FILL, true, false);
 		fontData.horizontalSpan = 3;
@@ -4116,7 +4116,6 @@ public class Creator {
 			directionCombo.add(d);
 		}
 		
-		String[] fontNames = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
 		Combo fontCombo = new Combo(textTool, SWT.DROP_DOWN);
 		GridData fontData  = new GridData(SWT.FILL, SWT.FILL, true, false);
 		fontData.horizontalSpan = 5;
@@ -5477,6 +5476,8 @@ public class Creator {
 		for (File f : files) {
 			display.loadFont(f.getPath());
 		}
+		
+		fontNames = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
 	}
 
 	public static void main(String[] args) {
