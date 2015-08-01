@@ -112,4 +112,12 @@ public class YearbookIcons {
 	public static Image navEnd(Display display) {
 		return new Image(display, "icons/go-end.png");
 	}
+	
+	public static Image play(Display display) {
+		return new Image(display, "icons/play.png");
+	}
+
+	public static Image pause(Display display) {
+		return new Image(display, "icons/pause.png");
+	}
 }

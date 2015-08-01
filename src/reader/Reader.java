@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import javax.sound.sampled.*;
 import javax.sound.sampled.LineEvent.Type;
@@ -56,12 +58,12 @@ import writer.YearbookImages;
 public class Reader {
 	public static final boolean DEMO = false;
 	public static final boolean PRODUCTION = false;
-	
+
 	Config config;
-	
+
 	Display display;
 	Shell shell;
-	
+
 	int canvasHeight;
 	Yearbook yearbook;
 
@@ -71,17 +73,21 @@ public class Reader {
 	private Canvas canvas;
 	private Canvas rightCanvas;
 	private Color canvasBackgroundColor;
-	
+
 	Label yearbookName;
 	Label separator;
 	Text pageNumbers;
 	Label pages;
 	Label totalPages;
-	
+
 	boolean onPageCover;
 	boolean front;
 	boolean back;
+	boolean playSlideshow;
 	
+	Image play;
+	Image pause;
+
 	@SuppressWarnings("unused")
 	public Reader() throws ClassNotFoundException, IOException {
 		display = new Display();
@@ -101,46 +107,69 @@ public class Reader {
 		} else {
 			fileName = "yearbook.ctcs";
 		}
-		
+
 		/*
 		 * Load the fonts.
 		 */
 		this.loadFonts();
-		
+
 		onPageCover = false;
-		
+
 		this.initialize();
 		yearbook = Yearbook.readFromDisk(fileName);
 		this.createNewYearbook();
-		
+
 		this.initializeUI();
-		
+
 		this.refresh();
-		
+
+		this.loadSlideshow();
+
 		shell.setLayout(new GridLayout());
 		shell.setText(Creator.COMPANY_NAME + " Digital Yearbook");
 		shell.pack();
 		//Magic number, chosen for being near center.
 		shell.setLocation((int) (.09375 * display.getClientArea().width), 0);
-		
+
 		//Need both of these for compatibility with Windows.
 		shell.setMaximized(true);
 		shell.setFullScreen(true);
 		shell.open();
-		
+
 		while (!shell.isDisposed()) {
 			if (!display.readAndDispatch())	display.sleep();
 		}
 		display.dispose();
 	}
-	
+
+	private void loadSlideshow() {
+		Timer timer = new Timer();
+		timer.schedule(new TimerTask() {
+			@Override
+			public void run() {
+				display.asyncExec(new Runnable() {
+
+					@Override
+					public void run() {
+						if (playSlideshow) turnPageRight();
+					}
+					
+				});
+				
+				
+
+			}
+		}, 5000L, 5000L);
+
+	}
+
 	private void loadFonts() {
 		File folder;// = new File("media/fonts");
 		File[] files;/* = folder.listFiles();
 		for (File f : files) {
 			display.loadFont(f.getPath());
 		}*/
-		
+
 		folder = new File("icons/fonts");
 		files = folder.listFiles();
 		for (File f : files) {
@@ -150,14 +179,14 @@ public class Reader {
 
 	private void initializeUI() {
 		yearbookName.setText(yearbook.name);
-		
+
 		if (!DEMO) {
 			pageNumbers.setText(Integer.toString(0));
 			totalPages.setText(" / " + Integer.toString(yearbook.size() - 1));
-			
-			
+
+
 			pageNumbers.addListener(SWT.DefaultSelection, new Listener() {
-	
+
 				@Override
 				public void handleEvent(Event event) {
 					try {
@@ -169,27 +198,27 @@ public class Reader {
 								refresh();
 							}
 					} catch (NumberFormatException e) {
-						
+
 					}
-					
+
 				}
-				
+
 			});
 		}
 	}
 
 	private void initialize() {
-		
+
 		showExpandingLogo();
 
 		if (!DEMO) canvasHeight = display.getClientArea().height - 120;
 		if (DEMO) canvasHeight = display.getClientArea().height - 50;
-		
+
 		canvasBackgroundColor = new Color(display, 254, 254, 254);
-		
+
 		Color barColor = new Color(display, 0x84, 0x2c, 0x2a);
 		Color gray = new Color(display, 0xee, 0xee, 0xee);
-		
+
 		Composite topbar = new Composite(shell, SWT.NONE);
 		topbar.setBackground(barColor);
 		topbar.setLayoutData(new GridData(SWT.FILL, SWT.BOTTOM, true, false));
@@ -199,10 +228,10 @@ public class Reader {
 		topbarLayout.marginBottom = 10;
 		topbarLayout.marginLeft = 20;
 		topbar.setLayout(topbarLayout);
-		
+
 		Font tahomaBold = new Font(display, "Gill Sans MT", 16, SWT.BOLD);
 		Font tahomaSmall = new Font(display, "Gill Sans MT", 14, SWT.NONE);
-		
+
 		yearbookName = new Label(topbar, SWT.NONE);
 		yearbookName.setBackground(barColor);
 		yearbookName.setForeground(display.getSystemColor(SWT.COLOR_WHITE));
@@ -215,12 +244,12 @@ public class Reader {
 			pages.setBackground(barColor);
 			pages.setFont(tahomaSmall);
 			pages.setText("   pages: ");
-			
+
 			Composite numberWrapper = new Composite(topbar, SWT.NONE);
 			numberWrapper.setLayout(new FillLayout());
 			pageNumbers = new Text(numberWrapper, SWT.SINGLE);
 			pageNumbers.setBackground(gray);
-			
+
 			totalPages = new Label(topbar, SWT.NONE);
 			totalPages.setForeground(gray);
 			totalPages.setBackground(barColor);
@@ -230,30 +259,30 @@ public class Reader {
 		//tahomaBold.dispose();
 		//tahomaSmall.dispose();
 		//gray.dispose();
-		
-		
+
+
 		bigCanvasWrapper = new Composite(shell, SWT.NONE);
 		bigCanvasWrapper.setLayoutData(new GridData(SWT.CENTER, SWT.BEGINNING, true, true));
 		GridLayout wrapperLayout = new GridLayout(2, false);
 		//For the larger open book image:
 		//wrapperLayout.marginHeight = (int) (1.1 * (68.0 / 2868.0) * canvasHeight);
 		//wrapperLayout.marginWidth = (int) (2.2 * (68.0 / 2868.0) * canvasHeight);
-		
+
 		wrapperLayout.marginHeight = (int) ((13.0 / 2868.0) * (canvasHeight));
 		wrapperLayout.marginWidth = (int) (1.05 * (68.0 / 2868.0) * canvasHeight);
 		bigCanvasWrapper.setLayout(wrapperLayout);
-		
+
 		canvasWrapper = new Composite(bigCanvasWrapper, SWT.NONE);
 		canvas = new Canvas(canvasWrapper, SWT.NONE);
 		canvas.setBackground(canvasBackgroundColor);
-		
+
 		canvasWrapper2 = new Composite(bigCanvasWrapper, SWT.NONE);
 		rightCanvas = new Canvas(canvasWrapper2, SWT.NONE);
 		rightCanvas.setBackground(canvasBackgroundColor);
-		
+
 		canvas.addMouseListener(new MouseListener() {
 			int startX;
-			
+
 			@Override
 			public void mouseDoubleClick(MouseEvent e) {
 				turnPageLeft();
@@ -265,7 +294,7 @@ public class Reader {
 				if (rightIsActive() && yearbook.activePage - 1 >= 0) {
 					yearbook.activePage--;
 				}
-				
+
 				if (yearbook.page(yearbook.activePage).isClickableAtPoint(e.x, e.y, yearbook.settings.width, yearbook.settings.height) && leftIsActive()) {
 					//Show their video.
 					//Using the system player for now.
@@ -275,9 +304,9 @@ public class Reader {
 					} else {
 						file = new File(((YearbookClickableElement) yearbook.page(yearbook.activePage).getElementAtPoint(e.x, e.y, yearbook.settings.width, yearbook.settings.height)).getVideo().getSrc());
 					}
-					
+
 					Desktop dt = Desktop.getDesktop();
-					
+
 					try {
 						dt.open(file);
 					} catch (IOException e1) {
@@ -289,7 +318,7 @@ public class Reader {
 						box.open();
 					}
 				}
-				
+
 			}
 
 			@Override
@@ -301,13 +330,13 @@ public class Reader {
 					turnPageLeft();
 				}
 			}
-			
+
 		});
-		
+
 		rightCanvas.addMouseListener(new MouseListener() {
 
 			int startX;
-			
+
 			@Override
 			public void mouseDoubleClick(MouseEvent e) {
 				turnPageRight();
@@ -329,9 +358,9 @@ public class Reader {
 					} else {
 						file = new File(((YearbookClickableElement) yearbook.page(yearbook.activePage).getElementAtPoint(e.x, e.y, yearbook.settings.width, yearbook.settings.height)).getVideo().getSrc());
 					}
-					
+
 					Desktop dt = Desktop.getDesktop();
-					
+
 					try {
 						dt.open(file);
 					} catch (IOException e1) {
@@ -343,7 +372,7 @@ public class Reader {
 						box.open();
 					}
 				} 
-				
+
 			}
 
 			@Override
@@ -355,29 +384,29 @@ public class Reader {
 					turnPageRight();
 				}
 			}
-			
+
 		});
-		
+
 		canvas.addPaintListener(new PaintListener() {
 
 			@Override
 			public void paintControl(PaintEvent e) {
 				refresh();
-				
+
 			}
-			
+
 		});
-		
+
 		rightCanvas.addPaintListener(new PaintListener() {
 
 			@Override
 			public void paintControl(PaintEvent e) {
 				refresh();
-				
+
 			}
-			
+
 		});
-		
+
 		Composite navbar = new Composite(shell, SWT.NONE);
 		if (DEMO) navbar.setVisible(false);
 		navbar.setLayoutData(new GridData(SWT.CENTER, SWT.BEGINNING, true, true));
@@ -392,15 +421,20 @@ public class Reader {
 		navbar.setLayout(barLayout);
 		Button frontBtn = new Button(navbar, SWT.PUSH);
 		Button backBtn = new Button(navbar, SWT.PUSH);
+		Button playBtn = new Button(navbar, SWT.PUSH);
 		Button nextBtn = new Button(navbar, SWT.PUSH);
 		Button endBtn = new Button(navbar, SWT.PUSH);
 		
+		play = YearbookIcons.play(display);
+		pause = YearbookIcons.pause(display);
+
 		Image image = YearbookIcons.navFront(display);
 		frontBtn.setImage(image);
 		//image.dispose();
 		image = YearbookIcons.navBack(display);
 		backBtn.setImage(image);
 		//image.dispose();
+		playBtn.setImage(play);
 		image = YearbookIcons.navNext(display);
 		nextBtn.setImage(image);
 		//image.dispose();
@@ -408,47 +442,61 @@ public class Reader {
 		endBtn.setImage(image);
 		//image.dispose();
 		navbar.pack();
-		
+
 		nextBtn.addListener(SWT.Selection, new Listener() {
 
 			@Override
 			public void handleEvent(Event event) {
 				turnPageRight();
-				
+
 			}
-			
+
 		});
-		
+
 		backBtn.addListener(SWT.Selection, new Listener() {
 
 			@Override
 			public void handleEvent(Event event) {
 				turnPageLeft();
-				
+
+			}
+
+		});
+		
+		playBtn.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				playSlideshow = !playSlideshow;
+				if (playSlideshow) {
+					playBtn.setImage(pause);
+				} else {
+					playBtn.setImage(play);
+				}
 			}
 			
 		});
-		
+
 		frontBtn.addListener(SWT.Selection, new Listener() {
 
 			@Override
 			public void handleEvent(Event event) {
 				yearbook.activePage = 0;
 				refresh();
-				
+
 			}
-			
+
 		});
-		
+
 		endBtn.addListener(SWT.Selection, new Listener() {
 
 			@Override
 			public void handleEvent(Event event) {
 				yearbook.activePage = yearbook.size() - 1;
 				refresh();
-				
+
 			}
-			
+
 		});
 
 		shell.addPaintListener(new PaintListener() {
@@ -459,9 +507,9 @@ public class Reader {
 				e.gc.drawImage(bg, 0, 0, bg.getBounds().width, bg.getBounds().height, 0, 0, shell.getBounds().width, shell.getBounds().height);
 				bg.dispose();
 			}
-			
+
 		});
-		
+
 		bigCanvasWrapper.addPaintListener(new PaintListener() {
 
 			@Override
@@ -485,7 +533,7 @@ public class Reader {
 					e.gc.drawImage(shellBg, xc, yc, wc, hc, 0, 0, width, height);
 					//System.out.println(((double) x / shell.getBounds().width * shellBg.getBounds().width) + " " + yc + " " + wc + " " + hc);
 					shellBg.dispose();
-					
+
 					/*
 					if (front) {
 						int halfWidth = (int) Math.floor(bg.getBounds().width / 2);
@@ -493,12 +541,12 @@ public class Reader {
 						//e.gc.drawImage(bg, halfWidth, 0, halfWidth, bg.getBounds().height, halfDestWidth, 0, halfDestWidth, bigCanvasWrapper.getBounds().height);
 						//System.out.println(bigCanvasWrapper.getBounds().height);
 					}
-					*/
+					 */
 				}
 				bg.dispose();
-				
+
 			}
-			
+
 		});
 
 		navbar.addPaintListener(new PaintListener() {
@@ -508,11 +556,11 @@ public class Reader {
 				Image bg = YearbookImages.readerBackground(display);
 				e.gc.drawImage(bg, 0, 0, bg.getBounds().width, bg.getBounds().height, 0, 0, shell.getBounds().width, shell.getBounds().height);
 				bg.dispose();
-				
+
 			}
-			
+
 		});
-		
+
 		shell.addListener(SWT.Traverse, new Listener() {
 
 			@Override
@@ -524,13 +572,13 @@ public class Reader {
 					event.doit = false;
 					break;
 				}
-				
+
 			}
-			
+
 		});
-		
-		
-		
+
+
+
 	}
 
 	private void showExpandingLogo() {
@@ -541,15 +589,15 @@ public class Reader {
 		Image logo = YearbookImages.logoWhiteBackground(display);
 		for (int i = 0; i < 1000; i++) {
 			int destX, destY, destWidth, destHeight;
-			
+
 			//Expensive operation
 			double eToTheX = (Math.exp((double) i / 1000) - 1);
-			
+
 			destWidth = (int) (eToTheX * logo.getBounds().width);
 			destHeight = (int) (eToTheX * logo.getBounds().height);
 			destX = (shell.getBounds().width - destWidth) / 2;
 			destY = (shell.getBounds().height - destHeight) / 2;
-			
+
 			try {
 				Thread.sleep(1);
 			} catch (InterruptedException e) {
@@ -568,13 +616,13 @@ public class Reader {
 
 	protected void openFromBack() {
 		//
-		
+
 	}
 
 	protected void openBook() {
 		//pageTurnRightAnimation(0, 1);
 	}
-	
+
 	private void pageTurnLeftAnimation(int current, int next) {
 		if (DEMO) return;
 		if (current == yearbook.size() - 1 || Math.abs(next - current) > 2 || DEMO) {
@@ -584,7 +632,7 @@ public class Reader {
 		}
 
 	}
-	
+
 	/*
 	 * This is the exact same as smoothPageTurnRight, but the loops are ran
 	 * in reverse order.
@@ -598,77 +646,77 @@ public class Reader {
 		newLeft = new Image(display, rightCanvas.getBounds().width, rightCanvas.getBounds().height);
 		leftBuffer = new Image(display, rightCanvas.getBounds().width, rightCanvas.getBounds().height);
 		rightBuffer = new Image(display, rightCanvas.getBounds().width, rightCanvas.getBounds().height);
-		
+
 		/*
 		 * Get the appropriate pages.
 		 */
-		
+
 		GC rightBufferGc = new GC(oldRight);
 		Creator.paintPage(rightBufferGc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), current, rightBuffer.getBounds().width, rightBuffer.getBounds().height, true, false);
 		rightBufferGc.dispose();
-		
+
 		rightBufferGc = new GC(newLeft);
 		Creator.paintPage(rightBufferGc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), current + 1, rightBuffer.getBounds().width, rightBuffer.getBounds().height, true, false);
 		rightBufferGc.dispose();
-		
+
 		rightBufferGc = new GC(newRight);
 		Creator.paintPage(rightBufferGc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), current + 2, rightBuffer.getBounds().width, rightBuffer.getBounds().height, true, false);
 		rightBufferGc.dispose();
-		
+
 		rightBufferGc = new GC(rightBuffer);
 		GC leftBufferGc = new GC(leftBuffer);
 		GC rightCanvasGc = new GC(rightCanvas);
 		GC leftCanvasGc = new GC(canvas);
-		
+
 		for (int i = (MagicNumber.FRAMES * 2); i > MagicNumber.FRAMES; i--) {
 			int xLine = rightCanvas.getBounds().width - ((int) (((double) i / MagicNumber.FRAMES) * rightCanvas.getBounds().width));
 			int x2Line = xLine + ((rightCanvas.getBounds().width - xLine) / 2);
 			//int xLeftLine = rightCanvas.getBounds().width - (int) (((double) (i / 2) / MagicNumber.FRAMES) * rightCanvas.getBounds().width);
 			int xLeftLine = rightCanvas.getBounds().width - Math.abs(xLine);
-			
+
 			if ((x2Line - xLine) > 0) {
 				rightBufferGc.drawImage(newLeft, rightCanvas.getBounds().width - x2Line, 0, x2Line, oldRight.getBounds().height, 0, 0, x2Line, oldRight.getBounds().height);
 				rightBufferGc.drawImage(newRight, x2Line, 0, (int) Math.floor(newRight.getBounds().width - x2Line), newRight.getBounds().height, x2Line, 0, x2Line - xLine, newRight.getBounds().height);
 			}
-			
+
 			leftBufferGc.drawImage(oldLeft, 0, 0, xLeftLine, canvas.getBounds().height, 0, 0, xLeftLine, canvas.getBounds().height);
 			leftBufferGc.drawImage(newLeft, 0, 0, canvas.getBounds().width - xLeftLine, canvas.getBounds().height, xLeftLine, 0, canvas.getBounds().width - xLeftLine, canvas.getBounds().height);
-			
+
 			leftBufferGc.drawLine(xLeftLine, 0, xLeftLine, canvas.getBounds().height);
 			rightBufferGc.drawLine(x2Line, 0, x2Line, rightCanvas.getBounds().height);
-			
+
 			rightCanvasGc.drawImage(rightBuffer, 0, 0);
 			leftCanvasGc.drawImage(leftBuffer, 0, 0);
 		}
-		
+
 		for (int i = MagicNumber.FRAMES; i > 5; i--) {
 			int xLine = rightCanvas.getBounds().width - ((int) (((double) i / MagicNumber.FRAMES) * rightCanvas.getBounds().width));
 			int x2Line = xLine + ((rightCanvas.getBounds().width - xLine) / 2);
-			
+
 			rightBufferGc.drawImage(oldRight, 0, 0, xLine, oldRight.getBounds().height, 0, 0, xLine, oldRight.getBounds().height);
 			rightBufferGc.drawImage(newLeft, 0, 0, x2Line - xLine, newLeft.getBounds().height, xLine, 0, x2Line - xLine, newLeft.getBounds().height);
 			rightBufferGc.drawImage(newRight, x2Line, 0, (int) Math.floor(newRight.getBounds().width - x2Line), newRight.getBounds().height, x2Line, 0, x2Line - xLine, newRight.getBounds().height);
-			
+
 			rightBufferGc.drawLine(xLine, 0, xLine, rightCanvas.getBounds().height);
 			rightBufferGc.drawLine(x2Line, 0, x2Line, rightCanvas.getBounds().height);
-			
+
 			rightCanvasGc.drawImage(rightBuffer, 0, 0);
 		}
-		
+
 		leftCanvasGc.drawImage(newLeft, 0, 0);
 		rightCanvasGc.drawImage(newRight, 0, 0);
-		
+
 		oldLeft.dispose();
 		oldRight.dispose();
 		newLeft.dispose();
 		newRight.dispose();
 		rightBuffer.dispose();
 		leftBuffer.dispose();
-		
+
 		rightBufferGc.dispose();
 		rightCanvasGc.dispose();
 		leftCanvasGc.dispose();
-		
+
 	}
 
 	private void coverTurnLeftAnimation(int current, int next) {
@@ -693,12 +741,12 @@ public class Reader {
 			gc.drawImage(shellBg, xc, yc, wc, hc, 0, 0, width, height);
 			shellBg.dispose();
 		}
-		
+
 		gc.dispose();
 
 		int i = 0;
 		int subtrahend = 0;
-		
+
 		while (i < MagicNumber.FRAMES) {
 			try {
 				Thread.sleep(1);
@@ -713,17 +761,17 @@ public class Reader {
 			gc.drawImage(pageTwo, 0, 0);
 			gc.drawImage(image, 0, 0, image.getBounds().width, image.getBounds().height, consolidated.getBounds().width - subtrahend, 0, subtrahend, consolidated.getBounds().height);
 			gc.dispose();
-			
+
 			gc = new GC(canvas);
 			gc.drawImage(consolidated, 0, 0);
 			gc.dispose();
 			consolidated.dispose();
 		}
-		
+
 		pageTwo.dispose();
 		image.dispose();
 	}
-	
+
 	private void pageTurnRightAnimation(int current, int next) {
 		if (DEMO) return;
 		if (current == 0 || Math.abs(next - current) > 2 || DEMO) {
@@ -742,73 +790,73 @@ public class Reader {
 		newLeft = new Image(display, rightCanvas.getBounds().width, rightCanvas.getBounds().height);
 		leftBuffer = new Image(display, rightCanvas.getBounds().width, rightCanvas.getBounds().height);
 		rightBuffer = new Image(display, rightCanvas.getBounds().width, rightCanvas.getBounds().height);
-		
+
 		/*
 		 * Get the appropriate pages.
 		 */
-		
+
 		GC rightBufferGc = new GC(oldRight);
 		Creator.paintPage(rightBufferGc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), current, rightBuffer.getBounds().width, rightBuffer.getBounds().height, true, false);
 		rightBufferGc.dispose();
-		
+
 		rightBufferGc = new GC(newLeft);
 		Creator.paintPage(rightBufferGc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), current + 1, rightBuffer.getBounds().width, rightBuffer.getBounds().height, true, false);
 		rightBufferGc.dispose();
-		
+
 		rightBufferGc = new GC(newRight);
 		Creator.paintPage(rightBufferGc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), current + 2, rightBuffer.getBounds().width, rightBuffer.getBounds().height, true, false);
 		rightBufferGc.dispose();
-		
+
 		rightBufferGc = new GC(rightBuffer);
 		GC leftBufferGc = new GC(leftBuffer);
 		GC rightCanvasGc = new GC(rightCanvas);
 		GC leftCanvasGc = new GC(canvas);
-		
+
 		for (int i = 5; i < MagicNumber.FRAMES; i++) {
 			int xLine = rightCanvas.getBounds().width - ((int) (((double) i / MagicNumber.FRAMES) * rightCanvas.getBounds().width));
 			int x2Line = xLine + ((rightCanvas.getBounds().width - xLine) / 2);
-			
+
 			rightBufferGc.drawImage(oldRight, 0, 0, xLine, oldRight.getBounds().height, 0, 0, xLine, oldRight.getBounds().height);
 			rightBufferGc.drawImage(newLeft, 0, 0, x2Line - xLine, newLeft.getBounds().height, xLine, 0, x2Line - xLine, newLeft.getBounds().height);
 			rightBufferGc.drawImage(newRight, x2Line, 0, (int) Math.floor(newRight.getBounds().width - x2Line), newRight.getBounds().height, x2Line, 0, x2Line - xLine, newRight.getBounds().height);
-			
+
 			rightBufferGc.drawLine(xLine, 0, xLine, rightCanvas.getBounds().height);
 			rightBufferGc.drawLine(x2Line, 0, x2Line, rightCanvas.getBounds().height);
-			
+
 			rightCanvasGc.drawImage(rightBuffer, 0, 0);
 		}
-		
+
 		for (int i = MagicNumber.FRAMES; i < (MagicNumber.FRAMES * 2); i++) {
 			int xLine = rightCanvas.getBounds().width - ((int) (((double) i / MagicNumber.FRAMES) * rightCanvas.getBounds().width));
 			int x2Line = xLine + ((rightCanvas.getBounds().width - xLine) / 2);
 			//int xLeftLine = rightCanvas.getBounds().width - (int) (((double) (i / 2) / MagicNumber.FRAMES) * rightCanvas.getBounds().width);
 			int xLeftLine = rightCanvas.getBounds().width - Math.abs(xLine);
-			
+
 			if ((x2Line - xLine) > 0) {
 				rightBufferGc.drawImage(newLeft, rightCanvas.getBounds().width - x2Line, 0, x2Line, oldRight.getBounds().height, 0, 0, x2Line, oldRight.getBounds().height);
 				rightBufferGc.drawImage(newRight, x2Line, 0, (int) Math.floor(newRight.getBounds().width - x2Line), newRight.getBounds().height, x2Line, 0, x2Line - xLine, newRight.getBounds().height);
 			}
-			
+
 			leftBufferGc.drawImage(oldLeft, 0, 0, xLeftLine, canvas.getBounds().height, 0, 0, xLeftLine, canvas.getBounds().height);
 			leftBufferGc.drawImage(newLeft, 0, 0, canvas.getBounds().width - xLeftLine, canvas.getBounds().height, xLeftLine, 0, canvas.getBounds().width - xLeftLine, canvas.getBounds().height);
-			
+
 			leftBufferGc.drawLine(xLeftLine, 0, xLeftLine, canvas.getBounds().height);
 			rightBufferGc.drawLine(x2Line, 0, x2Line, rightCanvas.getBounds().height);
-			
+
 			rightCanvasGc.drawImage(rightBuffer, 0, 0);
 			leftCanvasGc.drawImage(leftBuffer, 0, 0);
 		}
-		
+
 		leftCanvasGc.drawImage(newLeft, 0, 0);
 		rightCanvasGc.drawImage(newRight, 0, 0);
-		
+
 		oldLeft.dispose();
 		oldRight.dispose();
 		newLeft.dispose();
 		newRight.dispose();
 		rightBuffer.dispose();
 		leftBuffer.dispose();
-		
+
 		rightBufferGc.dispose();
 		rightCanvasGc.dispose();
 		leftCanvasGc.dispose();
@@ -823,8 +871,8 @@ public class Reader {
 		Image pageTwo = new Image(display, rightCanvas.getBounds().width, rightCanvas.getBounds().height);
 		gc = new GC(pageTwo);
 
-		
-		
+
+
 		if (next != MagicNumber.LAST_PAGE) Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), next, yearbook.settings.width, yearbook.settings.height, true, false);
 		else {
 			int x = canvasWrapper2.getBounds().x + bigCanvasWrapper.getBounds().x;
@@ -839,9 +887,9 @@ public class Reader {
 			gc.drawImage(shellBg, xc, yc, wc, hc, 0, 0, width, height);
 			shellBg.dispose();
 		}
-		
+
 		gc.dispose();
-		
+
 		Image leftOriginal = new Image(display, canvas.getBounds().width, canvas.getBounds().height);
 		gc = new GC(leftOriginal);
 		if (current != 0) Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), current - 1, yearbook.settings.width, yearbook.settings.height, true, false);
@@ -859,15 +907,15 @@ public class Reader {
 			shellBg.dispose();
 		}
 		gc.dispose();
-		
+
 		Image newLeft = new Image(display, canvas.getBounds().width, canvas.getBounds().height);
 		gc = new GC(newLeft);
 		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), current + 1, yearbook.settings.width, yearbook.settings.height, true, false);
 		gc.dispose();
-		
+
 		int i = 0;
 		int subtrahend = 0;
-		
+
 		while (i++ < MagicNumber.FRAMES) {
 			try {
 				Thread.sleep(1);
@@ -881,83 +929,83 @@ public class Reader {
 			gc.drawImage(pageTwo, 0, 0);
 			gc.drawImage(image, 0, 0, image.getBounds().width, image.getBounds().height, 0, 0, consolidated.getBounds().width - subtrahend, consolidated.getBounds().height);
 			gc.dispose();
-			
+
 			gc = new GC(rightCanvas);
 			gc.drawImage(consolidated, 0, 0);
 			gc.dispose();
 			consolidated.dispose();
-			
-			
+
+
 		}
-		
+
 		i = 0;
 		subtrahend = 0;
-		
-		
+
+
 		canvasWrapper.setVisible(true);
-		
+
 		pageTwo.dispose();
 		image.dispose();
-		
+
 	}
 
 	private void createNewYearbook() {
-		
+
 
 		canvasHeight = display.getClientArea().height - 150;
-		
+
 		yearbook.settings.height = canvasHeight;
 		yearbook.settings.width = (int) ((8.5 / 11.0) * canvasHeight);
 		canvas.setSize(yearbook.settings.width, yearbook.settings.height);
 		rightCanvas.setSize(yearbook.settings.width, yearbook.settings.height);
-		
+
 		yearbook.activePage = 0;
-		
+
 		if (DEMO) yearbook.activePage = 2;
-		
+
 	}
-	
+
 	private void loadPages(int pageIndex) {
-		
+
 		//Back cover
 		if (pageIndex + 1 == yearbook.size() && leftIsActive()) {
 			blankRightCanvas();
 			loadLeftCanvas(pageIndex);
 			return;
 		}
-	
+
 		//Front cover
 		if (pageIndex == 0) {
 			blankLeftCanvas();
 			loadRightCanvas(0);
 			return;
 		} 
-		
+
 		//Active page is odd
 		if (leftIsActive()) {
 			loadLeftCanvas(pageIndex);
 			loadRightCanvas(pageIndex + 1);
 			return;
 		}
-		
+
 		//Active page is even
 		if (rightIsActive()) {
 			loadLeftCanvas(pageIndex - 1);
 			loadRightCanvas(pageIndex);
 			return;
 		}
-		
+
 		yearbook.tidyUp();
 	}
-	
+
 	private boolean leftIsActive() {
 		return Math.abs(yearbook.activePage % 2) == 1;
 	}
-	
+
 	private boolean rightIsActive() {
 		return yearbook.activePage % 2 == 0; 
 	}
-	
+
 	private void blankLeftCanvas() {
 		GC gc;
 		gc = new GC(canvas);
@@ -970,7 +1018,7 @@ public class Reader {
 		logo.dispose();
 		gc.dispose();		
 	}
-	
+
 	private void blankRightCanvas() {
 		GC gc;
 		gc = new GC(rightCanvas);
@@ -983,24 +1031,24 @@ public class Reader {
 		logo.dispose();
 		gc.dispose();
 	}
-	
+
 	private void loadLeftCanvas(int activePage) {
 		//blankLeftCanvas();
-		
+
 		Image buffer = new Image(display, canvas.getBounds().width, canvas.getBounds().height);
 		GC gc = new GC(buffer);
-		
+
 		if (yearbook.page(activePage).noBackground) {
 			gc.setBackground(canvasBackgroundColor);
 			gc.fillRectangle(0, 0, rightCanvas.getBounds().width, rightCanvas.getBounds().height);
 		}
-		
+
 		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), activePage, yearbook.settings.width, yearbook.settings.height, true, false);
 		gc.dispose();
 		gc = new GC(canvas);
 		gc.drawImage(buffer, 0, 0);
 		gc.dispose();
-		
+
 		canvas.addMouseMoveListener(new MouseMoveListener() {
 
 			@Override
@@ -1009,18 +1057,18 @@ public class Reader {
 					shell.setCursor(display.getSystemCursor(SWT.CURSOR_ARROW));
 					return;
 				}
-				
+
 				if (yearbook.page(activePage).isClickableAtPoint(e.x, e.y, yearbook.settings.width, yearbook.settings.height)) {
 					shell.setCursor(display.getSystemCursor(SWT.CURSOR_HAND));
 				} else {
 					shell.setCursor(display.getSystemCursor(SWT.CURSOR_ARROW));
 				}
 			}
-			
+
 		});
-		
+
 	}
-	
+
 	private void loadRightCanvas(int activePage) {
 		//blankRightCanvas();
 		Image buffer = new Image(display, canvas.getBounds().width, canvas.getBounds().height);
@@ -1030,7 +1078,7 @@ public class Reader {
 		gc = new GC(rightCanvas);
 		gc.drawImage(buffer, 0, 0);
 		gc.dispose();
-		
+
 		rightCanvas.addMouseMoveListener(new MouseMoveListener() {
 
 			@Override
@@ -1039,18 +1087,18 @@ public class Reader {
 					shell.setCursor(display.getSystemCursor(SWT.CURSOR_ARROW));
 					return;
 				}
-				
+
 				if (yearbook.page(activePage).isClickableAtPoint(e.x, e.y, yearbook.settings.width, yearbook.settings.height)) {
 					shell.setCursor(display.getSystemCursor(SWT.CURSOR_HAND));
 				} else {
 					shell.setCursor(display.getSystemCursor(SWT.CURSOR_ARROW));
 				}
 			}
-			
+
 		});
-		
+
 	}
-	
+
 	private void refresh() {
 		if (!DEMO) pageNumbers.setText(Integer.toString(yearbook.activePage));
 		if (!yearbook.hasCover) {
@@ -1088,28 +1136,28 @@ public class Reader {
 	private void loadCover() {
 		if (DEMO) return;
 		GC gc = new GC(rightCanvas);
-		
+
 		if (yearbook.page(0).noBackground) {
 			gc.setBackground(canvasBackgroundColor);
 			gc.fillRectangle(0, 0, rightCanvas.getBounds().width, rightCanvas.getBounds().height);
 		}
-		
+
 		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), 0, yearbook.settings.width, yearbook.settings.height, true, false);
 		gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
 		gc.setLineWidth(3);
 		gc.drawRectangle(rightCanvas.getBounds());
 		gc.dispose();
 	}
-	
+
 	private void loadBackCover() {
 		if (DEMO) return;
 		GC gc = new GC(canvas);
-		
+
 		if (yearbook.page(0).noBackground) {
 			gc.setBackground(canvasBackgroundColor);
 			gc.fillRectangle(0, 0, rightCanvas.getBounds().width, rightCanvas.getBounds().height);
 		}
-		
+
 		Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), yearbook.size() - 1, yearbook.settings.width, yearbook.settings.height, true, false);
 		gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
 		gc.setLineWidth(3);
@@ -1137,7 +1185,7 @@ public class Reader {
 		refresh();
 		this.pageTurnSound();
 	}
-	
+
 	private void pageTurnSound() {
 		try {
 			File file = new File("icons/sounds/pageflip.wav");
@@ -1148,7 +1196,7 @@ public class Reader {
 			e.printStackTrace();
 		}
 	}
-	
+
 	private static void playClip(File clipFile) throws IOException, 
 	UnsupportedAudioFileException, LineUnavailableException, InterruptedException {
 		class AudioListener implements LineListener {
@@ -1207,7 +1255,7 @@ public class Reader {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		
+
 		try {
 			new Reader();
 		} catch (Exception e) {
