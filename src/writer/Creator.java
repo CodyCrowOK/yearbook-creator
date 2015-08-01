@@ -862,6 +862,92 @@ public class Creator {
 						
 					});
 					
+					if (yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).isPSPA()) {
+						new MenuItem(menu, SWT.SEPARATOR);
+						
+						YearbookPSPAElement element = (YearbookPSPAElement) yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY);
+						
+						MenuItem changeNameItem = new MenuItem(menu, SWT.PUSH);
+						changeNameItem.setText("Change Name");
+						changeNameItem.addListener(SWT.Selection, new Listener() {
+
+							@Override
+							public void handleEvent(Event event) {
+								final Shell dialog = new Shell(shell, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
+								dialog.setText("Enter Name");
+								dialog.setSize(400, 300);
+								FormLayout formLayout = new FormLayout();
+								formLayout.marginWidth = 10;
+								formLayout.marginHeight = 10;
+								formLayout.spacing = 10;
+								dialog.setLayout(formLayout);
+
+								Label label = new Label(dialog, SWT.NONE);
+								label.setText("New name:");
+								FormData data = new FormData();
+								label.setLayoutData(data);
+
+								Button cancel = new Button(dialog, SWT.PUSH);
+								cancel.setText("Cancel");
+								data = new FormData();
+								data.width = 60;
+								data.right = new FormAttachment(100, 0);
+								data.bottom = new FormAttachment(100, 0);
+								cancel.setLayoutData(data);
+								cancel.addSelectionListener(new SelectionAdapter () {
+									@Override
+									public void widgetSelected(SelectionEvent e) {
+										dialog.close();
+										dialog.dispose();
+									}
+								});
+
+								final Text text = new Text(dialog, SWT.BORDER);
+								data = new FormData();
+								data.width = 200;
+								data.left = new FormAttachment(label, 0, SWT.DEFAULT);
+								data.right = new FormAttachment(100, 0);
+								data.top = new FormAttachment(label, 0, SWT.CENTER);
+								data.bottom = new FormAttachment(cancel, 0, SWT.DEFAULT);
+								text.setLayoutData(data);
+
+								Button ok = new Button(dialog, SWT.PUSH);
+								ok.setText("OK");
+								data = new FormData();
+								data.width = 60;
+								data.right = new FormAttachment(cancel, 0, SWT.DEFAULT);
+								data.bottom = new FormAttachment(100, 0);
+								ok.setLayoutData(data);
+								ok.addSelectionListener(new SelectionAdapter() {
+									@Override
+									public void widgetSelected (SelectionEvent e) {
+										String fullName = text.getText();
+										String[] tokens = fullName.split(" ");
+										if (tokens.length > 1) {
+											element.person.firstName = tokens[0];
+											element.person.lastName = "";
+											for (int i = 1; i < tokens.length; i++) {
+												element.person.lastName += tokens[i];
+											}
+										} else {
+											element.person.firstName = fullName;
+											element.person.lastName = "";
+										}
+										
+										dialog.close();
+										dialog.dispose();
+										refresh();
+									}
+								});
+
+								dialog.setDefaultButton (ok);
+								dialog.pack();
+								dialog.open();
+							}
+							
+						});
+					}
+					
 					new MenuItem(menu, SWT.SEPARATOR);
 					
 					MenuItem properties = new MenuItem(menu, SWT.PUSH);

@@ -111,6 +111,10 @@ abstract public class YearbookElement implements Serializable {
 		return false;
 	}
 	
+	public boolean isPSPA() {
+		return false;
+	}
+	
 	@Override
 	public boolean equals(Object o) {
 		if (o == null) return false;
