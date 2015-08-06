@@ -57,7 +57,7 @@ import writer.YearbookImages;
  */
 public class Reader {
 	public static final boolean DEMO = false;
-	public static final boolean PRODUCTION = false;
+	public static final boolean PRODUCTION = true;
 
 	Config config;
 
@@ -133,7 +133,7 @@ public class Reader {
 
 		//Need both of these for compatibility with Windows.
 		shell.setMaximized(true);
-		shell.setFullScreen(true);
+		//shell.setFullScreen(true);
 		shell.open();
 
 		while (!shell.isDisposed()) {
@@ -308,6 +308,7 @@ public class Reader {
 					Desktop dt = Desktop.getDesktop();
 
 					try {
+						dt.open(file);
 						dt.open(file);
 					} catch (IOException e1) {
 						e1.printStackTrace();
@@ -952,7 +953,7 @@ public class Reader {
 	private void createNewYearbook() {
 
 
-		canvasHeight = display.getClientArea().height - 150;
+		canvasHeight = display.getClientArea().height - 200;
 
 		yearbook.settings.height = canvasHeight;
 		yearbook.settings.width = (int) ((8.5 / 11.0) * canvasHeight);

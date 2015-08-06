@@ -43,5 +43,10 @@ public class YearbookPSPAElement extends YearbookImageElement implements Seriali
 	public boolean isPSPA() {
 		return true;
 	}
+	
+	@Override
+	public boolean isTruePSPA() {
+		return true;
+	}
 
 }

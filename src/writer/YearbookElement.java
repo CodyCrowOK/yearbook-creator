@@ -143,4 +143,12 @@ abstract public class YearbookElement implements Serializable {
 			return false;
 		}
 	}
+
+	/**
+	 * *Sigh*
+	 * @return false unless overridden
+	 */
+	public boolean isTruePSPA() {
+		return false;
+	}
 }

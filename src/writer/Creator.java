@@ -2647,7 +2647,8 @@ public class Creator {
 		/*
 		 * Let's create a splash screen.
 		 */
-		Shell splash = new Shell(display, SWT.DIALOG_TRIM);
+		Shell splash = new Shell(display, SWT.SHELL_TRIM);
+		splash.setSize(500, 500);
 		splash.setLayout(new FillLayout(SWT.VERTICAL));
 		splash.setText(COMPANY_NAME + " " + SOFTWARE_NAME);
 
@@ -3313,12 +3314,14 @@ public class Creator {
 						box.open();
 						return;
 					} else if (selectedElement != null && selectedElement.isImage()) {
-						try {
-							attachVideoToImage((YearbookImageElement) selectedElement);
-						} catch (IOException e) {
-							e.printStackTrace();
+						if (selectionRectangle == null) {
+							try {
+								attachVideoToImage((YearbookImageElement) selectedElement);
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+							return;
 						}
-						return;
 					}
 				}
 
@@ -4636,27 +4639,50 @@ public class Creator {
 	}
 
 	protected void attachVideoToImage(YearbookImageElement element) throws IOException {
-		YearbookClickableImageElement e = new YearbookClickableImageElement(display, element.getImage(display).getImageData(), element.getPageWidth(), element.getPageHeight());
-
-		e.x = element.x;
-		e.y = element.y;
-		e.scale = element.scale;
-		e.rotation = element.rotation;
-		e.imageData = element.imageData;
-		e.border = element.border;
-
-		FileDialog dialog = new FileDialog(shell, SWT.OPEN);
-		String[] allowedExtensions = {"*.webm;*.mkv;*.flv;*.vob;*.ogv;*.ogg;*.drc;*.avi;*.mov;*.qt;*.wmv;*.rm;*.mp4;*.m4p;*.m4v;*.mpg;*.3gp;*.3g2", "*.*"};
-		dialog.setFilterExtensions(allowedExtensions);
-		String fileName = dialog.open();
-		if (fileName == null) return;
-
-		Video video = new Video(fileName);
-		e.video = video;
-		int position = yearbook.page(yearbook.activePage).findElementIndex(element);
-		yearbook.page(yearbook.activePage).removeElement(element);
-		yearbook.page(yearbook.activePage).getElements().add(position, e);
-		refresh();
+		if (!element.isPSPA()) {
+			YearbookClickableImageElement e = new YearbookClickableImageElement(display, element.getImage(display).getImageData(), element.getPageWidth(), element.getPageHeight());
+	
+			e.x = element.x;
+			e.y = element.y;
+			e.scale = element.scale;
+			e.rotation = element.rotation;
+			e.imageData = element.imageData;
+			e.border = element.border;
+	
+			FileDialog dialog = new FileDialog(shell, SWT.OPEN);
+			String[] allowedExtensions = {"*.webm;*.mkv;*.flv;*.vob;*.ogv;*.ogg;*.drc;*.avi;*.mov;*.qt;*.wmv;*.rm;*.mp4;*.m4p;*.m4v;*.mpg;*.3gp;*.3g2", "*.*"};
+			dialog.setFilterExtensions(allowedExtensions);
+			String fileName = dialog.open();
+			if (fileName == null) return;
+	
+			Video video = new Video(fileName);
+			e.video = video;
+			int position = yearbook.page(yearbook.activePage).findElementIndex(element);
+			yearbook.page(yearbook.activePage).removeElement(element);
+			yearbook.page(yearbook.activePage).getElements().add(position, e);
+			refresh();
+		} else if (element.isTruePSPA()) {
+			YearbookClickablePSPAElement e = new YearbookClickablePSPAElement(display, element.getImage(display).getImageData(), element.getPageWidth(), element.getPageHeight(), (YearbookPSPAElement) element);
+			
+			e.x = element.x;
+			e.y = element.y;
+			e.scale = element.scale;
+			e.rotation = element.rotation;
+			e.imageData = element.imageData;
+			e.border = element.border;
+	
+			FileDialog dialog = new FileDialog(shell, SWT.OPEN);
+			String[] allowedExtensions = {"*.webm;*.mkv;*.flv;*.vob;*.ogv;*.ogg;*.drc;*.avi;*.mov;*.qt;*.wmv;*.rm;*.mp4;*.m4p;*.m4v;*.mpg;*.3gp;*.3g2", "*.*"};
+			dialog.setFilterExtensions(allowedExtensions);
+			String fileName = dialog.open();
+			if (fileName == null) return;
+	
+			Video video = new Video(fileName);
+			e.video = video;
+			int position = yearbook.page(yearbook.activePage).findElementIndex(element);
+			yearbook.page(yearbook.activePage).removeElement(element);
+			yearbook.page(yearbook.activePage).getElements().add(position, e);
+		}
 	}
 
 	private void buildToolbar() {
