@@ -1,11 +1,21 @@
 package writer;
 import java.awt.GraphicsEnvironment;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Timer;
+import java.util.TimerTask;
 
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
 import org.eclipse.swt.*;
 import org.eclipse.swt.dnd.DND;
 import org.eclipse.swt.dnd.DragSource;
@@ -54,19 +64,20 @@ public class Creator {
 	public static final String VERSION = "0.10";
 	public static final String COMPANY_NAME = "Digital Express";
 	public static final String SOFTWARE_NAME = "Yearbook Designer";
-	
+
 	//Constants
 	public static final String RESOURCE_DIR = "resources";
 	public static final String BACKGROUNDS_DIR = RESOURCE_DIR + File.separator + "backgrounds";
 	public static final String CLIPART_DIR = RESOURCE_DIR + File.separator + "clipart";
 	public static final String LAYOUTS_DIR = RESOURCE_DIR + File.separator + "layouts";
+	public static final String READER_DIR = "reader";
 
 	//Used for way too many things
 	int canvasHeight;
-	
+
 	//Used so we don't "Save As..." every time.
 	public String saveFileName;
-	
+
 	//Command stack
 	public Stack stack;
 
@@ -83,6 +94,7 @@ public class Creator {
 	private MenuItem fileOpenItem;
 	private MenuItem fileSaveItem;
 	private MenuItem fileSaveAsItem;
+	private MenuItem fileAutosaveItem;
 	private MenuItem fileExportItem;
 	private MenuItem fileExportJPEGItem;
 	private MenuItem fileExportVideoItem;
@@ -167,7 +179,7 @@ public class Creator {
 	protected String comboValue;
 
 	private boolean MOD1;
-	
+
 	private Tree layoutTree;
 	private String[] fontNames;
 
@@ -179,8 +191,9 @@ public class Creator {
 		//clipboard.elements = new ArrayList<YearbookElement>();
 		clipboard = new Clipboard();
 		stack = new Stack();
-		
-		canvasHeight = (int) (.80 * display.getClientArea().height);
+
+		//canvasHeight = (int) (.80 * display.getClientArea().height);
+		canvasHeight = (int) (.62 * (5.0 / 8.0) * display.getClientArea().width);
 
 		shell.setSize(800, 600);
 
@@ -318,11 +331,11 @@ public class Creator {
 				});
 			}
 		});
-		
+
 		this.buildPagesListDnD();
-		
+
 		this.buildExpandBar();
-		
+
 		this.finalPrep();
 
 		shell.setMaximized(true);
@@ -334,13 +347,14 @@ public class Creator {
 	}
 
 	private void buildExpandBar() {
+		
 		ExpandBar bar = new ExpandBar(content, SWT.V_SCROLL);
-		
-		GridData data = new GridData(SWT.BEGINNING, SWT.FILL, true, true);
+
+		GridData data = new GridData(SWT.FILL, SWT.FILL, true, true);
 		data.horizontalSpan = 2;
-		data.minimumWidth = 250;
+		data.minimumHeight = canvasHeight;
 		bar.setLayoutData(data);
-		
+
 		bar.setLayout(new FillLayout());
 
 		Composite composite = new Composite(bar, SWT.NONE);
@@ -349,7 +363,7 @@ public class Creator {
 		//Load backgrounds into list.
 		File backgroundsRoot = new File(BACKGROUNDS_DIR);
 		File[] backgroundsList = backgroundsRoot.listFiles();
-		
+
 		//Convert them to thumbnails to save RAM.
 		int i = 0;
 		for (File f : backgroundsList) {
@@ -363,33 +377,33 @@ public class Creator {
 				Label label = new Label(composite, SWT.NONE);
 				label.setText(Integer.toString(i));
 				label.setImage(thumbnail);
-				
+
 				label.addMouseTrackListener(new MouseTrackListener() {
 
 					@Override
 					public void mouseEnter(MouseEvent e) {
 						shell.setCursor(display.getSystemCursor(SWT.CURSOR_HAND));
-						
+
 					}
 
 					@Override
 					public void mouseExit(MouseEvent e) {
 						shell.setCursor(display.getSystemCursor(SWT.CURSOR_ARROW));
-						
+
 					}
 
 					@Override
 					public void mouseHover(MouseEvent e) {
-						
+
 					}
-					
+
 				});
-				
+
 				label.addMouseListener(new MouseListener() {
 
 					@Override
 					public void mouseDoubleClick(MouseEvent e) {
-						
+
 					}
 
 					@Override
@@ -408,24 +422,24 @@ public class Creator {
 
 					@Override
 					public void mouseUp(MouseEvent e) {
-						
+
 					}
-					
+
 				});
-				
+
 			} catch (SWTException e) {
 				//Ignore
 			}
 			i++;
 		}
-		
+
 		ExpandItem item0 = new ExpandItem(bar, SWT.NONE, 0);
 		item0.setText("Backgrounds");
 		item0.setHeight(composite.computeSize(SWT.DEFAULT, SWT.DEFAULT).y);
 		item0.setControl(composite);
-		
+
 		//Clip art tree
-		
+
 		composite = new Composite(bar, SWT.NONE);
 		composite.setLayout(new FillLayout());
 
@@ -455,35 +469,35 @@ public class Creator {
 				} catch (Exception ex) {
 					//Ignore
 				}
-				
-				
+
+
 			}
 
 			@Override
 			public void widgetDefaultSelected(SelectionEvent e) {
 				// TODO Auto-generated method stub
-				
+
 			}
-			
+
 		});
-		
-		
+
+
 		ExpandItem item1 = new ExpandItem(bar, SWT.NONE, 1);
 		item1.setText("Clip Art");
 		//item1.setHeight(composite.computeSize(SWT.DEFAULT, SWT.DEFAULT).y);
 		item1.setHeight((int) Math.ceil(.92 * canvasHeight));
 		item1.setControl(composite);
-		
+
 		//Layouts
-		
+
 		composite = new Composite(bar, SWT.NONE);
 		GridLayout layout = new GridLayout();
-		
+
 		composite.setLayout(layout);
-		
+
 		Button addBtn = new Button(composite, SWT.PUSH);
 		addBtn.setText("Create New Layout");
-		
+
 		addBtn.addListener(SWT.Selection, new Listener() {
 
 			@Override
@@ -494,8 +508,8 @@ public class Creator {
 					box.setMessage("Would you like to create a new layout from the selected elements?");
 					int res = box.open();
 					if ((res & SWT.CANCEL) == SWT.CANCEL) return;
-					
-					
+
+
 					final Shell dialog = new Shell(shell, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
 					dialog.setText("Create New Layout");
 					dialog.setSize(400, 300);
@@ -553,7 +567,7 @@ public class Creator {
 								box.setMessage("Yearbook layout " + text.getText() + " could not be saved. Please try again.");
 								box.open();
 							}
-							
+
 							dialog.close();
 							dialog.dispose();
 							refreshNoPageList();
@@ -565,21 +579,21 @@ public class Creator {
 					dialog.pack();
 					dialog.open();
 				}
-				
+
 			}
-			
+
 		});
-		
+
 		layoutTree = new Tree(composite, SWT.BORDER);
 		updateLayoutTree();
-		
+
 		layoutTree.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-		
+
 		ExpandItem item2 = new ExpandItem(bar, SWT.NONE, 2);
 		item2.setText("Layouts");
 		item2.setHeight((int) Math.ceil(.9 * canvasHeight));
 		item2.setControl(composite);
-		
+
 		layoutTree.addSelectionListener(new SelectionListener() {
 
 			@Override
@@ -604,32 +618,32 @@ public class Creator {
 
 			@Override
 			public void widgetDefaultSelected(SelectionEvent e) {
-				
+
 			}
-			
+
 		});
-		
+
 
 		composite.pack();
-		
+
 		bar.setSpacing(8);
 	}
-	
+
 	private void updateLayoutTree() {
 		File layoutRoot = new File(LAYOUTS_DIR);
 		File[] layoutFiles = layoutRoot.listFiles();
-		
+
 		layoutTree.clearAll(true);
 		populateFileTree(layoutTree, layoutFiles);
-		
+
 	}
-	
+
 	private void populateFileTree(TreeItem tree, File[] files) {
 		for (File f : files) {
 			TreeItem item = new TreeItem(tree, SWT.NONE);
 			item.setText(f.getName());
 			item.setData("path", f.getPath());
-			
+
 			if (f.isDirectory()) populateFileTree(item, f.listFiles());
 			else {
 				try {
@@ -654,7 +668,7 @@ public class Creator {
 				} catch (SWTException e) {
 					continue;
 				}
-				
+
 			}
 		}
 	}
@@ -688,13 +702,13 @@ public class Creator {
 				} catch (SWTException e) {
 					continue;
 				}
-				
+
 			}
 		}
 	}
 
 	private void finalPrep() {
-		
+
 		/*
 		 * Handle global shortcuts
 		 */
@@ -711,11 +725,32 @@ public class Creator {
 					}
 					break;
 				}
-				
+
 			}
-			
+
 		});
 		
+		/*
+		 * Start autosave timer with 10 minute intervals.
+		 */
+		Timer timer = new Timer();
+		timer.schedule(new TimerTask() {
+			@Override
+			public void run() {
+				display.asyncExec(new Runnable() {
+
+					@Override
+					public void run() {
+						if (settings.autosave) fileSaveItem.getListeners(SWT.Selection)[0].handleEvent(new Event());
+					}
+					
+				});
+				
+				
+
+			}
+		}, 600000L, 600000L);
+
 	}
 
 	private void initializeCanvas() {
@@ -781,7 +816,7 @@ public class Creator {
 			public void mouseDown(MouseEvent event) {
 				makeLeftActive();
 				xDiff = yDiff = 0;
-				
+
 				//Handle layouts first
 				if (yearbook.page(yearbook.activePage).isInLayout(event.x, event.y, yearbook.settings.width, yearbook.settings.height)) {
 					String fileName = imagePicker();
@@ -802,7 +837,7 @@ public class Creator {
 					Menu menu = new Menu(shell);
 					MenuItem addBorderItem = new MenuItem(menu, SWT.PUSH);
 					addBorderItem.setText("Add &Border");
-					
+
 					if (yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).isImage()) addBorderItem.addListener(SWT.Selection, new Listener() {
 
 						@Override
@@ -818,21 +853,21 @@ public class Creator {
 								}
 							}
 						}
-						
+
 					});
-					
+
 					else if (yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).isText()) addBorderItem.addListener(SWT.Selection, new Listener() {
 
 						@Override
 						public void handleEvent(Event event) {
 							openAddBorderDialog((YearbookTextElement) yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY));
 						}
-						
+
 					});
-					
+
 					MenuItem removeBorderItem = new MenuItem(menu, SWT.PUSH);
 					removeBorderItem.setText("Remove B&order");
-					
+
 					removeBorderItem.addListener(SWT.Selection, new Listener() {
 
 						@Override
@@ -842,14 +877,14 @@ public class Creator {
 							refreshNoPageList();
 							stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).copy(), yearbook.page(yearbook.activePage).id));
 						}
-						
+
 					});
-					
+
 					MenuItem shadowItem = new MenuItem(menu, SWT.CHECK);
 					shadowItem.setText("Show Drop &Shadow");
-					
+
 					shadowItem.setSelection(yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).shadow);
-					
+
 					shadowItem.addListener(SWT.Selection, new Listener() {
 
 						@Override
@@ -859,14 +894,14 @@ public class Creator {
 							refreshNoPageList();
 							stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).copy(), yearbook.page(yearbook.activePage).id));
 						}
-						
+
 					});
-					
+
 					if (yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).isPSPA()) {
 						new MenuItem(menu, SWT.SEPARATOR);
-						
+
 						YearbookPSPAElement element = (YearbookPSPAElement) yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY);
-						
+
 						MenuItem changeNameItem = new MenuItem(menu, SWT.PUSH);
 						changeNameItem.setText("Change Name");
 						changeNameItem.addListener(SWT.Selection, new Listener() {
@@ -933,7 +968,7 @@ public class Creator {
 											element.person.firstName = fullName;
 											element.person.lastName = "";
 										}
-										
+
 										dialog.close();
 										dialog.dispose();
 										refresh();
@@ -944,12 +979,16 @@ public class Creator {
 								dialog.pack();
 								dialog.open();
 							}
-							
+
 						});
+						
+						MenuItem twoLineItem = new MenuItem(menu, SWT.CHECK);
+						twoLineItem.setText("Use Two Lines for Name");
+						//HERE
 					}
-					
+
 					new MenuItem(menu, SWT.SEPARATOR);
-					
+
 					MenuItem properties = new MenuItem(menu, SWT.PUSH);
 					properties.setText("Properties");
 
@@ -1022,7 +1061,11 @@ public class Creator {
 								data.horizontalAlignment = SWT.FILL;
 
 								Label name = new Label(properties, SWT.LEFT | SWT.WRAP);
-								name.setText(e.getVideo().name);
+								String names = "";
+								for (Video v : e.getVideos()) {
+									names += v.name + " ";
+								}
+								name.setText(names);
 								name.setLayoutData(data2);
 							}
 
@@ -1093,7 +1136,7 @@ public class Creator {
 							Label font = new Label(properties, SWT.LEFT);
 							font.setText("Font Family:");
 							font.setLayoutData(data);
-							
+
 							data2 = new GridData();
 							data2.horizontalSpan = 1;
 							data2.grabExcessHorizontalSpace = true;
@@ -1235,17 +1278,17 @@ public class Creator {
 				case RESIZE:
 					xDiff += event.x;
 					yDiff += event.y;
-					
+
 					if (clipboard.elements.size() > 0) { 
 						double xPercent = (double) xDiff / clipboard.elements.get(clipboard.elements.size() - 1).getBounds(yearbook.settings.width, yearbook.settings.height).width;
 						double yPercent = (double) yDiff / clipboard.elements.get(clipboard.elements.size() - 1).getBounds(yearbook.settings.width, yearbook.settings.height).height; 
 						int newX, newY;
-						
+
 						for (YearbookElement selectedElement : clipboard.elements) {
 							YearbookElement orig = selectedElement.copy();
 							newX = (int) (xPercent * selectedElement.getBounds(yearbook.settings.width, yearbook.settings.height).width);
 							newY = (int) (yPercent * selectedElement.getBounds(yearbook.settings.width, yearbook.settings.height).height);
-							
+
 							if (yearbook.page(yearbook.activePage).findElement(selectedElement) != null) {
 								yearbook.page(yearbook.activePage).findElement(selectedElement).resize(display, newX, newY);
 								stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, selectedElement.copy(), yearbook.page(yearbook.activePage).id));
@@ -1268,12 +1311,12 @@ public class Creator {
 						if (Math.abs(xDiff) < 15 && Math.abs(yDiff) < 15) xDiff = yDiff = 0;
 
 					selectionRectangle = new Rectangle(startX, startY, xDiff, yDiff);
-					
+
 					ArrayList<YearbookElement> selected = yearbook.page(yearbook.activePage).getElementsInRectangle(selectionRectangle, yearbook.settings.width, yearbook.settings.height);
 					for (YearbookElement e : selected) {
 						selectAnotherElement(e);
 					}
-					
+
 					startX = startY = xDiff = yDiff = 0;
 
 					refresh();
@@ -1292,9 +1335,9 @@ public class Creator {
 					yearbook.page(yearbook.activePage).removeElement(clipboard.elements.get(0));
 					clipboard.elements.get(0).rotation += angle;
 					yearbook.page(yearbook.activePage).addElement(clipboard.elements.get(0));
-					
+
 					System.out.println(angle);
-					
+
 					startX = 0;
 					startY = 0;*/
 					refreshNoPageList();
@@ -1343,7 +1386,7 @@ public class Creator {
 
 			@Override
 			public void mouseDown(MouseEvent event) {
-				
+
 				makeRightActive();
 				xDiff = yDiff = 0;
 
@@ -1360,14 +1403,14 @@ public class Creator {
 					refreshNoPageList();
 					return;
 				}
-				
+
 				if (event.button == 3 && yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y, yearbook.settings.height, yearbook.settings.height)) {
 					int trueX = event.x;
 					int trueY = event.y;
 					Menu menu = new Menu(shell);
 					MenuItem addBorderItem = new MenuItem(menu, SWT.PUSH);
 					addBorderItem.setText("Add &Border");
-					
+
 					if (yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).isImage()) addBorderItem.addListener(SWT.Selection, new Listener() {
 
 						@Override
@@ -1383,21 +1426,21 @@ public class Creator {
 								}
 							}
 						}
-						
+
 					});
-					
+
 					else if (yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).isText()) addBorderItem.addListener(SWT.Selection, new Listener() {
 
 						@Override
 						public void handleEvent(Event event) {
 							openAddBorderDialog((YearbookTextElement) yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY));
 						}
-						
+
 					});
-					
+
 					MenuItem removeBorderItem = new MenuItem(menu, SWT.PUSH);
 					removeBorderItem.setText("Remove B&order");
-					
+
 					removeBorderItem.addListener(SWT.Selection, new Listener() {
 
 						@Override
@@ -1407,15 +1450,15 @@ public class Creator {
 							refreshNoPageList();
 							stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).copy(), yearbook.page(yearbook.activePage).id));
 						}
-						
+
 					});
-						
-					
+
+
 					MenuItem shadowItem = new MenuItem(menu, SWT.CHECK);
 					shadowItem.setText("Show Drop &Shadow");
-					
+
 					shadowItem.setSelection(yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).shadow);
-					
+
 					shadowItem.addListener(SWT.Selection, new Listener() {
 
 						@Override
@@ -1424,12 +1467,98 @@ public class Creator {
 							yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).shadow = !yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).shadow;
 							stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).copy(), yearbook.page(yearbook.activePage).id));
 						}
-						
+
 					});
-					
+
+
+					if (yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).isPSPA()) {
+						new MenuItem(menu, SWT.SEPARATOR);
+
+						YearbookPSPAElement element = (YearbookPSPAElement) yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY);
+
+						MenuItem changeNameItem = new MenuItem(menu, SWT.PUSH);
+						changeNameItem.setText("Change Name");
+						changeNameItem.addListener(SWT.Selection, new Listener() {
+
+							@Override
+							public void handleEvent(Event event) {
+								final Shell dialog = new Shell(shell, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
+								dialog.setText("Enter Name");
+								dialog.setSize(400, 300);
+								FormLayout formLayout = new FormLayout();
+								formLayout.marginWidth = 10;
+								formLayout.marginHeight = 10;
+								formLayout.spacing = 10;
+								dialog.setLayout(formLayout);
+
+								Label label = new Label(dialog, SWT.NONE);
+								label.setText("New name:");
+								FormData data = new FormData();
+								label.setLayoutData(data);
+
+								Button cancel = new Button(dialog, SWT.PUSH);
+								cancel.setText("Cancel");
+								data = new FormData();
+								data.width = 60;
+								data.right = new FormAttachment(100, 0);
+								data.bottom = new FormAttachment(100, 0);
+								cancel.setLayoutData(data);
+								cancel.addSelectionListener(new SelectionAdapter () {
+									@Override
+									public void widgetSelected(SelectionEvent e) {
+										dialog.close();
+										dialog.dispose();
+									}
+								});
+
+								final Text text = new Text(dialog, SWT.BORDER);
+								data = new FormData();
+								data.width = 200;
+								data.left = new FormAttachment(label, 0, SWT.DEFAULT);
+								data.right = new FormAttachment(100, 0);
+								data.top = new FormAttachment(label, 0, SWT.CENTER);
+								data.bottom = new FormAttachment(cancel, 0, SWT.DEFAULT);
+								text.setLayoutData(data);
+
+								Button ok = new Button(dialog, SWT.PUSH);
+								ok.setText("OK");
+								data = new FormData();
+								data.width = 60;
+								data.right = new FormAttachment(cancel, 0, SWT.DEFAULT);
+								data.bottom = new FormAttachment(100, 0);
+								ok.setLayoutData(data);
+								ok.addSelectionListener(new SelectionAdapter() {
+									@Override
+									public void widgetSelected (SelectionEvent e) {
+										String fullName = text.getText();
+										String[] tokens = fullName.split(" ");
+										if (tokens.length > 1) {
+											element.person.firstName = tokens[0];
+											element.person.lastName = "";
+											for (int i = 1; i < tokens.length; i++) {
+												element.person.lastName += tokens[i];
+											}
+										} else {
+											element.person.firstName = fullName;
+											element.person.lastName = "";
+										}
+
+										dialog.close();
+										dialog.dispose();
+										refresh();
+									}
+								});
+
+								dialog.setDefaultButton (ok);
+								dialog.pack();
+								dialog.open();
+							}
+
+						});
+					}
+
 					new MenuItem(menu, SWT.SEPARATOR);
-					
-					
+
 					MenuItem properties = new MenuItem(menu, SWT.PUSH);
 					properties.setText("Properties");
 
@@ -1502,7 +1631,11 @@ public class Creator {
 								data.horizontalAlignment = SWT.FILL;
 
 								Label name = new Label(properties, SWT.LEFT | SWT.WRAP);
-								name.setText(e.getVideo().name);
+								String names = "";
+								for (Video v : e.getVideos()) {
+									names += v.name + " ";
+								}
+								name.setText(names);
 								name.setLayoutData(data2);
 							}
 
@@ -1579,9 +1712,38 @@ public class Creator {
 						}
 
 					});
+					
+					if (yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).isClickable() && yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY).isImage()) {
+						YearbookClickableImageElement element = (YearbookClickableImageElement) yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY);
+						
+						MenuItem clearVideoItem = new MenuItem(menu, SWT.PUSH);
+						clearVideoItem.setText("Clear Video");
+						
+						clearVideoItem.addListener(SWT.Selection, new Listener() {
 
+							@Override
+							public void handleEvent(Event event) {
+								element.videos.clear();
+								if (element.isPSPA()) {
+									YearbookPSPAElement dest = (YearbookPSPAElement) yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY);
+									yearbook.page(yearbook.activePage).removeElement(yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY));
+									yearbook.page(yearbook.activePage).addElement(dest);
+								} else if (element.isImage()) {
+									YearbookImageElement dest = (YearbookImageElement) element;
+									yearbook.page(yearbook.activePage).removeElement(element);
+									yearbook.page(yearbook.activePage).addElement(dest);
+								}
+							}
+						
+						});
+					}
+
+					//HERE
+					
 					menu.setVisible(true);
 				}
+				
+				
 
 				if (!(isInsertingText || event.button == SWT.BUTTON3)) switch (settings.cursorMode) {
 				case MOVE:
@@ -1708,21 +1870,21 @@ public class Creator {
 				case RESIZE:
 					xDiff += event.x;
 					yDiff += event.y;
-					
+
 					if (clipboard.elements.size() > 0) { 
 						double xPercent = (double) xDiff / clipboard.elements.get(clipboard.elements.size() - 1).getBounds(yearbook.settings.width, yearbook.settings.height).width;
 						double yPercent = (double) yDiff / clipboard.elements.get(clipboard.elements.size() - 1).getBounds(yearbook.settings.width, yearbook.settings.height).height; 
 						int newX, newY;
-						
+
 						for (YearbookElement selectedElement : clipboard.elements) {
 							YearbookElement orig = selectedElement.copy();
 							newX = (int) (xPercent * selectedElement.getBounds(yearbook.settings.width, yearbook.settings.height).width);
 							newY = (int) (yPercent * selectedElement.getBounds(yearbook.settings.width, yearbook.settings.height).height);
-							
+
 							if (yearbook.page(yearbook.activePage).findElement(selectedElement) != null) {
 								yearbook.page(yearbook.activePage).findElement(selectedElement).resize(display, newX, newY);
 							}
-							
+
 							stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, selectedElement.copy(), yearbook.page(yearbook.activePage).id));
 						}
 						refreshNoPageList();
@@ -1742,12 +1904,12 @@ public class Creator {
 						if (Math.abs(xDiff) < 15 && Math.abs(yDiff) < 15) xDiff = yDiff = 0;
 
 					selectionRectangle = new Rectangle(startX, startY, xDiff, yDiff);
-					
+
 					ArrayList<YearbookElement> selected = yearbook.page(yearbook.activePage).getElementsInRectangle(selectionRectangle, yearbook.settings.width, yearbook.settings.height);
 					for (YearbookElement e : selected) {
 						selectAnotherElement(e);
 					}
-					
+
 					startX = startY = xDiff = yDiff = 0;
 
 					refresh();
@@ -1760,7 +1922,7 @@ public class Creator {
 			}
 
 		});
-		
+
 		//Handle arrow key movement.
 		canvas.addListener(SWT.KeyUp, new Listener() {
 
@@ -1819,7 +1981,7 @@ public class Creator {
 			}
 
 		});
-		
+
 		rightCanvas.addListener(SWT.KeyUp, new Listener() {
 
 			@Override
@@ -1877,11 +2039,11 @@ public class Creator {
 			}
 
 		});
-		
+
 		canvas.addMouseMoveListener(new MouseMoveListener() {
 			boolean in = false;
 			Cursor previousCursor;
-			
+
 			@Override
 			public void mouseMove(MouseEvent e) {
 				if (yearbook.page(yearbook.activePage).isInLayout(e.x, e.y, yearbook.settings.width, yearbook.settings.height)) {
@@ -1894,15 +2056,15 @@ public class Creator {
 					if (in) shell.setCursor(previousCursor);
 					in = false;
 				}
-				
+
 			}
-			
+
 		});
-		
+
 		rightCanvas.addMouseMoveListener(new MouseMoveListener() {
 			boolean in = false;
 			Cursor previousCursor;
-			
+
 			@Override
 			public void mouseMove(MouseEvent e) {
 				if (yearbook.page(yearbook.activePage).isInLayout(e.x, e.y, yearbook.settings.width, yearbook.settings.height)) {
@@ -1915,9 +2077,9 @@ public class Creator {
 					if (in) shell.setCursor(previousCursor);
 					in = false;
 				}
-				
+
 			}
-			
+
 		});
 
 		canvas.addPaintListener(new PaintListener() {
@@ -1925,9 +2087,9 @@ public class Creator {
 			@Override
 			public void paintControl(PaintEvent e) {
 				refreshNoPageList();
-				
+
 			}
-			
+
 		});
 
 		rightCanvas.addPaintListener(new PaintListener() {
@@ -1935,13 +2097,13 @@ public class Creator {
 			@Override
 			public void paintControl(PaintEvent e) {
 				refreshNoPageList();
-				
+
 			}
-			
+
 		});
 
 	}
-	
+
 	private void openRotateDialog(YearbookElement elementAtPoint) {
 		YearbookElement orig = elementAtPoint.copy();
 		float originalRotation = elementAtPoint.rotation;
@@ -1991,7 +2153,7 @@ public class Creator {
 				}
 				if (count++ % 3 == 0) refreshNoPageList();
 			}
-			
+
 		});
 		data = new FormData();
 		data.width = 200;
@@ -2022,15 +2184,15 @@ public class Creator {
 		dialog.setDefaultButton (ok);
 		dialog.pack();
 		dialog.open();
-		
+
 	}
 
 	private void openAddBorderDialog(YearbookElement element) {
 		YearbookElement orig = element.copy();
 		YearbookElementBorder originalBorder = element.border;
-		
+
 		element.border.noBorder = false;
-		
+
 		final Shell dialog = new Shell(shell, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
 		dialog.setText("Add Border");
 		dialog.setSize(400, 300);
@@ -2070,15 +2232,15 @@ public class Creator {
 			public void modifyText(ModifyEvent e) {
 				int val = 0;
 				try {
-					 val = Integer.valueOf(text.getText());
+					val = Integer.valueOf(text.getText());
 				} catch (NumberFormatException ex) {
 					//Ignore.
 				}
 				element.border.setWidth(val, yearbook.settings.width);
 				refreshNoPageList();
-				
+
 			}
-			
+
 		});
 		data = new FormData();
 		data.width = 200;
@@ -2125,15 +2287,15 @@ public class Creator {
 			}
 
 		});
-		
+
 		dialog.addListener(SWT.Close, new Listener() {
 
 			@Override
 			public void handleEvent(Event event) {
 				stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, element.copy(), yearbook.page(yearbook.activePage).id));
-				
+
 			}
-			
+
 		});
 
 		dialog.setDefaultButton (ok);
@@ -2504,15 +2666,19 @@ public class Creator {
 		fileSaveAsItem = new MenuItem(fileMenu, SWT.PUSH);
 		fileSaveAsItem.setText("Save &As...\tCtrl+Shift+S");
 		fileSaveAsItem.setAccelerator(SWT.MOD1 | SWT.MOD2 | 'S');
+		
+		fileAutosaveItem = new MenuItem(fileMenu, SWT.CHECK);
+		fileAutosaveItem.setText("Autosave (10 min.)");
+		fileAutosaveItem.setSelection(settings.autosave);
 
 		new MenuItem(fileMenu, SWT.SEPARATOR);
-		
+
 		fileExportItem = new MenuItem(fileMenu, SWT.PUSH);
 		fileExportItem.setText("&Export to PDF (Print)");
-		
+
 		fileExportJPEGItem = new MenuItem(fileMenu, SWT.PUSH);
 		fileExportJPEGItem.setText("Export to &PNG (Screen)");
-		
+
 		fileExportVideoItem = new MenuItem(fileMenu, SWT.PUSH);
 		fileExportVideoItem.setText("Export to &Video Yearbook");
 
@@ -2582,10 +2748,10 @@ public class Creator {
 		insertVideoItem.setText("&Video");
 
 		new MenuItem(insertMenu, SWT.SEPARATOR);
-		
+
 		insertPSPAItem = new MenuItem(insertMenu, SWT.PUSH);
 		insertPSPAItem.setText("Photos from PSPA Disk...");
-		
+
 		insertGeneratePSPAItem = new MenuItem(insertMenu, SWT.PUSH);
 		insertGeneratePSPAItem.setText("Generate Pages from Volume...");
 
@@ -2631,9 +2797,9 @@ public class Creator {
 		helpAboutItem = new MenuItem(helpMenu, SWT.PUSH);
 		helpAboutItem.setText("&About " + Creator.SOFTWARE_NAME);
 		helpAboutItem.setAccelerator(SWT.MOD1 + 'Z');
-		
+
 		new MenuItem(helpMenu, SWT.SEPARATOR);
-		
+
 		helpGenerateKeysItem = new MenuItem(helpMenu, SWT.PUSH);
 		helpGenerateKeysItem.setText("&Generate Product Keys");
 	}
@@ -2680,7 +2846,7 @@ public class Creator {
 				splash.close();
 				splash.dispose();
 				shell.open();
-				
+
 				final Shell dialog = new Shell(shell, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
 				dialog.setText("Enter Yearbook Name");
 				dialog.setSize(400, 300);
@@ -2694,7 +2860,7 @@ public class Creator {
 				label.setText("New yearbook name:");
 				FormData data = new FormData();
 				label.setLayoutData(data);
-				
+
 				Button cancel = new Button(dialog, SWT.PUSH);
 				cancel.setText("Cancel");
 				data = new FormData();
@@ -2770,7 +2936,7 @@ public class Creator {
 				} else {
 					Shell wait = new Shell(splash, SWT.NO_TRIM);
 					wait.setSize(300, 300);
-					
+
 					wait.addPaintListener(new PaintListener() {
 
 						@Override
@@ -2783,9 +2949,9 @@ public class Creator {
 							e.gc.drawText("Please wait.", x, y, true);
 							font.dispose();
 						}
-						
+
 					});
-					
+
 					wait.open();
 					Yearbook newYearbook = Yearbook.importFromPDF(display, fileName);
 					wait.close();
@@ -3016,6 +3182,16 @@ public class Creator {
 			}
 
 		});
+		
+		fileAutosaveItem.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				settings.autosave = !settings.autosave;
+				
+			}
+			
+		});
 
 		fileExportItem.addListener(SWT.Selection, new Listener() {
 
@@ -3038,7 +3214,7 @@ public class Creator {
 			}
 
 		});
-		
+
 		fileExportJPEGItem.addListener(SWT.Selection, new Listener() {
 
 			@Override
@@ -3047,7 +3223,7 @@ public class Creator {
 				picker.setText("Select Folder");
 				String folder = picker.open();
 				if (folder == null) return;
-				
+
 				try {
 					Yearbook.exportToPNG(yearbook, folder, display);
 				} catch (Throwable e) {
@@ -3057,25 +3233,64 @@ public class Creator {
 					box.open();
 					e.printStackTrace();
 				}
-				
+
 			}
-			
+
 		});
-		
+
 		fileExportVideoItem.addListener(SWT.Selection, new Listener() {
 
 			@Override
 			public void handleEvent(Event event) {
-				FileDialog picker = new FileDialog(shell, SWT.SAVE);
-				picker.setText("Save As...");
-				picker.setFilterExtensions(new String[] {"*.ctcs"});
-				String fileName = picker.open();
-				if (fileName == null) return;
+
+				DirectoryDialog picker = new DirectoryDialog(shell);
+				picker.setText("Select Folder");
+				String folder = picker.open();
+				if (folder == null) return;
+
+				File directory = new File(folder);
+				directory.mkdir();
+
+				/*
+				 * Copy the reader files
+				 */
+
+				System.out.println(Creator.READER_DIR);
 				
+				try {
+					FileUtilities.copyDirectory(new File(Creator.READER_DIR), new File(directory.getPath()));
+				} catch (IOException e2) {
+					// TODO Auto-generated catch block
+					e2.printStackTrace();
+				}
+				
+
+				File media = new File(folder + File.separator + "media");
+				media.mkdir();
+
+				/*
+				 * Populate the media folder.
+				 */
+
+				for (YearbookPage p : yearbook.getPages()) {
+					for (YearbookElement e : p.getElements()) {
+						if (e.isClickable()) {
+							Clickable element = (Clickable) e;
+							try {
+								for (Video v : element.getVideos()) Files.copy(Paths.get(v.getSrc()), Paths.get(directory.getPath() + File.separator + v.getSrc()), StandardCopyOption.REPLACE_EXISTING);
+							} catch (IOException e1) {
+								e1.printStackTrace();
+							}
+						}
+					}
+				}
+
+				String fileName = folder + File.separator + "yearbook.ctcs";
+
 				/*
 				 * Add in the Digital Express logo.
 				 */
-				
+
 				Image logo = YearbookImages.logo(display);
 				Image pageBg = new Image(display, yearbook.settings.width, yearbook.settings.height);
 				GC gc = new GC(pageBg);
@@ -3083,38 +3298,38 @@ public class Creator {
 				int x = (yearbook.settings.width - logo.getBounds().width) / 2;
 				int y = (yearbook.settings.height - logo.getBounds().height) / 2;
 				gc.drawImage(logo, x, y);
-				
+
 				gc.dispose();
 				logo.dispose();
-				
+
 				yearbook.insertPage(new YearbookPage(pageBg), 0);
 				yearbook.addPage(new YearbookPage(pageBg));
 				pageBg.dispose();
-				
-				
+
+
 				/*
 				 * Add in the covers, if they exist.
 				 */
 				if (yearbook.hasCover) {
 					Image image = yearbook.cover(display);
-					
+
 					Image front = new Image(display, yearbook.settings.width, yearbook.settings.height);
 					gc = new GC(front);
 					gc.drawImage(image, image.getBounds().width / 2, 0, (int) Math.floor(image.getBounds().width / 2), image.getBounds().height, 0, 0, canvas.getBounds().width, canvas.getBounds().height);
 					gc.dispose();
 					yearbook.insertPage(new YearbookPage(front), 0);
 					front.dispose();
-					
+
 					Image back = new Image(display, yearbook.settings.width, yearbook.settings.height);
 					gc = new GC(back);
 					gc.drawImage(image, 0, 0, (int) Math.floor(image.getBounds().width / 2), image.getBounds().height, 0, 0, canvas.getBounds().width, canvas.getBounds().height);
 					gc.dispose();
 					yearbook.addPage(new YearbookPage(back));
 					back.dispose();
-					
+
 					image.dispose();
 				}
-				
+
 				try {
 					Yearbook.saveToDisk(yearbook, fileName);
 				} catch (IOException e) {
@@ -3125,13 +3340,17 @@ public class Creator {
 					e.printStackTrace();
 				}
 			}
-			
+
 		});
 
 		fileCloseItem.addListener(SWT.Selection, new Listener() {
 
 			@Override
 			public void handleEvent(Event event) {
+				MessageBox box = new MessageBox(shell, SWT.YES | SWT.NO | SWT.CANCEL | SWT.ICON_QUESTION);
+				box.setText("Save changes?");
+				box.setMessage("Would you like to save? Everything not saved will be lost.");
+				box.open();
 				exit();
 
 			}
@@ -3180,6 +3399,7 @@ public class Creator {
 			}
 
 		});
+		
 		editPasteItem.addListener(SWT.Selection, new Listener() {
 
 			@Override
@@ -3187,10 +3407,10 @@ public class Creator {
 				for (YearbookElement e : clipboard.cutElements) {
 					yearbook.page(yearbook.activePage).addElement(e.copy());
 				}
-				
+
 				if (clipboard.cut) {
 					for (YearbookElement e : clipboard.cutElements) {
-					yearbook.removeElement(e);
+						yearbook.removeElement(e);
 					}
 					clipboard.cut = false;
 				}
@@ -3287,9 +3507,36 @@ public class Creator {
 			public void handleEvent(Event event) {
 				String fileName = imagePicker();
 				if (fileName == null) return;
-				YearbookImageElement element = new YearbookImageElement(display, fileName, yearbook.settings.width, yearbook.settings.height);
-				stack.push(new ElementCommand(Commands.ADD_ELEMENT, null, element.copy(), yearbook.page(yearbook.activePage).id));
-				yearbook.page(yearbook.activePage).addElement(element);
+				
+				String[] tok = fileName.split("\\.");
+				if (tok.length > 1) if ("pdf".equalsIgnoreCase(tok[tok.length - 1])) {
+					//Convert pdf to images
+					try {
+						PDDocument document = PDDocument.loadNonSeq(new File(fileName), null);
+						@SuppressWarnings("unchecked")
+						ArrayList<PDPage> pdPages = (ArrayList<PDPage>) document.getDocumentCatalog().getAllPages();
+						ArrayList<java.awt.Image> awtImages = new ArrayList<java.awt.Image>();
+						for (PDPage pdPage : pdPages) {
+							awtImages.add(pdPage.convertToImage(BufferedImage.TYPE_INT_RGB, 300));
+						}
+						
+						for (java.awt.Image image : awtImages) {
+							ImageData newData = SWTUtils.convertAWTImageToSWT(image);
+							YearbookImageElement element = new YearbookImageElement(display, newData, yearbook.settings.width, yearbook.settings.height);
+							stack.push(new ElementCommand(Commands.ADD_ELEMENT, null, element.copy(), yearbook.page(yearbook.activePage).id));
+							yearbook.page(yearbook.activePage).addElement(element);
+						}
+					} catch (Throwable t) {
+						MessageBox box = new MessageBox(shell, SWT.ERROR);
+						box.setText("Error");
+						box.setMessage("Could not import pdf as images successfully. Please try again.");
+						box.open();
+					}
+				} else {
+					YearbookImageElement element = new YearbookImageElement(display, fileName, yearbook.settings.width, yearbook.settings.height);
+					stack.push(new ElementCommand(Commands.ADD_ELEMENT, null, element.copy(), yearbook.page(yearbook.activePage).id));
+					yearbook.page(yearbook.activePage).addElement(element);
+				}
 				refreshNoPageList();
 			}
 
@@ -3351,7 +3598,7 @@ public class Creator {
 			}
 
 		});
-		
+
 		insertPSPAItem.addListener(SWT.Selection, new Listener() {
 			File root;
 			Volume volume;
@@ -3361,134 +3608,134 @@ public class Creator {
 				volume = new Volume(yearbook.settings.width, yearbook.settings.height);
 				Shell window = new Shell(shell, SWT.SHELL_TRIM);
 				window.setText("Load PSPA Volume");
-				
+
 				GridLayout layout = new GridLayout();
 				layout.makeColumnsEqualWidth = true;
 				layout.numColumns = 6;
 				window.setLayout(layout);
-				
+
 				Label rows = new Label(window, SWT.LEFT);
 				rows.setText("Rows:");
 				GridData data = new GridData(SWT.BEGINNING, SWT.BEGINNING, true, false);
 				data.horizontalSpan = 3;
 				rows.setLayoutData(data);
-				
+
 				FontData[] fontData = rows.getFont().getFontData();
 				for(int i = 0; i < fontData.length; ++i)
-				    fontData[i].setHeight(16);
+					fontData[i].setHeight(16);
 
 				final Font newFont = new Font(display, fontData);
 				rows.setFont(newFont);
 
 				rows.addDisposeListener(new DisposeListener() {
-				    public void widgetDisposed(DisposeEvent e) {
-				        newFont.dispose();
-				    }
+					public void widgetDisposed(DisposeEvent e) {
+						newFont.dispose();
+					}
 				});
-				
+
 				Combo rowsCombo = new Combo(window, SWT.DROP_DOWN);
 				String[] rowsOptions = new String[] {
-					"3",
-					"4",
-					"5",
-					"6",
-					"7",
-					"8"
+						"3",
+						"4",
+						"5",
+						"6",
+						"7",
+						"8"
 				};
 				for (String s : rowsOptions) {
 					rowsCombo.add(s);
 				}
-				
+
 				data = new GridData(SWT.FILL, SWT.BEGINNING, true, true);
 				data.horizontalSpan = 3;
 				rowsCombo.setLayoutData(data);
-				
+
 				Label columns = new Label(window, SWT.LEFT);
 				columns.setText("Columns:");
 				data = new GridData(SWT.BEGINNING, SWT.BEGINNING, true, false);
 				data.horizontalSpan = 3;
 				columns.setLayoutData(data);
 				columns.setFont(newFont);
-				
+
 				Combo columnsCombo = new Combo(window, SWT.DROP_DOWN);
 				String[] columnsOptions = new String[] {
-					"1",
-					"2",
-					"3",
-					"4",
-					"5",
-					"6",
-					"7",
-					"8",
-					"9"
+						"1",
+						"2",
+						"3",
+						"4",
+						"5",
+						"6",
+						"7",
+						"8",
+						"9"
 				};
-				
+
 				data = new GridData(SWT.FILL, SWT.BEGINNING, true, true);
 				data.horizontalSpan = 3;
-				
+
 				for (String s : columnsOptions) {
 					columnsCombo.add(s);
 				}
-				
+
 				columnsCombo.setLayoutData(data);
-				
+
 				Label name = new Label(window, SWT.LEFT);
 				name.setText("Name:");
 				data = new GridData(SWT.BEGINNING, SWT.BEGINNING, true, false);
 				data.horizontalSpan = 3;
 				name.setLayoutData(data);
 				name.setFont(newFont);
-				
+
 				Text nameText = new Text(window, SWT.SINGLE);
 				data = new GridData(SWT.FILL, SWT.BEGINNING, true, true);
 				data.horizontalSpan = 3;
 				nameText.setLayoutData(data);
-				
-				
+
+
 				Button fontBtn = new Button(window, SWT.PUSH);
 				fontBtn.setText("Set Font");
-				
+
 				data = new GridData(SWT.FILL, SWT.BEGINNING, true, true);
 				data.horizontalSpan = 3;
 				fontBtn.setLayoutData(data);
-				
+
 				Button chooseBtn = new Button(window, SWT.PUSH);
 				chooseBtn.setText("Choose PSPA Volume");
-				
+
 				data = new GridData(SWT.FILL, SWT.BEGINNING, true, true);
 				data.horizontalSpan = 3;
 				chooseBtn.setLayoutData(data);
-				
+
 				Label blank = new Label(window, SWT.NONE);
-				
+
 				data = new GridData(SWT.FILL, SWT.BEGINNING, true, true);
 				data.horizontalSpan = 2;
 				blank.setLayoutData(data);
-				
+
 				Button ok = new Button(window, SWT.PUSH);
 				ok.setText("OK");
-				
+
 				data = new GridData(SWT.FILL, SWT.BEGINNING, true, true);
 				data.horizontalSpan = 2;
 				ok.setLayoutData(data);
-				
+
 				Button cancel = new Button(window, SWT.PUSH);
 				cancel.setText("Cancel");
-				
+
 				data = new GridData(SWT.FILL, SWT.BEGINNING, true, true);
 				data.horizontalSpan = 2;
 				cancel.setLayoutData(data);
-				
+
 				fontBtn.addListener(SWT.Selection, new Listener() {
 
 					@Override
 					public void handleEvent(Event event) {
 						openPSPATextDialog(volume.textElement);
-						
+
 					}
-					
+
 				});
-				
+
 				chooseBtn.addListener(SWT.Selection, new Listener() {
 
 					@Override
@@ -3496,24 +3743,24 @@ public class Creator {
 						DirectoryDialog picker = new DirectoryDialog(shell, SWT.NONE);
 						String fileName = picker.open();
 						if (fileName == null) return;
-						
+
 						root = new File(fileName);
-						
+
 					}
-					
+
 				});
-				
+
 				cancel.addListener(SWT.Selection, new Listener() {
 
 					@Override
 					public void handleEvent(Event event) {
 						window.close();
 						window.dispose();
-						
+
 					}
-					
+
 				});
-				
+
 				ok.addListener(SWT.Selection, new Listener() {
 
 					@Override
@@ -3525,7 +3772,7 @@ public class Creator {
 							box.open();
 							return;
 						}
-						
+
 						if (columnsCombo.getSelectionIndex() < 0 || rowsCombo.getSelectionIndex() < 0) {
 							MessageBox box = new MessageBox(window, SWT.OK);
 							box.setText("Invalid Option");
@@ -3533,18 +3780,18 @@ public class Creator {
 							box.open();
 							return;
 						}
-						
+
 						try {
 							volume.processRoot(root);
-							
+
 							int rows = Integer.parseInt(rowsOptions[rowsCombo.getSelectionIndex()]);
 							int cols = Integer.parseInt(columnsOptions[columnsCombo.getSelectionIndex()]);
 							volume.grid = new Point(cols, rows);
-							
+
 							if (!nameText.getText().isEmpty()) volume.name = nameText.getText();
-							
+
 							yearbook.volumes.add(volume);
-							
+
 						} catch (IOException
 								| PSPAIndexNotFoundException e) {
 							MessageBox box = new MessageBox(window, SWT.ICON_ERROR);
@@ -3560,15 +3807,15 @@ public class Creator {
 						window.close();
 						window.dispose();
 					}
-					
+
 				});
-				
+
 				window.setSize(300, 180);
 				window.open();
 			}
-			
+
 		});
-		
+
 		insertGeneratePSPAItem.addListener(SWT.Selection, new Listener() {
 
 			@Override
@@ -3579,16 +3826,16 @@ public class Creator {
 				layout.makeColumnsEqualWidth = true;
 				layout.numColumns = 1;
 				window.setLayout(layout);
-				
+
 				List list = new List(window, SWT.MULTI);
 				for (Volume v : yearbook.volumes) {
 					list.add(v.name + " (" + v.fileName + ")");
 				}
-				
+
 				GridData data = new GridData(SWT.FILL, SWT.FILL, true, true);
 				data.horizontalSpan = 1;
 				list.setLayoutData(data);
-				
+
 				Button genBtn = new Button(window, SWT.PUSH);
 				genBtn.setText("Generate Pages");
 				data = new GridData(SWT.FILL, SWT.END, true, false);
@@ -3601,25 +3848,25 @@ public class Creator {
 					public void handleEvent(Event event) {
 						try {
 							Volume volume = yearbook.volumes.get(list.getSelectionIndex());
-							
+
 							getPSPAGradeOrder(volume);
-							
+
 							window.close();
 							window.dispose();
 						} catch (Exception e) {
 							//Do nothing.
 						}
-						
+
 					}
-					
+
 				});
-				
+
 				window.setSize(300, 300);
 				window.open();
 			}
-			
+
 		});
-		
+
 		insertPageNumbersItem.addListener(SWT.Selection, new Listener() {
 
 			@Override
@@ -3627,9 +3874,9 @@ public class Creator {
 				yearbook.settings.showPageNumbers = true;
 				openPageNumberDialog(yearbook.numbers);
 			}
-			
+
 		});
-		
+
 		insertToCItem.addListener(SWT.Selection, new Listener() {
 
 			@Override
@@ -3637,7 +3884,7 @@ public class Creator {
 				yearbook.settings.showPageNumbers = false;
 				refreshNoPageList();
 			}
-			
+
 		});
 
 		pageMirrorItem.addListener(SWT.Selection, new Listener() {
@@ -3685,7 +3932,7 @@ public class Creator {
 			}
 
 		});
-		
+
 		pageAddCoverItem.addListener(SWT.Selection, new Listener() {
 
 			@Override
@@ -3708,18 +3955,18 @@ public class Creator {
 					box.setMessage("An error occurred:\n\t" + t);
 					box.open();
 				}
-				
+
 			}
-			
+
 		});
-		
+
 		pageUseCoverItem.addListener(SWT.Selection, new Listener() {
 
 			@Override
 			public void handleEvent(Event event) {
 				yearbook.hasCover = !yearbook.hasCover;
 			}
-			
+
 		});
 
 		pageShowGridItem.addListener(SWT.Selection, new Listener() {
@@ -3731,7 +3978,7 @@ public class Creator {
 			}
 
 		});
-		
+
 		pageShowTextItem.addListener(SWT.Selection, new Listener() {
 
 			@Override
@@ -3776,7 +4023,7 @@ public class Creator {
 				}
 				toolbarWrapper.pack();
 			}
-			
+
 		});
 
 		helpAboutItem.addListener(SWT.Selection, new Listener() {
@@ -3792,7 +4039,7 @@ public class Creator {
 			}
 
 		});
-		
+
 		helpGenerateKeysItem.addListener(SWT.Selection, new Listener() {
 
 			@Override
@@ -3810,7 +4057,7 @@ public class Creator {
 				label.setText("Number of Product Keys to Generate:");
 				FormData data = new FormData();
 				label.setLayoutData(data);
-				
+
 				Button cancel = new Button(dialog, SWT.PUSH);
 				cancel.setText("Cancel");
 				data = new FormData();
@@ -3851,13 +4098,13 @@ public class Creator {
 								textData += s + "\n";
 							}
 							text.setText(textData);
-							
+
 							keyShell.setSize(200, 500);
 							keyShell.open();
 						} catch (IOException e1) {
 							e1.printStackTrace();
 						}
-						
+
 						dialog.close();
 						dialog.dispose();
 					}
@@ -3866,13 +4113,13 @@ public class Creator {
 				dialog.setDefaultButton (ok);
 				dialog.pack();
 				dialog.open();
-				
+
 			}
-			
+
 		});
 
 	}
-	
+
 	protected void redo() {
 		Command c = stack.redo();
 		if (c.isElement()) {
@@ -3906,12 +4153,12 @@ public class Creator {
 				break;
 			}
 		}*/
-		
-		
+
+
 		refresh();
 	}
 
-	
+
 	//TODO: Fix page stuff.
 	protected void undo() {
 		Command c = stack.undo();
@@ -3946,9 +4193,9 @@ public class Creator {
 				break;
 			}
 		}*/
-		
 
-		
+
+
 		refresh();
 	}
 
@@ -3956,59 +4203,59 @@ public class Creator {
 		Shell window = new Shell(shell, SWT.SHELL_TRIM);
 		window.setText("Order Grades");
 		window.setLayout(new ColumnLayout());
-		
+
 		List list = new List(window, SWT.MULTI);
 		for (Grade g : volume.grades) {
 			list.add(g.name);
 		}
-		
+
 		Composite moveComposite = new Composite(window, SWT.NONE);
 		GridLayout moveLayout = new GridLayout();
 		moveLayout.makeColumnsEqualWidth = true;
 		moveLayout.numColumns = 2;
 		moveComposite.setLayout(moveLayout);
-		
+
 		Button up = new Button(moveComposite, SWT.PUSH);
 		up.setText("Move Up");
 		up.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-		
+
 		Button down = new Button(moveComposite, SWT.PUSH);
 		down.setText("Move Down");
 		down.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-		
+
 		Button btn = new Button(window, SWT.PUSH);
 		btn.setText("Set Grade Order");
-		
+
 		up.addListener(SWT.Selection, new Listener() {
 
 			@Override
 			public void handleEvent(Event event) {
 				int selectedIndex = list.getSelectionIndex();
 				if (selectedIndex == 0) return;
-				
+
 				String tmp = list.getItem(selectedIndex - 1);
 				list.remove(selectedIndex - 1);
 				list.add(tmp, selectedIndex);
-				
+
 			}
-			
+
 		});
-		
+
 		down.addListener(SWT.Selection, new Listener() {
 
 			@Override
 			public void handleEvent(Event event) {
 				int selectedIndex = list.getSelectionIndex();
 				if (selectedIndex == list.getItemCount() - 1) return;
-				
+
 				String tmp = list.getItem(selectedIndex);
 				list.remove(selectedIndex);
 				list.add(tmp, selectedIndex + 1);
 				list.setSelection(selectedIndex + 1);
 			}
-			
+
 		});
-		
+
 		btn.addListener(SWT.Selection, new Listener() {
 
 			@Override
@@ -4023,39 +4270,39 @@ public class Creator {
 				window.close();
 				window.dispose();
 			}
-			
+
 		});
-		
+
 		window.pack();
 		window.open();
 	}
-	
+
 	private void generatePSPAPages(Volume volume, ArrayList<String> items) {
-		
+
 		int initialXOffset = (int) ((1.0 / 8.5) * yearbook.settings.width) / 2;
 		int initialYOffset = (int) ((1.5 / 11.0) * yearbook.settings.height) / 2;
-		
+
 		for (String gradeName : items) {
 			Grade grade = volume.getGradeByName(gradeName);
-			
+
 			//First, add a blank page for the grade.
 			yearbook.addPage("Grade " + gradeName);
-			
+
 			for (HomeRoom h : grade.homeRooms) {
 				int photosPerPage = volume.grid.x * volume.grid.y;
 				int pageCount = (int) Math.ceil((double) h.people.size() / photosPerPage);
 
 				for (int i = 0; i < pageCount; i++) {
 					YearbookPage page = new YearbookPage(h.name);
-					
+
 					//YearbookImageElement element = new YearbookImageElement(display, fileName, yearbook.settings.width, yearbook.settings.height);
 					//yearbook.page(yearbook.activePage).addElement(element);
-					
+
 					for (int j = 0; j < photosPerPage && j < h.people.size() - 1; j++) {
-						
+
 						int index = j + (i * photosPerPage);
 						if (index > h.people.size() - 1) break;
-						
+
 						Person p = h.people.get(index);
 						//System.out.println(volume.path);
 						//System.out.println(p.folderName);
@@ -4071,7 +4318,7 @@ public class Creator {
 						element.person = p;
 						page.addElement(element);
 					}
-					
+
 					yearbook.addPage(page);
 					//stack.push(new PageCommand(Commands.ADD_PAGE, page, -1, yearbook.size() - 1));
 				}
@@ -4081,15 +4328,15 @@ public class Creator {
 			int pageCount = (int) Math.ceil((double) grade.people.size() / photosPerPage);
 			for (int i = 0; i < pageCount; i++) {
 				YearbookPage page = new YearbookPage("No home room");
-				
+
 				//YearbookImageElement element = new YearbookImageElement(display, fileName, yearbook.settings.width, yearbook.settings.height);
 				//yearbook.page(yearbook.activePage).addElement(element);
-				
+
 				for (int j = 0; j < photosPerPage && j < grade.people.size() - 1; j++) {
-					
+
 					int index = j + (i * photosPerPage);
 					if (index > grade.people.size() - 1) break; 
-					
+
 					Person p = grade.people.get(index);
 					String path = volume.path + File.separator + p.folderName + File.separator + p.fileName;
 					YearbookPSPAElement element = new YearbookPSPAElement(display, path, yearbook.settings.width, yearbook.settings.height, volume);
@@ -4102,13 +4349,13 @@ public class Creator {
 					element.person = p;
 					page.addElement(element);
 				}
-				
+
 				yearbook.addPage(page);
 				//stack.push(new PageCommand(Commands.ADD_PAGE, page, -1, yearbook.size() - 1));
-				
+
 			}
-			
-			
+
+
 		}
 		refresh();
 	}
@@ -4125,7 +4372,7 @@ public class Creator {
 		GridData previewData = new GridData(SWT.FILL, SWT.FILL, true, true);
 		previewData.horizontalSpan = 5;
 		preview.setLayoutData(previewData);
-		
+
 
 		ColorDialog colorDialog = new ColorDialog(textTool, SWT.APPLICATION_MODAL | SWT.DIALOG_TRIM);
 		colorDialog.setText("Color Picker");
@@ -4188,14 +4435,14 @@ public class Creator {
 
 		Button shadow = new Button(styleWrapper, SWT.PUSH);
 		shadow.setText("S");
-		
+
 		String[] directions = new String[] {
-			"High and In",
-			"High and Middle",
-			"High and Out",
-			"Low and In",
-			"Low and Middle",
-			"Low and Out"
+				"High and In",
+				"High and Middle",
+				"High and Out",
+				"Low and In",
+				"Low and Middle",
+				"Low and Out"
 		};
 		Combo directionCombo = new Combo(textTool, SWT.DROP_DOWN);
 		GridData directionData  = new GridData(SWT.FILL, SWT.FILL, true, false);
@@ -4204,7 +4451,7 @@ public class Creator {
 		for (String d : directions) {
 			directionCombo.add(d);
 		}
-		
+
 		Combo fontCombo = new Combo(textTool, SWT.DROP_DOWN);
 		GridData fontData  = new GridData(SWT.FILL, SWT.FILL, true, false);
 		fontData.horizontalSpan = 5;
@@ -4216,7 +4463,7 @@ public class Creator {
 			if (fontNames[index].equalsIgnoreCase(element.fontFamily)) break;
 		}
 		if (index >= 0) fontCombo.select(index);
-		
+
 		preview.addPaintListener(new PaintListener() {
 
 			@Override
@@ -4224,7 +4471,7 @@ public class Creator {
 				e.gc.setAdvanced(true);
 				e.gc.setAntialias(SWT.ON);
 				e.gc.setFont(element.getFont(e.display));
-				
+
 				if (element.shadow) {
 					int offset = element.size >= 72 ? 4 : element.size >= 36 ? 2 : 1;
 					e.gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
@@ -4232,10 +4479,10 @@ public class Creator {
 					e.gc.drawText("1234567890", preview.getBounds().x + offset, preview.getBounds().y + offset, true);
 					e.gc.setAlpha(0xff);
 				}
-				
+
 				e.gc.setForeground(element.getColor(e.display));
 				e.gc.drawText("1234567890", preview.getBounds().x, preview.getBounds().y);
-				
+
 				if (element.underline) {
 					//Determine the line width
 					int width;
@@ -4248,7 +4495,7 @@ public class Creator {
 
 				}
 			}
-			
+
 		});
 
 		colorButton.addListener(SWT.Selection, new Listener() {
@@ -4302,7 +4549,7 @@ public class Creator {
 			}
 
 		});
-		
+
 		directionCombo.addListener(SWT.Selection, new Listener() {
 
 			@Override
@@ -4329,9 +4576,9 @@ public class Creator {
 				}
 				refreshNoPageList();
 			}
-			
+
 		});
-		
+
 		bold.addListener(SWT.Selection, new Listener() {
 
 			@Override
@@ -4379,7 +4626,7 @@ public class Creator {
 		textTool.open();
 
 	}
-	
+
 	protected void openPSPATextDialog(YearbookTextElement element) {
 		Shell textTool = new Shell(display, SWT.DIALOG_TRIM);
 		textTool.setText("PSPA Text Tool");
@@ -4392,7 +4639,7 @@ public class Creator {
 		GridData previewData = new GridData(SWT.FILL, SWT.FILL, true, true);
 		previewData.horizontalSpan = 5;
 		preview.setLayoutData(previewData);
-		
+
 
 		ColorDialog colorDialog = new ColorDialog(textTool, SWT.APPLICATION_MODAL | SWT.DIALOG_TRIM);
 		colorDialog.setText("Color Picker");
@@ -4461,14 +4708,14 @@ public class Creator {
 
 		Button shadow = new Button(styleWrapper, SWT.PUSH);
 		shadow.setText("S");
-		
+
 		Button borderBtn = new Button(textTool, SWT.PUSH);
 		borderBtn.setText("Set Border");
 		styleData = new GridData(SWT.FILL, SWT.FILL, true, false);
 		styleData.horizontalSpan = 3;
 		borderBtn.setLayoutData(styleData);
-		
-		
+
+
 		String[] fontNames = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
 		Combo fontCombo = new Combo(textTool, SWT.DROP_DOWN);
 		GridData fontData  = new GridData(SWT.FILL, SWT.FILL, true, false);
@@ -4481,7 +4728,7 @@ public class Creator {
 			if (fontNames[index].equalsIgnoreCase(element.fontFamily)) break;
 		}
 		if (index >= 0) fontCombo.select(index);
-		
+
 		preview.addPaintListener(new PaintListener() {
 
 			@Override
@@ -4489,7 +4736,7 @@ public class Creator {
 				e.gc.setAdvanced(true);
 				e.gc.setAntialias(SWT.ON);
 				e.gc.setFont(element.getFont(e.display));
-				
+
 				if (element.shadow) {
 					int offset = element.size >= 72 ? 4 : element.size >= 36 ? 2 : 1;
 					e.gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
@@ -4497,10 +4744,10 @@ public class Creator {
 					e.gc.drawText("John Smith", preview.getBounds().x + offset, preview.getBounds().y + offset, true);
 					e.gc.setAlpha(0xff);
 				}
-				
+
 				e.gc.setForeground(element.getColor(e.display));
 				e.gc.drawText("John Smith", preview.getBounds().x, preview.getBounds().y);
-				
+
 				if (element.underline) {
 					//Determine the line width
 					int width;
@@ -4512,7 +4759,7 @@ public class Creator {
 					e.gc.drawLine(element.getBounds().x + 1, element.getBounds().y + element.getBounds().height - (int) (element.getBounds().height * .1), element.getBounds().x + element.getBounds().width - 1, element.getBounds().y + element.getBounds().height - (int) (element.getBounds().height * .1));
 
 				}
-				
+
 				if (!element.border.noBorder) {
 					Path path = new Path(display);
 					path.addString("John Smith", preview.getBounds().x, preview.getBounds().y, e.gc.getFont());
@@ -4521,14 +4768,14 @@ public class Creator {
 					e.gc.setLineWidth(element.border.getWidthInPixels(yearbook.settings.width));
 					e.gc.setLineStyle(SWT.LINE_SOLID);
 					e.gc.drawPath(path);
-					
+
 					path.dispose();
 					e.gc.setLineWidth(1);
 					e.gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
 					c.dispose();
 				}
 			}
-			
+
 		});
 
 		colorButton.addListener(SWT.Selection, new Listener() {
@@ -4582,7 +4829,7 @@ public class Creator {
 			}
 
 		});
-		
+
 		bold.addListener(SWT.Selection, new Listener() {
 
 			@Override
@@ -4616,15 +4863,15 @@ public class Creator {
 			}
 
 		});
-		
+
 		borderBtn.addListener(SWT.Selection, new Listener() {
 
 			@Override
 			public void handleEvent(Event event) {
 				openAddBorderDialog(element);
-				
+
 			}
-			
+
 		});
 
 		textTool.setSize(250, 200);
@@ -4640,45 +4887,59 @@ public class Creator {
 
 	protected void attachVideoToImage(YearbookImageElement element) throws IOException {
 		if (!element.isPSPA()) {
-			YearbookClickableImageElement e = new YearbookClickableImageElement(display, element.getImage(display).getImageData(), element.getPageWidth(), element.getPageHeight());
-	
-			e.x = element.x;
-			e.y = element.y;
-			e.scale = element.scale;
-			e.rotation = element.rotation;
-			e.imageData = element.imageData;
-			e.border = element.border;
-	
-			FileDialog dialog = new FileDialog(shell, SWT.OPEN);
-			String[] allowedExtensions = {"*.webm;*.mkv;*.flv;*.vob;*.ogv;*.ogg;*.drc;*.avi;*.mov;*.qt;*.wmv;*.rm;*.mp4;*.m4p;*.m4v;*.mpg;*.3gp;*.3g2", "*.*"};
-			dialog.setFilterExtensions(allowedExtensions);
-			String fileName = dialog.open();
-			if (fileName == null) return;
-	
-			Video video = new Video(fileName);
-			e.video = video;
-			int position = yearbook.page(yearbook.activePage).findElementIndex(element);
-			yearbook.page(yearbook.activePage).removeElement(element);
-			yearbook.page(yearbook.activePage).getElements().add(position, e);
-			refresh();
+			if (!(element instanceof Clickable)) {
+				YearbookClickableImageElement e = new YearbookClickableImageElement(display, element.getImage(display).getImageData(), element.getPageWidth(), element.getPageHeight());
+		
+				e.x = element.x;
+				e.y = element.y;
+				e.scale = element.scale;
+				e.rotation = element.rotation;
+				e.imageData = element.imageData;
+				e.border = element.border;
+		
+				FileDialog dialog = new FileDialog(shell, SWT.OPEN);
+				String[] allowedExtensions = {"*.webm;*.mkv;*.flv;*.vob;*.ogv;*.ogg;*.drc;*.avi;*.mov;*.qt;*.wmv;*.rm;*.mp4;*.m4p;*.m4v;*.mpg;*.3gp;*.3g2", "*.*"};
+				dialog.setFilterExtensions(allowedExtensions);
+				String fileName = dialog.open();
+				if (fileName == null) return;
+		
+				Video video = new Video(fileName);
+				e.videos.add(video);
+				int position = yearbook.page(yearbook.activePage).findElementIndex(element);
+				yearbook.page(yearbook.activePage).removeElement(element);
+				yearbook.page(yearbook.activePage).getElements().add(position, e);
+				refresh();
+			} else {
+				YearbookClickableImageElement e = (YearbookClickableImageElement) element;
+				
+				FileDialog dialog = new FileDialog(shell, SWT.OPEN);
+				String[] allowedExtensions = {"*.webm;*.mkv;*.flv;*.vob;*.ogv;*.ogg;*.drc;*.avi;*.mov;*.qt;*.wmv;*.rm;*.mp4;*.m4p;*.m4v;*.mpg;*.3gp;*.3g2", "*.*"};
+				dialog.setFilterExtensions(allowedExtensions);
+				String fileName = dialog.open();
+				if (fileName == null) return;
+		
+				Video video = new Video(fileName);
+				e.videos.add(video);
+				refreshNoPageList();
+			}
 		} else if (element.isTruePSPA()) {
 			YearbookClickablePSPAElement e = new YearbookClickablePSPAElement(display, element.getImage(display).getImageData(), element.getPageWidth(), element.getPageHeight(), (YearbookPSPAElement) element);
-			
+
 			e.x = element.x;
 			e.y = element.y;
 			e.scale = element.scale;
 			e.rotation = element.rotation;
 			e.imageData = element.imageData;
 			e.border = element.border;
-	
+
 			FileDialog dialog = new FileDialog(shell, SWT.OPEN);
 			String[] allowedExtensions = {"*.webm;*.mkv;*.flv;*.vob;*.ogv;*.ogg;*.drc;*.avi;*.mov;*.qt;*.wmv;*.rm;*.mp4;*.m4p;*.m4v;*.mpg;*.3gp;*.3g2", "*.*"};
 			dialog.setFilterExtensions(allowedExtensions);
 			String fileName = dialog.open();
 			if (fileName == null) return;
-	
+
 			Video video = new Video(fileName);
-			e.video = video;
+			e.videos.add(video);
 			int position = yearbook.page(yearbook.activePage).findElementIndex(element);
 			yearbook.page(yearbook.activePage).removeElement(element);
 			yearbook.page(yearbook.activePage).getElements().add(position, e);
@@ -4716,7 +4977,7 @@ public class Creator {
 		printBtn = new Button(toolbarWrapper, SWT.PUSH);
 		printBtn.setImage(YearbookIcons.print(display));
 		printBtn.pack();
-*/
+		 */
 		Label sep2 = new Label(toolbarWrapper, SWT.NONE);
 		sep2.setText("   ");
 
@@ -4813,64 +5074,64 @@ public class Creator {
 			}
 
 		});
-		
+
 		previewBtn.addListener(SWT.Selection, new Listener() {
 
 			@Override
 			public void handleEvent(Event event) {
 				fileExportItem.getListeners(SWT.Selection)[0].handleEvent(event);
 			}
-			
+
 		});
-		
+
 		undoBtn.addListener(SWT.Selection, new Listener() {
 
 			@Override
 			public void handleEvent(Event event) {
 				editUndoItem.getListeners(SWT.Selection)[0].handleEvent(event);
-				
+
 			}
-			
+
 		});
-		
+
 		redoBtn.addListener(SWT.Selection, new Listener() {
 
 			@Override
 			public void handleEvent(Event event) {
 				editRedoItem.getListeners(SWT.Selection)[0].handleEvent(event);
-				
+
 			}
-			
+
 		});
-		
+
 		cutBtn.addListener(SWT.Selection, new Listener() {
 
 			@Override
 			public void handleEvent(Event event) {
 				editCutItem.getListeners(SWT.Selection)[0].handleEvent(event);
-				
+
 			}
-			
+
 		});
-		
+
 		copyBtn.addListener(SWT.Selection, new Listener() {
 
 			@Override
 			public void handleEvent(Event event) {
 				editCopyItem.getListeners(SWT.Selection)[0].handleEvent(event);
-				
+
 			}
-			
+
 		});
-		
+
 		pasteBtn.addListener(SWT.Selection, new Listener() {
 
 			@Override
 			public void handleEvent(Event event) {
 				editPasteItem.getListeners(SWT.Selection)[0].handleEvent(event);
-				
+
 			}
-			
+
 		});
 
 		textBtn.addListener(SWT.Selection, new Listener() {
@@ -5045,74 +5306,74 @@ public class Creator {
 	}
 
 	private void updateCanvas() {
-		
+
 		//Back cover
 		if (yearbook.activePage + 1 == yearbook.size() && leftIsActive()) {
 			blankRightCanvas();
 			loadLeftCanvas(yearbook.activePage);
 			return;
 		}
-	
+
 		//Front cover
 		if (yearbook.activePage == 0) {
 			blankLeftCanvas();
 			loadRightCanvas(0);
 			return;
 		} 
-		
+
 		//Active page is odd
 		if (leftIsActive()) {
 			loadLeftCanvas(yearbook.activePage);
 			loadRightCanvas(yearbook.activePage + 1);
 			return;
 		}
-		
+
 		//Active page is even
 		if (rightIsActive()) {
 			loadLeftCanvas(yearbook.activePage - 1);
 			loadRightCanvas(yearbook.activePage);
 			return;
 		}
-		
+
 		yearbook.tidyUp();
-		
-		
+
+
 	}
-	
+
 	private void loadLeftCanvas(int index) {
 		GC gc;
 		gc = new GC(canvas);
 		paintPage(gc, display, yearbook, clipboard.elements, selectionRectangle, settings, index, yearbook.settings.width, yearbook.settings.height, false, false);
 		gc.dispose();
 	}
-	
+
 	private void loadRightCanvas(int index) {
 		GC gc;
 		gc = new GC(rightCanvas);
 		paintPage(gc, display, yearbook, clipboard.elements, selectionRectangle, settings, index, yearbook.settings.width, yearbook.settings.height, false, false);
 		gc.dispose();
 	}
-	
+
 	private boolean leftIsActive() {
 		return Math.abs(yearbook.activePage % 2) == 1;
 	}
-	
+
 	private boolean rightIsActive() {
 		return yearbook.activePage % 2 == 0; 
 	}
-	
+
 	private void makeLeftActive() {
 		if (leftIsActive()) return;
 		if (yearbook.activePage == 0) return;
 		yearbook.activePage--;
 	}
-	
+
 	private void makeRightActive() {
 		if (rightIsActive()) return;
 		if (yearbook.activePage - 1 == yearbook.size()) return;
 		yearbook.activePage++;
 	}
-	
+
 	private void blankLeftCanvas() {
 		GC gc;
 		gc = new GC(canvas);
@@ -5128,7 +5389,7 @@ public class Creator {
 		gc.drawText("Front Cover", (yearbook.settings.width / 2) - (gc.textExtent("Front Cover").x / 2), yearbook.settings.height / 2, true);
 		gc.dispose();		
 	}
-	
+
 	private void blankRightCanvas() {
 		GC gc;
 		gc = new GC(rightCanvas);
@@ -5175,7 +5436,7 @@ public class Creator {
 		if (yearbook.page(activePage).backgroundImage(display) != null && !yearbook.page(activePage).noBackground) {
 			gc.drawImage(yearbook.page(activePage).backgroundImage(display), 0, 0, yearbook.page(activePage).backgroundImage(display).getBounds().width, yearbook.page(activePage).backgroundImage(display).getBounds().height, 0, 0, pageWidth, pageHeight);
 		}
-		
+
 		//Apparently there's no map function in Java.
 		//Map the YearbookImageElements to images...
 		ArrayList<YearbookImageElement> images = new ArrayList<YearbookImageElement>();
@@ -5190,35 +5451,35 @@ public class Creator {
 			tr.translate(element.getBounds(pageWidth, pageHeight).x + element.getBounds(pageWidth, pageHeight).width / 2, element.getBounds(pageWidth, pageHeight).y + element.getBounds(pageWidth, pageHeight).height / 2);
 			tr.rotate(element.rotation);
 			tr.translate(-element.getBounds(pageWidth, pageHeight).x - element.getBounds(pageWidth, pageHeight).width / 2, element.getBounds(pageWidth, -pageHeight).y - element.getBounds(pageWidth, pageHeight).height / 2);
-			
+
 			gc.setTransform(tr);
-			
+
 			if (element.shadow) {
 				gc.setAlpha(0xbf);
 				gc.setBackground(display.getSystemColor(SWT.COLOR_BLACK));
-				
+
 				int offset = (int) Math.ceil((1.0 / 250.0) * element.getBounds(pageWidth, pageHeight).width);
-				
+
 				//gc.fillRectangle(element.getBounds(pageWidth, pageHeight).x + offset, element.getBounds(pageWidth, pageHeight).y + offset, element.getBounds(pageWidth, pageHeight).width, element.getBounds(pageWidth, pageHeight).height);
 				gc.fillRoundRectangle(element.getBounds(pageWidth, pageHeight).x + offset, element.getBounds(pageWidth, pageHeight).y + offset, element.getBounds(pageWidth, pageHeight).width, element.getBounds(pageWidth, pageHeight).height, 2 * offset, 2 * offset);
 				gc.setAlpha(0xff);
 			}
-			
+
 			gc.drawImage(element.getImage(display), 0, 0, element.getImage(display).getBounds().width, element.getImage(display).getBounds().height, element.getBounds(pageWidth, pageHeight).x, element.getBounds(pageWidth, pageHeight).y, element.getBounds(pageWidth, pageHeight).width, element.getBounds(pageWidth, pageHeight).height);
-			
+
 			if (!element.border.noBorder) {
 				gc.setLineWidth(element.border.getWidthInPixels(pageWidth));
 				Color c = new Color(display, element.border.rgb);
 				gc.setForeground(c);
 				gc.setLineStyle(SWT.LINE_SOLID);
-				
+
 				gc.drawRectangle(element.getBounds(pageWidth, pageHeight));
-				
+
 				gc.setLineWidth(1);
 				gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
 				c.dispose();
 			}
-			
+
 			if (selectedElements.contains(element)) {
 				YearbookElement selectedElement = selectedElements.get(selectedElements.indexOf(element));
 				if (element == selectedElement) {
@@ -5234,11 +5495,11 @@ public class Creator {
 					gc.drawRectangle(element.getBounds(pageWidth, pageHeight).x, element.getBounds(pageWidth, pageHeight).y, element.getBounds(pageWidth, pageHeight).width, element.getBounds(pageWidth, pageHeight).height);
 				}
 			}
-			
+
 			if (element.isPSPA()) {
 				YearbookPSPAElement e = (YearbookPSPAElement) element;
 				double multiplicand = (double) pageWidth / e.pageWidth;
-				
+
 				Font f = e.text.getFont(display);
 				/*if (isExport) {
 					FontData fd = f.getFontData()[0];
@@ -5250,19 +5511,19 @@ public class Creator {
 				fd.setHeight((int) (fd.getHeight() * multiplicand));
 				f.dispose();
 				f = new Font(display, fd);
-				
+
 				Color c = e.text.getColor(display);
 				gc.setFont(f);
 				String name = e.person.firstName + " " + e.person.lastName;
-				
-				
+
+
 				Point nameExtent = gc.textExtent(name);
-				
+
 				int nameX = e.getBounds(pageWidth, pageHeight).x + ((e.getBounds(pageWidth, pageHeight).width - nameExtent.x) / 2);
 				int nameY = (e.getBounds(pageWidth, pageHeight).y + e.getBounds(pageWidth, pageHeight).height) + Math.abs((e.margins.y - nameExtent.y) / 2);
 				e.text.setBounds(new Rectangle(nameX, nameY, nameExtent.x, nameExtent.y));
 				//e.text.setBounds(new Rectangle(0,0,30,30));
-				
+
 				if (e.text.shadow) {
 					int offset = e.text.size >= 72 ? 3 : e.text.size >= 36 ? 2 : 1;
 					gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
@@ -5270,9 +5531,9 @@ public class Creator {
 					gc.drawText(name, nameX + offset, nameY + offset, true);
 					gc.setAlpha(0xff);
 				}
-				
+
 				gc.setForeground(c);
-				
+
 				gc.drawText(name, nameX, nameY, true);
 
 				if (e.text.underline) {
@@ -5286,9 +5547,9 @@ public class Creator {
 					gc.drawLine(e.text.getBounds(pageWidth, pageHeight).x + 1, e.text.getBounds(pageWidth, pageHeight).y + e.text.getBounds(pageWidth, pageHeight).height - (int) (e.text.getBounds(pageWidth, pageHeight).height * .1), e.text.getBounds(pageWidth, pageHeight).x + e.text.getBounds(pageWidth, pageHeight).width - 1, e.text.getBounds(pageWidth, pageHeight).y + e.text.getBounds(pageWidth, pageHeight).height - (int) (e.text.getBounds(pageWidth, pageHeight).height * .1));
 
 				}
-				
+
 				c.dispose();
-				
+
 				if (!e.text.border.noBorder) {
 					Path path = new Path(display);
 					path.addString(name, e.text.getBounds(pageWidth, pageHeight).x, e.text.getBounds(pageWidth, pageHeight).y, gc.getFont());
@@ -5297,16 +5558,16 @@ public class Creator {
 					gc.setLineWidth(e.text.border.getWidthInPixels(pageWidth));
 					gc.setLineStyle(SWT.LINE_SOLID);
 					gc.drawPath(path);
-					
+
 					path.dispose();
 					gc.setLineWidth(1);
 					gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
 					c.dispose();
 				}
-				
+
 				f.dispose();
 			}
-			
+
 			tr.dispose();
 		}
 
@@ -5344,7 +5605,7 @@ public class Creator {
 			gc.setAlpha(50);
 			gc.fillRectangle(e.getBounds(pageWidth, pageHeight));
 			gc.setAlpha(0xff);
-			*/
+			 */
 			tr.dispose();
 		}
 
@@ -5399,7 +5660,7 @@ public class Creator {
 		for (YearbookElement e : yearbook.page(activePage).getElements()) {
 			if (e.isText()) texts.add((YearbookTextElement) e);
 		}
-		
+
 
 		//...and display those in some manner.
 		for (YearbookTextElement e : texts) {
@@ -5417,10 +5678,10 @@ public class Creator {
 			fd.setHeight((int) (fd.getHeight() * multiplicand));
 			f = new Font(display, fd);
 			gc.setFont(f);
-			
+
 			int x = (int) (e.x * pageWidth);
 			int y = (int) (e.y * pageHeight);
-			
+
 			Point textExtent = gc.textExtent(e.text);
 
 			if (e.shadow) {
@@ -5432,15 +5693,15 @@ public class Creator {
 			}
 
 			gc.setForeground(e.getColor(display));
-			
+
 			//System.out.println(x + " " + e.getBounds().x);
-			
+
 			/*
 			 * Inform the text element of its bounds.
 			 * This must be done here, regrettably.
 			 */
 			e.setBounds(new Rectangle(e.getBounds(pageWidth, pageHeight).x, e.getBounds(pageWidth, pageHeight).y, gc.stringExtent(e.text).x, gc.stringExtent(e.text).y));
-			
+
 			gc.drawText(e.text, x, y, true);
 
 			/*
@@ -5470,7 +5731,7 @@ public class Creator {
 					gc.drawRectangle(e.getBounds(pageWidth, pageHeight).x, e.getBounds(pageWidth, pageHeight).y, e.getBounds(pageWidth, pageHeight).width, e.getBounds(pageWidth, pageHeight).height);
 				}
 			}
-			
+
 			/*
 			 * Text outlines
 			 */
@@ -5482,19 +5743,19 @@ public class Creator {
 				gc.setLineWidth(e.border.getWidthInPixels(pageWidth));
 				gc.setLineStyle(SWT.LINE_SOLID);
 				gc.drawPath(path);
-				
+
 				path.dispose();
 				gc.setLineWidth(1);
 				gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
 				c.dispose();
 			}
-			
+
 			tr.dispose();
 
 		}
 
 		boolean displayNumbers = !(activePage == 0 || activePage - 1 == yearbook.size()) && yearbook.settings.showPageNumbers;
-		
+
 		//Paint the page numbers
 		if (displayNumbers) {
 			YearbookTextElement element = yearbook.numbers;
@@ -5503,7 +5764,7 @@ public class Creator {
 			gc.setAntialias(SWT.ON);
 			gc.setFont(element.getFont(display));
 			Rectangle bounds = YearbookPageNumberElement.generateBounds(pageWidth, pageHeight, yearbook.numbers.location, activePage, gc.textExtent(text));
-			
+
 			if (element.shadow) {
 				int offset = element.size >= 72 ? 4 : element.size >= 36 ? 2 : 1;
 				gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
@@ -5511,23 +5772,23 @@ public class Creator {
 				gc.drawText(text, bounds.x + offset, bounds.y + offset, true);
 				gc.setAlpha(0xff);
 			}
-			
+
 			gc.setForeground(element.getColor(display));
 			gc.drawText(text, bounds.x, bounds.y, true);
 		}
-		
+
 		//Draw the layouts
 		if (!isReader) for (YearbookLayout layout : yearbook.page(yearbook.activePage).layouts) {
 			gc.setBackground(display.getSystemColor(SWT.COLOR_GRAY));
 			gc.setAlpha(0x55);
-			
+
 			for (YearbookElementPrototype yep : layout.elements) {
 				Transform tr = new Transform(display);
 				tr.translate(yep.getBounds(pageWidth, pageHeight).x + yep.getBounds(pageWidth, pageHeight).width / 2, yep.getBounds(pageWidth, pageHeight).y + yep.getBounds(pageWidth, pageHeight).height / 2);
 				tr.rotate(yep.rotation);
 				tr.translate(-yep.getBounds(pageWidth, pageHeight).x - yep.getBounds(pageWidth, pageHeight).width / 2, yep.getBounds(pageWidth, -pageHeight).y - yep.getBounds(pageWidth, pageHeight).height / 2);
 				gc.setTransform(tr);
-				
+
 				gc.fillOval(yep.getBounds(pageWidth, pageHeight).x, yep.getBounds(pageWidth, pageHeight).y, yep.getBounds(pageWidth, pageHeight).width, yep.getBounds(pageWidth, pageHeight).height);
 				int textX, textY;
 				String text = Double.toString(Math.floor(yep.rotation)) + "°";
@@ -5536,11 +5797,11 @@ public class Creator {
 				gc.drawText(text, textX, textY, true);
 				tr.dispose();
 			}
-			
+
 			gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
 			gc.setAlpha(0xff);
 		}
-		
+
 	}
 
 	private void createNewPage(String name) {
@@ -5571,7 +5832,7 @@ public class Creator {
 		shell.layout();
 		refreshYearbookName();
 	}
-	
+
 	public void refreshYearbookName() {
 		if (!shell.getText().contains(yearbook.name)) setWindowTitle(yearbook.name);
 		else if (yearbook.name.isEmpty()) setWindowTitle(SWT.DEFAULT);
@@ -5581,14 +5842,14 @@ public class Creator {
 		updatePageList();
 		refreshNoPageList();
 	}
-	
+
 	private void loadFonts() {
 		File folder = new File("icons/fonts");
 		File[] files = folder.listFiles();
 		for (File f : files) {
 			display.loadFont(f.getPath());
 		}
-		
+
 		fontNames = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
 	}
 

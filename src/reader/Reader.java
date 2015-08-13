@@ -40,9 +40,11 @@ import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
+import writer.Clickable;
 import writer.Config;
 import writer.Creator;
 import writer.UserSettings;
+import writer.Video;
 import writer.Yearbook;
 import writer.YearbookClickableElement;
 import writer.YearbookClickableImageElement;
@@ -298,24 +300,27 @@ public class Reader {
 				if (yearbook.page(yearbook.activePage).isClickableAtPoint(e.x, e.y, yearbook.settings.width, yearbook.settings.height) && leftIsActive()) {
 					//Show their video.
 					//Using the system player for now.
-					File file;
+					Clickable element;
 					if (yearbook.page(yearbook.activePage).getElementAtPoint(e.x, e.y, yearbook.settings.width, yearbook.settings.height).isImage()) {
-						file = new File(((YearbookClickableImageElement) yearbook.page(yearbook.activePage).getElementAtPoint(e.x, e.y, yearbook.settings.width, yearbook.settings.height)).getVideo().getSrc());
+						element = ((YearbookClickableImageElement) yearbook.page(yearbook.activePage).getElementAtPoint(e.x, e.y, yearbook.settings.width, yearbook.settings.height));
 					} else {
-						file = new File(((YearbookClickableElement) yearbook.page(yearbook.activePage).getElementAtPoint(e.x, e.y, yearbook.settings.width, yearbook.settings.height)).getVideo().getSrc());
+						element = ((YearbookClickableElement) yearbook.page(yearbook.activePage).getElementAtPoint(e.x, e.y, yearbook.settings.width, yearbook.settings.height));
 					}
-
+					
 					Desktop dt = Desktop.getDesktop();
 
 					try {
-						dt.open(file);
-						dt.open(file);
+						File file;
+						for (Video v : element.getVideos()) {
+							file = new File(v.getSrc());
+							dt.open(file);
+						}
 					} catch (IOException e1) {
 						e1.printStackTrace();
 					} catch (Exception e1) {
 						MessageBox box = new MessageBox(shell, SWT.ERROR);
 						box.setText("Error");
-						box.setMessage("The video was not loaded successfully.");
+						box.setMessage("The video was not loaded successfully. Ensure that you have an up-to-date video player installed (e.g. Windows Media Player) and try again.");
 						box.open();
 					}
 				}
@@ -350,29 +355,33 @@ public class Reader {
 					yearbook.activePage++;
 				}
 
-				if (yearbook.page(yearbook.activePage).isClickableAtPoint(e.x, e.y, yearbook.settings.width, yearbook.settings.height) && rightIsActive()) {
+				if (yearbook.page(yearbook.activePage).isClickableAtPoint(e.x, e.y, yearbook.settings.width, yearbook.settings.height) && leftIsActive()) {
 					//Show their video.
 					//Using the system player for now.
-					File file;
+					Clickable element;
 					if (yearbook.page(yearbook.activePage).getElementAtPoint(e.x, e.y, yearbook.settings.width, yearbook.settings.height).isImage()) {
-						file = new File(((YearbookClickableImageElement) yearbook.page(yearbook.activePage).getElementAtPoint(e.x, e.y, yearbook.settings.width, yearbook.settings.height)).getVideo().getSrc());
+						element = ((YearbookClickableImageElement) yearbook.page(yearbook.activePage).getElementAtPoint(e.x, e.y, yearbook.settings.width, yearbook.settings.height));
 					} else {
-						file = new File(((YearbookClickableElement) yearbook.page(yearbook.activePage).getElementAtPoint(e.x, e.y, yearbook.settings.width, yearbook.settings.height)).getVideo().getSrc());
+						element = ((YearbookClickableElement) yearbook.page(yearbook.activePage).getElementAtPoint(e.x, e.y, yearbook.settings.width, yearbook.settings.height));
 					}
-
+					
 					Desktop dt = Desktop.getDesktop();
 
 					try {
-						dt.open(file);
+						File file;
+						for (Video v : element.getVideos()) {
+							file = new File(v.getSrc());
+							dt.open(file);
+						}
 					} catch (IOException e1) {
 						e1.printStackTrace();
 					} catch (Exception e1) {
 						MessageBox box = new MessageBox(shell, SWT.ERROR);
 						box.setText("Error");
-						box.setMessage("The video was not loaded successfully.");
+						box.setMessage("The video was not loaded successfully. Ensure that you have an up-to-date video player installed (e.g. Windows Media Player) and try again.");
 						box.open();
 					}
-				} 
+				}
 
 			}
 

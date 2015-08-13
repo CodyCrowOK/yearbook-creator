@@ -101,7 +101,11 @@ public class Volume implements Serializable {
 			String[] tokens = line.split("\t");
 			
 			//Skip if no grade...
-			if (tokens[columns.get(Keys.GRADE.toString())].isEmpty()) continue;
+			try {
+				if (tokens[columns.get(Keys.GRADE.toString())].isEmpty()) continue;
+			} catch (ArrayIndexOutOfBoundsException e) {
+				continue;
+			}
 			
 			if (!gradeExists(tokens[columns.get(Keys.GRADE.toString())])) {
 				Grade grade = new Grade(tokens[columns.get(Keys.GRADE.toString())]);

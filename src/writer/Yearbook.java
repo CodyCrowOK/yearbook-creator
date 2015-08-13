@@ -307,6 +307,10 @@ public class Yearbook implements Serializable {
 		out.write(bytes);
 	}
 
+	public ArrayList<YearbookPage> getPages() {
+		return pages;
+	}
+
 	private void readObject(ObjectInputStream in) throws IOException,
 	ClassNotFoundException {
 		in.defaultReadObject();

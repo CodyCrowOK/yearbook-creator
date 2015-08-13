@@ -15,6 +15,7 @@ public class YearbookPSPAElement extends YearbookImageElement implements Seriali
 	public YearbookTextElement text;
 	public Person person;
 	public Point margins;
+	public boolean useTwoLinesForName;
 
 	public YearbookPSPAElement(Display display, String fileName, int pageWidth, int pageHeight) {
 		super(display, fileName, pageWidth, pageHeight);

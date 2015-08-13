@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.util.ArrayDeque;
+import java.util.Deque;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.ImageData;
@@ -19,11 +21,11 @@ import org.eclipse.swt.widgets.Display;
 public class YearbookClickableImageElement extends YearbookImageElement implements Clickable, Serializable {
 
 	private static final long serialVersionUID = -2109379287205311724L;
-	public Video video;
+	public Deque<Video> videos;
 	
 	public YearbookClickableImageElement copy() {
 		YearbookClickableImageElement copy = new YearbookClickableImageElement(this.getDisplay(), this.imageData, this.pageWidth, this.pageHeight);
-		copy.video = video;
+		copy.videos = videos;
 		copy.x = this.x;
 		copy.y = this.y;
 		copy.rotation = this.rotation;
@@ -34,16 +36,18 @@ public class YearbookClickableImageElement extends YearbookImageElement implemen
 	public YearbookClickableImageElement(Display display, String fileName,
 			int pageWidth, int pageHeight) {
 		super(display, fileName, pageWidth, pageHeight);
+		videos = new ArrayDeque<Video>();
 	}
 
 	public YearbookClickableImageElement(Display display,
 			ImageData imageData, int pageWidth, int pageHeight) {
 		super(display, imageData, pageWidth, pageHeight);
+		videos = new ArrayDeque<Video>();
 	}
 
 	@Override
-	public Video getVideo() {
-		return video;
+	public Deque<Video> getVideos() {
+		return videos;
 	}
 	
 	@Override

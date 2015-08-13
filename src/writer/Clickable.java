@@ -1,4 +1,6 @@
 package writer;
+import java.util.Deque;
+
 import org.eclipse.swt.graphics.Rectangle;
 
 /**
@@ -13,5 +15,5 @@ public interface Clickable {
 	 * @return The clickable area of the object.
 	 */
 	Rectangle getBounds();
-	Video getVideo();
+	Deque<Video> getVideos();
 }

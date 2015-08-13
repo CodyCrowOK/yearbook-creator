@@ -1,5 +1,7 @@
 package writer;
 import java.io.Serializable;
+import java.util.ArrayDeque;
+import java.util.Deque;
 
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Display;
@@ -21,12 +23,12 @@ public class YearbookClickableElement extends YearbookElement implements Clickab
 	private int pageWidth;
 	private int pageHeight;
 	
-	private Video video;
+	private Deque<Video> videos;
 
 
 	@Override
 	public YearbookElement copy() {
-		YearbookClickableElement copy = new YearbookClickableElement(video, new Rectangle(0, 0, 0, 0), this.pageHeight, this.pageWidth);
+		YearbookClickableElement copy = new YearbookClickableElement(videos, new Rectangle(0, 0, 0, 0), this.pageHeight, this.pageWidth);
 		copy.x = this.x;
 		copy.y = this.y;
 		copy.width = this.width;
@@ -37,7 +39,20 @@ public class YearbookClickableElement extends YearbookElement implements Clickab
 	
 	public YearbookClickableElement(Video v, Rectangle rect, int pageHeight, int pageWidth) {
 		generateRandomElementId();
-		this.video = v;
+		videos = new ArrayDeque<Video>();
+		this.videos.add(v);
+		this.x = ((double) rect.x / pageWidth);
+		this.y = ((double) rect.y / pageHeight);
+		this.width = ((double) rect.width / pageWidth);
+		this.height = ((double) rect.height / pageHeight);
+		this.pageHeight = pageHeight;
+		this.pageWidth = pageWidth;
+		
+	}
+	
+	public YearbookClickableElement(Deque<Video> v, Rectangle rect, int pageHeight, int pageWidth) {
+		generateRandomElementId();
+		this.videos = v;
 		this.x = ((double) rect.x / pageWidth);
 		this.y = ((double) rect.y / pageHeight);
 		this.width = ((double) rect.width / pageWidth);
@@ -48,8 +63,8 @@ public class YearbookClickableElement extends YearbookElement implements Clickab
 	
 	
 	@Override
-	public Video getVideo() {
-		return video;
+	public Deque<Video> getVideos() {
+		return videos;
 	}
 
 	@Override
@@ -93,7 +108,7 @@ public class YearbookClickableElement extends YearbookElement implements Clickab
 
 
 	public void setVideo(Video video) {
-		this.video = video;
+		this.videos.add(video);
 	}
 
 
