@@ -185,6 +185,7 @@ public class Creator {
 
 	private Tree layoutTree;
 	private String[] fontNames;
+	Image bg;
 
 	private Creator() {
 		display = new Display();
@@ -711,6 +712,7 @@ public class Creator {
 	}
 
 	private void finalPrep() {
+		bg = YearbookImages.creatorBackground(display);
 
 		/*
 		 * Handle global shortcuts
@@ -761,9 +763,9 @@ public class Creator {
 
 			@Override
 			public void paintControl(PaintEvent e) {
-				//Image bg = YearbookImages.creatorBackground(display);
-				//e.gc.drawImage(bg, 0, 0, bg.getBounds().width, bg.getBounds().height, 0, 0, shell.getBounds().width, shell.getBounds().height);
-				
+				int srcY = (int) (((double) (content.getBounds().height + toolbarWrapper.getBounds().height + 17) / shell.getBounds().height) * bg.getBounds().height);
+				int srcHeight = bg.getBounds().height - srcY;
+				e.gc.drawImage(bg, 0, srcY, bg.getBounds().width, srcHeight, 0, content.getBounds().height + toolbarWrapper.getBounds().height + 17, shell.getBounds().width, shell.getBounds().height - (content.getBounds().height + toolbarWrapper.getBounds().height + 17));
 			}
 			
 		});
@@ -5729,6 +5731,8 @@ public class Creator {
 			}
 		});
 
+		
+		
 
 	}
 
