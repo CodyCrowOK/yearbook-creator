@@ -21,7 +21,7 @@ public class YearbookPageNumberElement extends YearbookTextElement implements Se
 		location = PageNumberLocations.DOWN_MIDDLE;
 	}
 
-	public static Rectangle generateBounds(int pageWidth, int pageHeight, PageNumberLocations location, int activePage, Point point) {
+	public static Rectangle generateBounds(int pageWidth, int pageHeight, PageNumberLocations location, int activePage, Point point, Point offset) {
 		int pageNumberX, pageNumberY;
 		switch (location) {
 		case UP_IN:
@@ -67,7 +67,7 @@ public class YearbookPageNumberElement extends YearbookTextElement implements Se
 			break;
 		}
 		
-		Rectangle rekt = new Rectangle(pageNumberX, pageNumberY, 30, 30);
+		Rectangle rekt = new Rectangle(pageNumberX + offset.x, pageNumberY + offset.y, 30, 30);
 		
 		return rekt;
 	}

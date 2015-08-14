@@ -123,6 +123,9 @@ public class Creator {
 	private MenuItem pageClearBackgroundItem;
 	private MenuItem pageAddCoverItem;
 	private MenuItem pageUseCoverItem;
+	private MenuItem pagePspaOffsetItem;
+	private MenuItem pageHideNumbersItem;
+	private MenuItem pageNumberOffsetItem;
 	private MenuItem pageShowGridItem;
 	private MenuItem pageShowTextItem;
 	private MenuItem helpMenuItem;
@@ -764,6 +767,8 @@ public class Creator {
 			}
 			
 		});
+		
+		
 
 	}
 
@@ -849,6 +854,89 @@ public class Creator {
 					int trueX = event.x;
 					int trueY = event.y;
 					Menu menu = new Menu(shell);
+					MenuItem moveItem = new MenuItem(menu, SWT.PUSH);
+					moveItem.setText("Move");
+					moveItem.addListener(SWT.Selection, new Listener() {
+
+						@Override
+						public void handleEvent(Event event) {
+							Shell window = new Shell(shell, SWT.SHELL_TRIM);
+							window.setLayout(new ColumnLayout());
+							
+							Label xLbl = new Label(window, SWT.NONE);
+							xLbl.setText("x (in.):");
+							
+							Text x = new Text(window, SWT.NONE);
+							x.setText(Double.toString(yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height).x * yearbook.settings.xInches()));
+							
+							Label yLbl = new Label(window, SWT.NONE);
+							yLbl.setText("y (in.):");
+							
+							Text y = new Text(window, SWT.SINGLE);
+							y.setText(Double.toString(yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height).y * yearbook.settings.yInches()));
+							
+							Button ok = new Button(window, SWT.PUSH);
+							ok.setText("OK");
+							ok.addListener(SWT.Selection, new Listener() {
+
+								@Override
+								public void handleEvent(Event event) {
+									window.close();
+									window.dispose();
+								}
+								
+							});
+							
+							x.addModifyListener(new ModifyListener() {
+
+								@Override
+								public void modifyText(ModifyEvent e) {
+
+									try {
+										YearbookElement orig = yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height).copy();
+										double x1 = Double.parseDouble(x.getText());
+										double y1 = Double.parseDouble(y.getText());
+										yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height).x = x1 / yearbook.settings.xInches();
+										yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height).y = y1 / yearbook.settings.yInches();
+										stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height).copy(), yearbook.page(yearbook.activePage).id));
+										refreshNoPageList();
+									} catch (Throwable t) {
+										//Ignore
+									}
+									
+									
+								}
+								
+							});
+							
+							y.addModifyListener(new ModifyListener() {
+
+								@Override
+								public void modifyText(ModifyEvent e) {
+									try {
+										YearbookElement orig = yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height).copy();
+										double x1 = Double.parseDouble(x.getText());
+										double y1 = Double.parseDouble(y.getText());
+										yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height).x = x1 / yearbook.settings.xInches();
+										yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height).y = y1 / yearbook.settings.yInches();
+										stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height).copy(), yearbook.page(yearbook.activePage).id));
+										refreshNoPageList();
+									} catch (Throwable t) {
+										//Ignore
+									}
+									
+									
+								}
+								
+							});
+							
+							window.setMinimumSize(100, 100);
+							window.pack();
+							window.open();
+						}
+						
+					});
+					
 					MenuItem addBorderItem = new MenuItem(menu, SWT.PUSH);
 					addBorderItem.setText("Add &Border");
 
@@ -1006,6 +1094,7 @@ public class Creator {
 							public void handleEvent(Event event) {
 								element.useTwoLinesForName = !element.useTwoLinesForName;
 								twoLineItem.setSelection(element.useTwoLinesForName);
+								refreshNoPageList();
 							}
 							
 						});
@@ -1432,6 +1521,88 @@ public class Creator {
 					int trueX = event.x;
 					int trueY = event.y;
 					Menu menu = new Menu(shell);
+					MenuItem moveItem = new MenuItem(menu, SWT.PUSH);
+					moveItem.setText("Move");
+					moveItem.addListener(SWT.Selection, new Listener() {
+
+						@Override
+						public void handleEvent(Event event) {
+							Shell window = new Shell(shell, SWT.SHELL_TRIM);
+							window.setLayout(new ColumnLayout());
+							
+							Label xLbl = new Label(window, SWT.NONE);
+							xLbl.setText("x (in.):");
+							
+							Text x = new Text(window, SWT.NONE);
+							x.setText(Double.toString(yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height).x * yearbook.settings.xInches()));
+							
+							Label yLbl = new Label(window, SWT.NONE);
+							yLbl.setText("y (in.):");
+							
+							Text y = new Text(window, SWT.SINGLE);
+							y.setText(Double.toString(yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height).y * yearbook.settings.yInches()));
+							
+							Button ok = new Button(window, SWT.PUSH);
+							ok.setText("OK");
+							ok.addListener(SWT.Selection, new Listener() {
+
+								@Override
+								public void handleEvent(Event event) {
+									window.close();
+									window.dispose();
+								}
+								
+							});
+							
+							x.addModifyListener(new ModifyListener() {
+
+								@Override
+								public void modifyText(ModifyEvent e) {
+
+									try {
+										YearbookElement orig = yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height).copy();
+										double x1 = Double.parseDouble(x.getText());
+										double y1 = Double.parseDouble(y.getText());
+										yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height).x = x1 / yearbook.settings.xInches();
+										yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height).y = y1 / yearbook.settings.yInches();
+										stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height).copy(), yearbook.page(yearbook.activePage).id));
+										refreshNoPageList();
+									} catch (Throwable t) {
+										//Ignore
+									}
+									
+									
+								}
+								
+							});
+							
+							y.addModifyListener(new ModifyListener() {
+
+								@Override
+								public void modifyText(ModifyEvent e) {
+									try {
+										YearbookElement orig = yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height).copy();
+										double x1 = Double.parseDouble(x.getText());
+										double y1 = Double.parseDouble(y.getText());
+										yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height).x = x1 / yearbook.settings.xInches();
+										yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height).y = y1 / yearbook.settings.yInches();
+										stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height).copy(), yearbook.page(yearbook.activePage).id));
+										refreshNoPageList();
+									} catch (Throwable t) {
+										//Ignore
+									}
+									
+									
+								}
+								
+							});
+							
+							window.setMinimumSize(100, 100);
+							window.pack();
+							window.open();
+						}
+						
+					});
 					MenuItem addBorderItem = new MenuItem(menu, SWT.PUSH);
 					addBorderItem.setText("Add &Border");
 
@@ -2817,6 +2988,17 @@ public class Creator {
 		pageClearBackgroundItem.setText("&Clear Background");
 
 		new MenuItem(pageMenu, SWT.SEPARATOR);
+		
+		pagePspaOffsetItem = new MenuItem(pageMenu, SWT.PUSH);
+		pagePspaOffsetItem.setText("Set PSPA Text Offset");
+
+		pageHideNumbersItem = new MenuItem(pageMenu, SWT.PUSH);
+		pageHideNumbersItem.setText("Hide/Unhide Page Numbers");
+		
+		pageNumberOffsetItem = new MenuItem(pageMenu, SWT.PUSH);
+		pageNumberOffsetItem.setText("Set Page Number Offset");
+		
+		new MenuItem(pageMenu, SWT.SEPARATOR);
 
 		pageAddCoverItem = new MenuItem(pageMenu, SWT.PUSH);
 		pageAddCoverItem.setText("Add Cover (Double Spread)");
@@ -3293,7 +3475,7 @@ public class Creator {
 				 * Copy the reader files
 				 */
 
-				System.out.println(Creator.READER_DIR);
+				//System.out.println(Creator.READER_DIR);
 				
 				try {
 					FileUtilities.copyDirectory(new File(Creator.READER_DIR), new File(directory.getPath()));
@@ -3370,6 +3552,12 @@ public class Creator {
 
 				try {
 					Yearbook.saveToDisk(yearbook, fileName);
+
+					MessageBox box = new MessageBox(shell, SWT.ICON_INFORMATION | SWT.OK);
+					box.setText("Export successful!");
+					box.setMessage("Export to digital yearbook successful! Exiting now.");
+					box.open();
+					System.exit(0);
 				} catch (IOException e) {
 					MessageBox box = new MessageBox(shell, SWT.ERROR);
 					box.setText("Save Yearbook");
@@ -4065,6 +4253,170 @@ public class Creator {
 				yearbook.hasCover = !yearbook.hasCover;
 			}
 
+		});
+		
+		pagePspaOffsetItem.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				Shell window = new Shell(shell, SWT.SHELL_TRIM);
+				window.setLayout(new ColumnLayout());
+				
+				Label xLbl = new Label(window, SWT.NONE);
+				xLbl.setText("x:");
+				
+				Spinner x = new Spinner(window, SWT.NONE);
+				x.setMinimum(-10000);
+				x.setMaximum(10000);
+				
+				Label yLbl = new Label(window, SWT.NONE);
+				yLbl.setText("y:");
+				
+				Spinner y = new Spinner(window, SWT.NONE);
+				y.setMinimum(-10000);
+				y.setMaximum(10000);
+				
+				Button ok = new Button(window, SWT.PUSH);
+				ok.setText("OK");
+				ok.addListener(SWT.Selection, new Listener() {
+
+					@Override
+					public void handleEvent(Event event) {
+						window.close();
+						window.dispose();
+					}
+					
+				});
+				
+				x.addModifyListener(new ModifyListener() {
+
+					@Override
+					public void modifyText(ModifyEvent e) {
+						try {
+							int x1 = Integer.parseInt(x.getText());
+							int y1 = Integer.parseInt(y.getText());
+							yearbook.pspaTranslation.set(x1, y1, yearbook.settings.width, yearbook.settings.height);
+							refreshNoPageList();
+						} catch (Throwable t) {
+							return;
+						}
+						
+						
+					}
+					
+				});
+				
+				y.addModifyListener(new ModifyListener() {
+
+					@Override
+					public void modifyText(ModifyEvent e) {
+						try {
+							int x1 = Integer.parseInt(x.getText());
+							int y1 = Integer.parseInt(y.getText());
+							yearbook.pspaTranslation.set(x1, y1, yearbook.settings.width, yearbook.settings.height);
+							refreshNoPageList();
+						} catch (Throwable t) {
+							return;
+						}
+						
+						
+					}
+					
+				});
+				
+				window.setMinimumSize(100, 100);
+				window.pack();
+				window.open();
+				
+			}
+			
+		});
+		
+		pageHideNumbersItem.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				yearbook.page(yearbook.activePage).pageNumberTranslation.visible = !yearbook.page(yearbook.activePage).pageNumberTranslation.visible;
+				refreshNoPageList();
+			}
+			
+		});
+		
+		pageNumberOffsetItem.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				Shell window = new Shell(shell, SWT.SHELL_TRIM);
+				window.setLayout(new ColumnLayout());
+				
+				Label xLbl = new Label(window, SWT.NONE);
+				xLbl.setText("x:");
+				
+				Spinner x = new Spinner(window, SWT.NONE);
+				x.setMinimum(-10000);
+				x.setMaximum(10000);
+				
+				Label yLbl = new Label(window, SWT.NONE);
+				yLbl.setText("y:");
+				
+				Spinner y = new Spinner(window, SWT.NONE);
+				y.setMinimum(-10000);
+				y.setMaximum(10000);
+				
+				Button ok = new Button(window, SWT.PUSH);
+				ok.setText("OK");
+				ok.addListener(SWT.Selection, new Listener() {
+
+					@Override
+					public void handleEvent(Event event) {
+						window.close();
+						window.dispose();
+					}
+					
+				});
+				
+				x.addModifyListener(new ModifyListener() {
+
+					@Override
+					public void modifyText(ModifyEvent e) {
+						try {
+							int x1 = Integer.parseInt(x.getText());
+							int y1 = Integer.parseInt(y.getText());
+							yearbook.page(yearbook.activePage).pageNumberTranslation.set(x1, y1, yearbook.settings.width, yearbook.settings.height);
+							refreshNoPageList();
+						} catch (Throwable t) {
+							return;
+						}
+						
+						
+					}
+					
+				});
+				
+				y.addModifyListener(new ModifyListener() {
+
+					@Override
+					public void modifyText(ModifyEvent e) {
+						try {
+							int x1 = Integer.parseInt(x.getText());
+							int y1 = Integer.parseInt(y.getText());
+							yearbook.page(yearbook.activePage).pageNumberTranslation.set(x1, y1, yearbook.settings.width, yearbook.settings.height);
+							refreshNoPageList();
+						} catch (Throwable t) {
+							return;
+						}
+						
+						
+					}
+					
+				});
+				
+				window.setMinimumSize(100, 100);
+				window.pack();
+				window.open();
+				
+			}
+			
 		});
 
 		pageShowGridItem.addListener(SWT.Selection, new Listener() {
@@ -4816,7 +5168,7 @@ public class Creator {
 		borderBtn.setLayoutData(styleData);
 
 
-		String[] fontNames = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
+		//fontNames = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
 		Combo fontCombo = new Combo(textTool, SWT.DROP_DOWN);
 		GridData fontData  = new GridData(SWT.FILL, SWT.FILL, true, false);
 		fontData.horizontalSpan = 5;
@@ -5627,8 +5979,8 @@ public class Creator {
 
 				Point nameExtent = gc.textExtent(name);
 
-				int nameX = e.getBounds(pageWidth, pageHeight).x + ((e.getBounds(pageWidth, pageHeight).width - nameExtent.x) / 2);
-				int nameY = (e.getBounds(pageWidth, pageHeight).y + e.getBounds(pageWidth, pageHeight).height) + Math.abs((e.margins.y - nameExtent.y) / 2);
+				int nameX = e.getBounds(pageWidth, pageHeight).x + ((e.getBounds(pageWidth, pageHeight).width - nameExtent.x) / 2) + yearbook.pspaTranslation.getDiff(pageWidth, pageHeight).x;
+				int nameY = (e.getBounds(pageWidth, pageHeight).y + e.getBounds(pageWidth, pageHeight).height) + Math.abs((e.margins.y - nameExtent.y) / 2) + yearbook.pspaTranslation.getDiff(pageWidth, pageHeight).y;
 				e.text.setBounds(new Rectangle(nameX, nameY, nameExtent.x, nameExtent.y));
 				//e.text.setBounds(new Rectangle(0,0,30,30));
 
@@ -5877,7 +6229,7 @@ public class Creator {
 
 		}
 
-		boolean displayNumbers = !(activePage == 0 || activePage - 1 == yearbook.size()) && yearbook.settings.showPageNumbers;
+		boolean displayNumbers = !(activePage == 0 || activePage - 1 == yearbook.size()) && yearbook.settings.showPageNumbers && yearbook.page(activePage).pageNumberTranslation.visible;
 
 		//Paint the page numbers
 		if (displayNumbers) {
@@ -5886,7 +6238,7 @@ public class Creator {
 			gc.setAdvanced(true);
 			gc.setAntialias(SWT.ON);
 			gc.setFont(element.getFont(display));
-			Rectangle bounds = YearbookPageNumberElement.generateBounds(pageWidth, pageHeight, yearbook.numbers.location, activePage, gc.textExtent(text));
+			Rectangle bounds = YearbookPageNumberElement.generateBounds(pageWidth, pageHeight, yearbook.numbers.location, activePage, gc.textExtent(text), yearbook.page(activePage).pageNumberTranslation.getDiff(pageWidth, pageHeight));
 
 			if (element.shadow) {
 				int offset = element.size >= 72 ? 4 : element.size >= 36 ? 2 : 1;
@@ -5974,6 +6326,7 @@ public class Creator {
 		}
 
 		fontNames = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
+		GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts();
 	}
 
 	public static void main(String[] args) {

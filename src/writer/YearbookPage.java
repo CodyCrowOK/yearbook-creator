@@ -31,6 +31,7 @@ public class YearbookPage implements Serializable {
 	transient private Image backgroundImage;
 	public boolean noBackground;
 	public Deque<YearbookLayout> layouts;
+	public Translation pageNumberTranslation;
 
 	public YearbookPage(Image backgroundImage) {
 		this();
@@ -56,6 +57,7 @@ public class YearbookPage implements Serializable {
 		elements = new ArrayList<YearbookElement>();
 		layouts = new ArrayDeque<YearbookLayout>();
 		id = (int) (1000000000.0 * Math.random());
+		pageNumberTranslation = new Translation();
 	}
 
 	public YearbookPage(String name) {

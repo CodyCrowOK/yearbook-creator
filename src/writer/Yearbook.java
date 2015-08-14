@@ -45,6 +45,7 @@ public class Yearbook implements Serializable {
 	transient private ImageData coverImageData;
 	public boolean noBackground;
 	public boolean hasCover;
+	public Translation pspaTranslation;
 
 	public String name;
 	public YearbookSettings settings;
@@ -59,6 +60,7 @@ public class Yearbook implements Serializable {
 		activePage = 0;
 		name = "Untitled";
 		numbers = new YearbookPageNumberElement(settings.width, settings.height);
+		pspaTranslation = new Translation();
 	}
 
 	public Yearbook(String name) {
