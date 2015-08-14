@@ -1,6 +1,8 @@
 package writer;
 
 import java.io.Serializable;
+import java.util.ArrayDeque;
+import java.util.Deque;
 
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.Point;
@@ -9,7 +11,7 @@ import org.eclipse.swt.widgets.Display;
 import pspa.Person;
 import pspa.Volume;
 
-public class YearbookPSPAElement extends YearbookImageElement implements Serializable {
+public class YearbookPSPAElement extends YearbookImageElement implements Serializable, Clickable {
 	private static final long serialVersionUID = -1279859963196943365L;
 	
 	public YearbookTextElement text;
@@ -17,14 +19,17 @@ public class YearbookPSPAElement extends YearbookImageElement implements Seriali
 	public Point margins;
 	public boolean nameReversed;
 	public boolean useTwoLinesForName;
+	public Deque<Video> videos;
 
 	public YearbookPSPAElement(Display display, String fileName, int pageWidth, int pageHeight) {
 		super(display, fileName, pageWidth, pageHeight);
+		videos = new ArrayDeque<Video>();
 		text = new YearbookTextElement(pageWidth, pageHeight);
 	}
 
 	public YearbookPSPAElement(Display display, ImageData imageData, int pageWidth, int pageHeight) {
 		super(display, imageData, pageWidth, pageHeight);
+		videos = new ArrayDeque<Video>();
 		text = new YearbookTextElement(pageWidth, pageHeight);
 	}
 	
@@ -49,6 +54,16 @@ public class YearbookPSPAElement extends YearbookImageElement implements Seriali
 	@Override
 	public boolean isTruePSPA() {
 		return true;
+	}
+
+	@Override
+	public Deque<Video> getVideos() {
+		return videos;
+	}
+	
+	@Override
+	public boolean isClickable() {
+		return videos.size() > 0;
 	}
 
 }

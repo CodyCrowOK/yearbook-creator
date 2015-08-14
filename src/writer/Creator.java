@@ -5374,7 +5374,7 @@ public class Creator {
 				e.videos.add(video);
 				refreshNoPageList();
 			}
-		} else if (element.isTruePSPA()) {
+		}/* else if (element.isTruePSPA()) {
 			YearbookClickablePSPAElement e = new YearbookClickablePSPAElement(display, element.getImage(display).getImageData(), element.getPageWidth(), element.getPageHeight(), (YearbookPSPAElement) element);
 
 			e.x = element.x;
@@ -5395,6 +5395,16 @@ public class Creator {
 			int position = yearbook.page(yearbook.activePage).findElementIndex(element);
 			yearbook.page(yearbook.activePage).removeElement(element);
 			yearbook.page(yearbook.activePage).getElements().add(position, e);
+		}*/ else {
+			FileDialog dialog = new FileDialog(shell, SWT.OPEN);
+			String[] allowedExtensions = {"*.webm;*.mkv;*.flv;*.vob;*.ogv;*.ogg;*.drc;*.avi;*.mov;*.qt;*.wmv;*.rm;*.mp4;*.m4p;*.m4v;*.mpg;*.3gp;*.3g2", "*.*"};
+			dialog.setFilterExtensions(allowedExtensions);
+			String fileName = dialog.open();
+			if (fileName == null) return;
+			
+			YearbookPSPAElement e = (YearbookPSPAElement) element;
+			Video video = new Video(fileName);
+			e.videos.add(video);
 		}
 	}
 
