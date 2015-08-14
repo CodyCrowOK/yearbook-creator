@@ -16,6 +16,8 @@ public class Volume implements Serializable {
 	private static final long serialVersionUID = 6310827207245198135L;
 	public String name;
 	public String fileName;
+	public boolean nameReversed;
+	public int offset = 0;
 	public String path;
 	public Point grid;
 	public ArrayList<Grade> grades;

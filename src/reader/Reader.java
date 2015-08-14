@@ -15,6 +15,7 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.SWTException;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.MouseListener;
 import org.eclipse.swt.events.MouseMoveListener;
@@ -59,7 +60,7 @@ import writer.YearbookImages;
  */
 public class Reader {
 	public static final boolean DEMO = false;
-	public static final boolean PRODUCTION = true;
+	public static final boolean PRODUCTION = false;
 
 	Config config;
 
@@ -86,6 +87,7 @@ public class Reader {
 	boolean front;
 	boolean back;
 	boolean playSlideshow;
+	boolean noPageTurn;
 	
 	Image play;
 	Image pause;
@@ -149,15 +151,18 @@ public class Reader {
 		timer.schedule(new TimerTask() {
 			@Override
 			public void run() {
-				display.asyncExec(new Runnable() {
-
-					@Override
-					public void run() {
-						if (playSlideshow) turnPageRight();
-					}
-					
-				});
-				
+				try {
+					display.asyncExec(new Runnable() {
+		
+						@Override
+						public void run() {
+							if (playSlideshow) turnPageRight();
+						}
+						
+					});
+				} catch (SWTException e) {
+					System.exit(0);
+				}
 				
 
 			}
@@ -287,7 +292,7 @@ public class Reader {
 
 			@Override
 			public void mouseDoubleClick(MouseEvent e) {
-				turnPageLeft();
+				//turnPageLeft();
 			}
 
 			@Override
@@ -298,6 +303,7 @@ public class Reader {
 				}
 
 				if (yearbook.page(yearbook.activePage).isClickableAtPoint(e.x, e.y, yearbook.settings.width, yearbook.settings.height) && leftIsActive()) {
+					
 					//Show their video.
 					//Using the system player for now.
 					Clickable element;
@@ -329,12 +335,12 @@ public class Reader {
 
 			@Override
 			public void mouseUp(MouseEvent e) {
-				if (e.x - startX >= 20) {
+				if (e.x - startX >= 100) {
 					if (back) {
 						openFromBack();
 					}
 					turnPageLeft();
-				}
+				} else noPageTurn = true;
 			}
 
 		});
@@ -345,7 +351,7 @@ public class Reader {
 
 			@Override
 			public void mouseDoubleClick(MouseEvent e) {
-				turnPageRight();
+				//turnPageRight();
 			}
 
 			@Override
@@ -355,7 +361,8 @@ public class Reader {
 					yearbook.activePage++;
 				}
 
-				if (yearbook.page(yearbook.activePage).isClickableAtPoint(e.x, e.y, yearbook.settings.width, yearbook.settings.height) && leftIsActive()) {
+				if (yearbook.page(yearbook.activePage).isClickableAtPoint(e.x, e.y, yearbook.settings.width, yearbook.settings.height) && rightIsActive()) {
+					
 					//Show their video.
 					//Using the system player for now.
 					Clickable element;
@@ -387,21 +394,21 @@ public class Reader {
 
 			@Override
 			public void mouseUp(MouseEvent e) {
-				if (e.x - startX <= 20) {
+				if (e.x - startX <= 100) {
 					if (front) {
 						openBook();
 					}
 					turnPageRight();
-				}
+				} else noPageTurn = true;
 			}
 
 		});
-
+		
 		canvas.addPaintListener(new PaintListener() {
 
 			@Override
 			public void paintControl(PaintEvent e) {
-				refresh();
+				refresh(true);
 
 			}
 
@@ -411,7 +418,7 @@ public class Reader {
 
 			@Override
 			public void paintControl(PaintEvent e) {
-				refresh();
+				refresh(true);
 
 			}
 
@@ -457,6 +464,7 @@ public class Reader {
 
 			@Override
 			public void handleEvent(Event event) {
+				noPageTurn = false;
 				turnPageRight();
 
 			}
@@ -467,6 +475,7 @@ public class Reader {
 
 			@Override
 			public void handleEvent(Event event) {
+				noPageTurn = false;
 				turnPageLeft();
 
 			}
@@ -477,6 +486,7 @@ public class Reader {
 
 			@Override
 			public void handleEvent(Event event) {
+				noPageTurn = false;
 				playSlideshow = !playSlideshow;
 				if (playSlideshow) {
 					playBtn.setImage(pause);
@@ -491,6 +501,7 @@ public class Reader {
 
 			@Override
 			public void handleEvent(Event event) {
+				noPageTurn = false;
 				yearbook.activePage = 0;
 				refresh();
 
@@ -502,6 +513,7 @@ public class Reader {
 
 			@Override
 			public void handleEvent(Event event) {
+				noPageTurn = false;
 				yearbook.activePage = yearbook.size() - 1;
 				refresh();
 
@@ -758,11 +770,6 @@ public class Reader {
 		int subtrahend = 0;
 
 		while (i < MagicNumber.FRAMES) {
-			try {
-				Thread.sleep(1);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
 			canvas.update();
 			i += 1;
 			subtrahend = (int) ((double) i / 500 * image.getBounds().width);
@@ -927,11 +934,6 @@ public class Reader {
 		int subtrahend = 0;
 
 		while (i++ < MagicNumber.FRAMES) {
-			try {
-				Thread.sleep(1);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
 			rightCanvas.update();
 			subtrahend = (int) ((double) i / MagicNumber.FRAMES * image.getBounds().width);
 			Image consolidated = new Image(display, rightCanvas.getBounds().width, rightCanvas.getBounds().height);
@@ -1110,6 +1112,7 @@ public class Reader {
 	}
 
 	private void refresh() {
+		if (noPageTurn) return;
 		if (!DEMO) pageNumbers.setText(Integer.toString(yearbook.activePage));
 		if (!yearbook.hasCover) {
 			loadPages(yearbook.activePage);
@@ -1128,6 +1131,43 @@ public class Reader {
 				canvasWrapper.setVisible(true);
 				bigCanvasWrapper.redraw();
 				pageTurnRightAnimation(yearbook.activePage - 1, MagicNumber.LAST_PAGE);
+				canvasWrapper2.setVisible(false);
+				loadBackCover();
+			} else {
+				if (onPageCover || front || back) {
+					onPageCover = false;
+					front = back = false;
+				}
+				bigCanvasWrapper.redraw();
+				canvasWrapper.setVisible(true);
+				canvasWrapper2.setVisible(true);
+				loadPages(yearbook.activePage);
+			}
+		}
+	}
+
+
+	private void refresh(boolean onlyPaint) {
+		if (!onlyPaint) return;
+		
+		if (!DEMO) pageNumbers.setText(Integer.toString(yearbook.activePage));
+		if (!yearbook.hasCover) {
+			loadPages(yearbook.activePage);
+			onPageCover = false;
+		} else {
+			onPageCover = true;
+			if (yearbook.activePage == 0) {
+				front = true;
+				canvasWrapper.setVisible(false);
+				canvasWrapper2.setVisible(true);
+				bigCanvasWrapper.redraw();
+				//pageTurnLeftAnimation(0, MagicNumber.FIRST_PAGE);
+				loadCover();
+			} else if (yearbook.activePage == yearbook.size() - 1) {
+				back = true;
+				canvasWrapper.setVisible(true);
+				bigCanvasWrapper.redraw();
+				//pageTurnRightAnimation(yearbook.activePage - 1, MagicNumber.LAST_PAGE);
 				canvasWrapper2.setVisible(false);
 				loadBackCover();
 			} else {
@@ -1262,7 +1302,6 @@ public class Reader {
 				}
 			}
 		} catch (IOException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 

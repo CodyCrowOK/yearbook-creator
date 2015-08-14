@@ -115,6 +115,10 @@ abstract public class YearbookElement implements Serializable {
 		return false;
 	}
 	
+	public boolean is(YearbookElement e) {
+		return e.elementId == elementId;
+	}
+	
 	@Override
 	public boolean equals(Object o) {
 		if (o == null) return false;

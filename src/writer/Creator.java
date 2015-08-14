@@ -737,19 +737,33 @@ public class Creator {
 		timer.schedule(new TimerTask() {
 			@Override
 			public void run() {
-				display.asyncExec(new Runnable() {
-
-					@Override
-					public void run() {
-						if (settings.autosave) fileSaveItem.getListeners(SWT.Selection)[0].handleEvent(new Event());
-					}
-					
-				});
-				
+				try {
+					display.asyncExec(new Runnable() {
+		
+						@Override
+						public void run() {
+							if (settings.autosave) fileSaveItem.getListeners(SWT.Selection)[0].handleEvent(new Event());
+						}
+						
+					});
+				} catch (SWTException e) {
+					System.exit(0);
+				}
 				
 
 			}
 		}, 600000L, 600000L);
+		
+		shell.addPaintListener(new PaintListener() {
+
+			@Override
+			public void paintControl(PaintEvent e) {
+				//Image bg = YearbookImages.creatorBackground(display);
+				//e.gc.drawImage(bg, 0, 0, bg.getBounds().width, bg.getBounds().height, 0, 0, shell.getBounds().width, shell.getBounds().height);
+				
+			}
+			
+		});
 
 	}
 
@@ -3680,7 +3694,7 @@ public class Creator {
 				columnsCombo.setLayoutData(data);
 
 				Label name = new Label(window, SWT.LEFT);
-				name.setText("Name:");
+				name.setText("Volume Name:");
 				data = new GridData(SWT.BEGINNING, SWT.BEGINNING, true, false);
 				data.horizontalSpan = 3;
 				name.setLayoutData(data);
@@ -3690,7 +3704,56 @@ public class Creator {
 				data = new GridData(SWT.FILL, SWT.BEGINNING, true, true);
 				data.horizontalSpan = 3;
 				nameText.setLayoutData(data);
+				
+				Label nameRev = new Label(window, SWT.LEFT);
+				nameRev.setText("Name Orientation:");
+				data = new GridData(SWT.BEGINNING, SWT.BEGINNING, true, false);
+				data.horizontalSpan = 3;
+				nameRev.setLayoutData(data);
+				nameRev.setFont(newFont);
 
+				Combo nameRevCombo = new Combo(window, SWT.DROP_DOWN);
+				String[] nameRevOptions = new String[] {
+						"John Smith",
+						"Smith, John"
+				};
+
+				data = new GridData(SWT.FILL, SWT.BEGINNING, true, true);
+				data.horizontalSpan = 3;
+
+				for (String s : nameRevOptions) {
+					nameRevCombo.add(s);
+				}
+
+				nameRevCombo.setLayoutData(data);
+
+				Label offset = new Label(window, SWT.LEFT);
+				offset.setText("Class Offset:");
+				data = new GridData(SWT.BEGINNING, SWT.BEGINNING, true, false);
+				data.horizontalSpan = 3;
+				offset.setLayoutData(data);
+				offset.setFont(newFont);
+
+				Combo offsetCombo = new Combo(window, SWT.DROP_DOWN);
+				String[] offsetOptions = new String[] {
+						"1",
+						"2",
+						"3",
+						"4",
+						"5",
+						"6",
+						"7",
+						"8",
+				};
+
+				data = new GridData(SWT.FILL, SWT.BEGINNING, true, true);
+				data.horizontalSpan = 3;
+
+				for (String s : offsetOptions) {
+					offsetCombo.add(s);
+				}
+
+				offsetCombo.setLayoutData(data);
 
 				Button fontBtn = new Button(window, SWT.PUSH);
 				fontBtn.setText("Set Font");
@@ -3804,13 +3867,23 @@ public class Creator {
 							box.setMessage("An unknown error occurred.\n\t" + e);
 							box.open();
 						}
+						
+						if (nameRevCombo.getSelectionIndex() > 0) {
+							volume.nameReversed = true;
+						}
+						
+						if (offsetCombo.getSelectionIndex() >= 0) {
+							volume.offset = offsetCombo.getSelectionIndex();
+						}
+						
+						
 						window.close();
 						window.dispose();
 					}
 
 				});
 
-				window.setSize(300, 180);
+				window.setSize(400, 275);
 				window.open();
 			}
 

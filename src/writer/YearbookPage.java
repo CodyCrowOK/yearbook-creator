@@ -187,7 +187,7 @@ public class YearbookPage implements Serializable {
 	 */
 	public int findElementIndex(YearbookElement e) {
 		for (int i = 0; i < this.elements.size(); i++) {
-			if (this.elements.get(i).equals(e)) {
+			if (this.elements.get(i).is(e)) {
 				return i;
 			}
 		}
