@@ -149,7 +149,9 @@ public class YearbookPage implements Serializable {
 	 * @param x
 	 * @param y
 	 * @return the found element, or null if no element found
+	 * @deprecated
 	 */
+	@Deprecated
 	public YearbookElement getElementAtPoint(int x, int y) {
 		for (int i = elements.size() - 1; i >= 0; i--) {
 			YearbookElement e = elements.get(i);
