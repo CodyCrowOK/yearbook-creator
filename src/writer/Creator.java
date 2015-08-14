@@ -4748,7 +4748,7 @@ public class Creator {
 					//YearbookImageElement element = new YearbookImageElement(display, fileName, yearbook.settings.width, yearbook.settings.height);
 					//yearbook.page(yearbook.activePage).addElement(element);
 
-					for (int j = volume.offset; j < photosPerPage && j < h.people.size() + volume.offset - 1; j++) {
+					for (int j = i == 0 ? volume.offset : 0; j < photosPerPage && j < h.people.size() + (i == 0 ? volume.offset : 0) - 1; j++) {
 
 						int index = j - volume.offset + (i * photosPerPage);
 						if (index > h.people.size() - 1) break;
