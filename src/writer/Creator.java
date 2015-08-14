@@ -3736,6 +3736,7 @@ public class Creator {
 
 				Combo offsetCombo = new Combo(window, SWT.DROP_DOWN);
 				String[] offsetOptions = new String[] {
+						"0",
 						"1",
 						"2",
 						"3",
@@ -4352,7 +4353,7 @@ public class Creator {
 
 	private void generatePSPAPages(Volume volume, ArrayList<String> items) {
 
-		int initialXOffset = (int) ((1.0 / 8.5) * yearbook.settings.width) / 2;
+		int initialXOffset = (int) ((1.0 / 8.5) * yearbook.settings.width) / 4;
 		int initialYOffset = (int) ((1.5 / 11.0) * yearbook.settings.height) / 2;
 
 		for (String gradeName : items) {
@@ -4363,7 +4364,7 @@ public class Creator {
 
 			for (HomeRoom h : grade.homeRooms) {
 				int photosPerPage = volume.grid.x * volume.grid.y;
-				int pageCount = (int) Math.ceil((double) h.people.size() / photosPerPage);
+				int pageCount = (int) Math.ceil(((double) h.people.size() + volume.offset) / photosPerPage);
 
 				for (int i = 0; i < pageCount; i++) {
 					YearbookPage page = new YearbookPage(h.name);
@@ -4371,9 +4372,9 @@ public class Creator {
 					//YearbookImageElement element = new YearbookImageElement(display, fileName, yearbook.settings.width, yearbook.settings.height);
 					//yearbook.page(yearbook.activePage).addElement(element);
 
-					for (int j = 0; j < photosPerPage && j < h.people.size() - 1; j++) {
+					for (int j = volume.offset; j < photosPerPage && j < h.people.size() + volume.offset - 1; j++) {
 
-						int index = j + (i * photosPerPage);
+						int index = j - volume.offset + (i * photosPerPage);
 						if (index > h.people.size() - 1) break;
 
 						Person p = h.people.get(index);
@@ -4382,6 +4383,7 @@ public class Creator {
 						//System.out.println(p.fileName);
 						String path = volume.path + File.separator + p.folderName + File.separator + p.fileName;
 						YearbookPSPAElement element = new YearbookPSPAElement(display, path, yearbook.settings.width, yearbook.settings.height, volume);
+						element.nameReversed = volume.nameReversed;
 						int row = j / volume.grid.x;
 						int col = j % volume.grid.x;
 						int yOffset = initialYOffset + (row * Volume.photoSpacing(volume.grid, yearbook.settings.width, yearbook.settings.height).y) + ((row + 1) * element.getBounds(yearbook.settings.width, yearbook.settings.height).height);
@@ -4413,6 +4415,7 @@ public class Creator {
 					Person p = grade.people.get(index);
 					String path = volume.path + File.separator + p.folderName + File.separator + p.fileName;
 					YearbookPSPAElement element = new YearbookPSPAElement(display, path, yearbook.settings.width, yearbook.settings.height, volume);
+					element.nameReversed = volume.nameReversed;
 					int row = j / volume.grid.x;
 					int col = j % volume.grid.x;
 					int yOffset = initialYOffset + (row * Volume.photoSpacing(volume.grid, yearbook.settings.width, yearbook.settings.height).y) + ((row + 1) * element.getBounds(yearbook.settings.width, yearbook.settings.height).height);
@@ -5587,7 +5590,9 @@ public class Creator {
 
 				Color c = e.text.getColor(display);
 				gc.setFont(f);
-				String name = e.person.firstName + " " + e.person.lastName;
+				String name = "";
+				if (e.nameReversed) name = e.person.lastName + ", " + e.person.firstName;
+				else name = e.person.firstName + " " + e.person.lastName;
 
 
 				Point nameExtent = gc.textExtent(name);
