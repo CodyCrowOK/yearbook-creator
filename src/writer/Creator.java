@@ -4,10 +4,8 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -61,7 +59,7 @@ import reader.ProductKey;
 public class Creator {
 
 	//Meta information
-	public static final String VERSION = "0.10";
+	public static final String VERSION = "1.00";
 	public static final String COMPANY_NAME = "Digital Express";
 	public static final String SOFTWARE_NAME = "Yearbook Designer";
 
@@ -6344,8 +6342,8 @@ public class Creator {
 	}
 
 	public static void main(String[] args) {
-		new Creator();
-		//reader.Reader.main(null);
+		//new Creator();
+		reader.Reader.main(null);
 		//ProductKey.main();
 	}
 

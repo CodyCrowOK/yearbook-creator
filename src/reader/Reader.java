@@ -60,7 +60,7 @@ import writer.YearbookImages;
  */
 public class Reader {
 	public static final boolean DEMO = false;
-	public static final boolean PRODUCTION = false;
+	public static final boolean PRODUCTION = true;
 
 	Config config;
 
