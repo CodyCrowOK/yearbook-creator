@@ -324,6 +324,13 @@ public class Creator {
 							/*for (int i : selectedPageIndices) {
 								stack.push(new PageCommand(Commands.REMOVE_PAGE, yearbook.page(i), i, -1));	
 							}*/
+							if (yearbook.size() == 1) {
+								MessageBox box = new MessageBox(shell, SWT.ICON_WARNING);
+								box.setText("Invalid action");
+								box.setMessage("Action denied:\n\tYou must have at least one page at all times.");
+								box.open();
+								return;
+							}
 							yearbook.removePages(selectedPageIndices);
 							refresh();
 						}
@@ -1098,6 +1105,87 @@ public class Creator {
 							}
 							
 						});
+						
+						MenuItem trans = new MenuItem(menu, SWT.PUSH);
+						trans.setText("Adjust Name Offset");
+						trans.addListener(SWT.Selection, new Listener() {
+
+							@Override
+							public void handleEvent(Event event) {
+								Shell window = new Shell(shell, SWT.SHELL_TRIM);
+								window.setLayout(new ColumnLayout());
+								
+								Label xLbl = new Label(window, SWT.NONE);
+								xLbl.setText("x:");
+								
+								Spinner x = new Spinner(window, SWT.NONE);
+								x.setMinimum(-10000);
+								x.setMaximum(10000);
+								
+								Label yLbl = new Label(window, SWT.NONE);
+								yLbl.setText("y:");
+								
+								Spinner y = new Spinner(window, SWT.NONE);
+								y.setMinimum(-10000);
+								y.setMaximum(10000);
+								
+								Button ok = new Button(window, SWT.PUSH);
+								ok.setText("OK");
+								ok.addListener(SWT.Selection, new Listener() {
+
+									@Override
+									public void handleEvent(Event event) {
+										window.close();
+										window.dispose();
+									}
+									
+								});
+								
+								x.addModifyListener(new ModifyListener() {
+
+									@Override
+									public void modifyText(ModifyEvent e) {
+										try {
+											int x1 = Integer.parseInt(x.getText());
+											int y1 = Integer.parseInt(y.getText());
+											//yearbook.pspaTranslation.set(x1, y1, yearbook.settings.width, yearbook.settings.height);
+											((YearbookPSPAElement) yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height)).textTranslation.set(x1, y1, yearbook.settings.width, yearbook.settings.height);
+											refreshNoPageList();
+										} catch (Throwable t) {
+											return;
+										}
+										
+										
+									}
+									
+								});
+								
+								y.addModifyListener(new ModifyListener() {
+
+									@Override
+									public void modifyText(ModifyEvent e) {
+										try {
+											int x1 = Integer.parseInt(x.getText());
+											int y1 = Integer.parseInt(y.getText());
+											//yearbook.pspaTranslation.set(x1, y1, yearbook.settings.width, yearbook.settings.height);
+											((YearbookPSPAElement) yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height)).textTranslation.set(x1, y1, yearbook.settings.width, yearbook.settings.height);
+											refreshNoPageList();
+										} catch (Throwable t) {
+											return;
+										}
+										
+										
+									}
+									
+								});
+								
+								window.setMinimumSize(100, 100);
+								window.pack();
+								window.open();
+								
+							}
+							
+						});
 					}
 
 					new MenuItem(menu, SWT.SEPARATOR);
@@ -1761,6 +1849,86 @@ public class Creator {
 							public void handleEvent(Event event) {
 								element.useTwoLinesForName = !element.useTwoLinesForName;
 								twoLineItem.setSelection(element.useTwoLinesForName);
+							}
+							
+						});
+						MenuItem trans = new MenuItem(menu, SWT.PUSH);
+						trans.setText("Adjust Name Offset");
+						trans.addListener(SWT.Selection, new Listener() {
+
+							@Override
+							public void handleEvent(Event event) {
+								Shell window = new Shell(shell, SWT.SHELL_TRIM);
+								window.setLayout(new ColumnLayout());
+								
+								Label xLbl = new Label(window, SWT.NONE);
+								xLbl.setText("x:");
+								
+								Spinner x = new Spinner(window, SWT.NONE);
+								x.setMinimum(-10000);
+								x.setMaximum(10000);
+								
+								Label yLbl = new Label(window, SWT.NONE);
+								yLbl.setText("y:");
+								
+								Spinner y = new Spinner(window, SWT.NONE);
+								y.setMinimum(-10000);
+								y.setMaximum(10000);
+								
+								Button ok = new Button(window, SWT.PUSH);
+								ok.setText("OK");
+								ok.addListener(SWT.Selection, new Listener() {
+
+									@Override
+									public void handleEvent(Event event) {
+										window.close();
+										window.dispose();
+									}
+									
+								});
+								
+								x.addModifyListener(new ModifyListener() {
+
+									@Override
+									public void modifyText(ModifyEvent e) {
+										try {
+											int x1 = Integer.parseInt(x.getText());
+											int y1 = Integer.parseInt(y.getText());
+											//yearbook.pspaTranslation.set(x1, y1, yearbook.settings.width, yearbook.settings.height);
+											((YearbookPSPAElement) yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height)).textTranslation.set(x1, y1, yearbook.settings.width, yearbook.settings.height);
+											refreshNoPageList();
+										} catch (Throwable t) {
+											return;
+										}
+										
+										
+									}
+									
+								});
+								
+								y.addModifyListener(new ModifyListener() {
+
+									@Override
+									public void modifyText(ModifyEvent e) {
+										try {
+											int x1 = Integer.parseInt(x.getText());
+											int y1 = Integer.parseInt(y.getText());
+											//yearbook.pspaTranslation.set(x1, y1, yearbook.settings.width, yearbook.settings.height);
+											((YearbookPSPAElement) yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height)).textTranslation.set(x1, y1, yearbook.settings.width, yearbook.settings.height);
+											refreshNoPageList();
+										} catch (Throwable t) {
+											return;
+										}
+										
+										
+									}
+									
+								});
+								
+								window.setMinimumSize(100, 100);
+								window.pack();
+								window.open();
+								
 							}
 							
 						});
@@ -4651,7 +4819,7 @@ public class Creator {
 
 	private void getPSPAGradeOrder(Volume volume) {
 		Shell window = new Shell(shell, SWT.SHELL_TRIM);
-		window.setText("Order Grades");
+		window.setText("Select Grade");
 		window.setLayout(new ColumnLayout());
 
 		List list = new List(window, SWT.MULTI);
@@ -4664,7 +4832,7 @@ public class Creator {
 		moveLayout.makeColumnsEqualWidth = true;
 		moveLayout.numColumns = 2;
 		moveComposite.setLayout(moveLayout);
-
+		/*
 		Button up = new Button(moveComposite, SWT.PUSH);
 		up.setText("Move Up");
 		up.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
@@ -4672,9 +4840,6 @@ public class Creator {
 		Button down = new Button(moveComposite, SWT.PUSH);
 		down.setText("Move Down");
 		down.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-
-		Button btn = new Button(window, SWT.PUSH);
-		btn.setText("Set Grade Order");
 
 		up.addListener(SWT.Selection, new Listener() {
 
@@ -4705,16 +4870,27 @@ public class Creator {
 			}
 
 		});
+		*/
+
+		Button btn = new Button(window, SWT.PUSH);
+		btn.setText("Insert Grade");
 
 		btn.addListener(SWT.Selection, new Listener() {
 
 			@Override
 			public void handleEvent(Event event) {
 				ArrayList<String> items = new ArrayList<String>();
+				/*
 				while (list.getItemCount() > 0) {
 					String item = list.getItem(0);
+					System.out.println(list.getItem(list.getSelectionIndex()));
 					list.remove(0);
 					items.add(item);
+				}*/
+				try {
+					items.add(list.getItem(list.getSelectionIndex()));
+				} catch (Exception e) {
+					return;
 				}
 				generatePSPAPages(volume, items);
 				window.close();
@@ -5965,12 +6141,7 @@ public class Creator {
 				double multiplicand = (double) pageWidth / e.pageWidth;
 
 				Font f = e.text.getFont(display);
-				/*if (isExport) {
-					FontData fd = f.getFontData()[0];
-					fd.setHeight((int) (fd.getHeight() * (300.0 / 72.0)));
-					f.dispose();
-					f = new Font(display, fd);
-				}*/
+
 				FontData fd = f.getFontData()[0];
 				fd.setHeight((int) (fd.getHeight() * multiplicand));
 				f.dispose();
@@ -5991,8 +6162,8 @@ public class Creator {
 
 				Point nameExtent = gc.textExtent(name);
 
-				int nameX = e.getBounds(pageWidth, pageHeight).x + ((e.getBounds(pageWidth, pageHeight).width - nameExtent.x) / 2) + yearbook.pspaTranslation.getDiff(pageWidth, pageHeight).x;
-				int nameY = (e.getBounds(pageWidth, pageHeight).y + e.getBounds(pageWidth, pageHeight).height) + Math.abs((e.margins.y - nameExtent.y) / 2) + yearbook.pspaTranslation.getDiff(pageWidth, pageHeight).y;
+				int nameX = e.getBounds(pageWidth, pageHeight).x + ((e.getBounds(pageWidth, pageHeight).width - nameExtent.x) / 2) + yearbook.pspaTranslation.getDiff(pageWidth, pageHeight).x + e.textTranslation.getDiff(pageWidth, pageHeight).x;
+				int nameY = (e.getBounds(pageWidth, pageHeight).y + e.getBounds(pageWidth, pageHeight).height) + Math.abs((e.margins.y - nameExtent.y) / 2) + yearbook.pspaTranslation.getDiff(pageWidth, pageHeight).y + e.textTranslation.getDiff(pageWidth, pageHeight).y;
 				e.text.setBounds(new Rectangle(nameX, nameY, nameExtent.x, nameExtent.y));
 				//e.text.setBounds(new Rectangle(0,0,30,30));
 
@@ -6342,8 +6513,8 @@ public class Creator {
 	}
 
 	public static void main(String[] args) {
-		//new Creator();
-		reader.Reader.main(null);
+		new Creator();
+		//reader.Reader.main(null);
 		//ProductKey.main();
 	}
 

@@ -17,6 +17,7 @@ public class YearbookPSPAElement extends YearbookImageElement implements Seriali
 	public YearbookTextElement text;
 	public Person person;
 	public Point margins;
+	public Translation textTranslation;
 	public boolean nameReversed;
 	public boolean useTwoLinesForName;
 	public Deque<Video> videos;
@@ -25,12 +26,14 @@ public class YearbookPSPAElement extends YearbookImageElement implements Seriali
 		super(display, fileName, pageWidth, pageHeight);
 		videos = new ArrayDeque<Video>();
 		text = new YearbookTextElement(pageWidth, pageHeight);
+		textTranslation = new Translation();
 	}
 
 	public YearbookPSPAElement(Display display, ImageData imageData, int pageWidth, int pageHeight) {
 		super(display, imageData, pageWidth, pageHeight);
 		videos = new ArrayDeque<Video>();
 		text = new YearbookTextElement(pageWidth, pageHeight);
+		textTranslation = new Translation();
 	}
 	
 	public YearbookPSPAElement(Display display, String fileName, int pageWidth, int pageHeight, Volume volume) {
