@@ -7,8 +7,10 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -59,7 +61,7 @@ import reader.ProductKey;
 public class Creator {
 
 	//Meta information
-	public static final String VERSION = "1.01";
+	public static final String VERSION = "1.02";
 	public static final String COMPANY_NAME = "Digital Express";
 	public static final String SOFTWARE_NAME = "Yearbook Designer";
 
@@ -114,6 +116,7 @@ public class Creator {
 	private MenuItem insertGeneratePSPAItem;
 	private MenuItem insertPageNumbersItem;
 	private MenuItem insertToCItem;
+	private MenuItem insertNamesItem;
 	private MenuItem pageMenuItem;
 	private Menu pageMenu;
 	private MenuItem pageMirrorItem;
@@ -210,7 +213,7 @@ public class Creator {
 
 		this.buildToolbar();	
 
-		gridLayout = new GridLayout(8, true);
+		gridLayout = new GridLayout(8, false);
 		content = new Composite(shell, SWT.NONE);
 		content.setLayout(gridLayout);
 
@@ -752,7 +755,7 @@ public class Creator {
 		
 						@Override
 						public void run() {
-							if (settings.autosave) fileSaveItem.getListeners(SWT.Selection)[0].handleEvent(new Event());
+							if (settings.autosave && !saveFileName.isEmpty()) fileSaveItem.getListeners(SWT.Selection)[0].handleEvent(new Event());
 						}
 						
 					});
@@ -3132,6 +3135,9 @@ public class Creator {
 		insertGeneratePSPAItem = new MenuItem(insertMenu, SWT.PUSH);
 		insertGeneratePSPAItem.setText("Generate Pages from Volume...");
 
+		insertNamesItem = new MenuItem(insertMenu, SWT.PUSH);
+		insertNamesItem.setText("Insert Names from PSPA Volume");
+
 		new MenuItem(insertMenu, SWT.SEPARATOR);
 
 		insertPageNumbersItem = new MenuItem(insertMenu, SWT.PUSH);
@@ -3139,7 +3145,7 @@ public class Creator {
 
 		insertToCItem = new MenuItem(insertMenu, SWT.PUSH);
 		insertToCItem.setText("Clear Page Numbers");
-
+		
 		//Create Page Menu
 		pageMenuItem = new MenuItem(menubar, SWT.CASCADE);
 		pageMenuItem.setText("&Page");
@@ -4247,6 +4253,7 @@ public class Creator {
 							box.setText("Error");
 							box.setMessage("An unknown error occurred.\n\t" + e);
 							box.open();
+							e.printStackTrace();
 						}
 						
 						if (nameRevCombo.getSelectionIndex() > 0) {
@@ -4339,6 +4346,37 @@ public class Creator {
 				refreshNoPageList();
 			}
 
+		});
+		
+		insertNamesItem.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				Deque<YearbookTextElement> names = new ArrayDeque<YearbookTextElement>();
+				for (YearbookElement e : yearbook.page(yearbook.activePage).getElements()) {
+					if (!e.isPSPA()) continue;
+					YearbookPSPAElement ype = (YearbookPSPAElement) e;
+					YearbookTextElement yte = (YearbookTextElement) (ype.text.copy());
+					yte.text = ype.nameReversed ? ype.person.lastName + ", " + ype.person.firstName : ype.person.firstName + " " + ype.person.lastName;
+					if (e.isPSPA()) names.add(yte);
+					
+				}
+				
+				int count = names.size();
+				double newY = .1;
+				
+				while (!names.isEmpty()) {
+					newY = ((double) names.size() + 2 / count) - .2;
+					if (newY > 1.0) newY = .9;
+					YearbookTextElement element = names.removeLast();
+					element.x = .1;
+					element.y = newY;
+					yearbook.page(yearbook.activePage).addElement(element);
+				}
+				
+				refresh();
+			}
+			
 		});
 
 		pageMirrorItem.addListener(SWT.Selection, new Listener() {
@@ -4905,8 +4943,11 @@ public class Creator {
 
 	private void generatePSPAPages(Volume volume, ArrayList<String> items) {
 
-		int initialXOffset = (int) ((1.0 / 8.5) * yearbook.settings.width) / 4;
+		int initialXOffset = (int) ((1.0 / 8.5) * yearbook.settings.width) / 2;
 		int initialYOffset = (int) ((1.5 / 11.0) * yearbook.settings.height) / 2;
+		initialXOffset += Volume.photoSpacing(volume.grid, yearbook.settings.width, yearbook.settings.height).x;
+		//initialYOffset /= 2;
+		//initialXOffset = initialYOffset = 0;
 
 		for (String gradeName : items) {
 			Grade grade = volume.getGradeByName(gradeName);
@@ -4923,29 +4964,36 @@ public class Creator {
 
 					//YearbookImageElement element = new YearbookImageElement(display, fileName, yearbook.settings.width, yearbook.settings.height);
 					//yearbook.page(yearbook.activePage).addElement(element);
-
-					for (int j = i == 0 ? volume.offset : 0; j < photosPerPage && j < h.people.size() + (i == 0 ? volume.offset : 0) - 1; j++) {
-
-						int index = j - volume.offset + (i * photosPerPage);
-						if (index > h.people.size() - 1) break;
-
-						Person p = h.people.get(index);
-						//System.out.println(volume.path);
-						//System.out.println(p.folderName);
-						//System.out.println(p.fileName);
-						String path = volume.path + File.separator + p.folderName + File.separator + p.fileName;
-						YearbookPSPAElement element = new YearbookPSPAElement(display, path, yearbook.settings.width, yearbook.settings.height, volume);
-						element.nameReversed = volume.nameReversed;
-						int row = j / volume.grid.x;
-						int col = j % volume.grid.x;
-						int yOffset = initialYOffset + (row * Volume.photoSpacing(volume.grid, yearbook.settings.width, yearbook.settings.height).y) + ((row + 1) * element.getBounds(yearbook.settings.width, yearbook.settings.height).height);
-						int xOffset = initialXOffset + (col * Volume.photoSpacing(volume.grid, yearbook.settings.width, yearbook.settings.height).x) + ((col + 1) * element.getBounds(yearbook.settings.width, yearbook.settings.height).width);
-						element.setLocationRelative(xOffset, yOffset);
-						//element.text.text = p.firstName + " " + p.lastName;
-						element.person = p;
-						page.addElement(element);
+					try {
+						for (int j = i == 0 ? volume.offset : 0; j < photosPerPage && j < h.people.size() + (i == 0 ? volume.offset : 0) - 1; j++) {
+		
+							int index = j - volume.offset + (i * photosPerPage);
+							if (index > h.people.size() - 1) break;
+		
+							Person p = h.people.get(index);
+							//System.out.println(volume.path);
+							//System.out.println(p.folderName);
+							//System.out.println(p.fileName);
+							String path = volume.path + File.separator + p.folderName + File.separator + p.fileName;
+							YearbookPSPAElement element = new YearbookPSPAElement(display, path, yearbook.settings.width, yearbook.settings.height, volume);
+							element.nameReversed = volume.nameReversed;
+							int row = j / volume.grid.x;
+							int col = j % volume.grid.x;
+							int yOffset = initialYOffset + ((row + 1) * Volume.photoSpacing(volume.grid, yearbook.settings.width, yearbook.settings.height).y) + ((row + 1) * element.getBounds(yearbook.settings.width, yearbook.settings.height).height);
+							int xOffset = initialXOffset + ((col + 1) * Volume.photoSpacing(volume.grid, yearbook.settings.width, yearbook.settings.height).x) + ((col + 1) * element.getBounds(yearbook.settings.width, yearbook.settings.height).width);
+							
+							element.setLocationRelative(xOffset, yOffset);
+							//element.setScaleByPixels(Volume.photoSize(volume.grid, yearbook.settings.width, yearbook.settings.height), yearbook.settings.width, yearbook.settings.height);
+							//element.text.text = p.firstName + " " + p.lastName;
+							element.person = p;
+							page.addElement(element);
+						}
+					} catch (Exception e) {
+						MessageBox box = new MessageBox(shell, SWT.ERROR | SWT.OK);
+						box.setText("Error");
+						box.setMessage("Could not read photos from PSPA volume. Did you eject your PSPA CD?");
+						box.open();
 					}
-
 					yearbook.addPage(page);
 					//stack.push(new PageCommand(Commands.ADD_PAGE, page, -1, yearbook.size() - 1));
 				}
@@ -4970,9 +5018,11 @@ public class Creator {
 					element.nameReversed = volume.nameReversed;
 					int row = j / volume.grid.x;
 					int col = j % volume.grid.x;
-					int yOffset = initialYOffset + (row * Volume.photoSpacing(volume.grid, yearbook.settings.width, yearbook.settings.height).y) + ((row + 1) * element.getBounds(yearbook.settings.width, yearbook.settings.height).height);
-					int xOffset = initialXOffset + (col * Volume.photoSpacing(volume.grid, yearbook.settings.width, yearbook.settings.height).x) + ((col + 1) * element.getBounds(yearbook.settings.width, yearbook.settings.height).width);
+					int yOffset = initialYOffset + (row * Volume.photoSpacing(volume.grid, yearbook.settings.width, yearbook.settings.height).y) + ((row) * element.getBounds(yearbook.settings.width, yearbook.settings.height).height);
+					int xOffset = initialXOffset + (col * Volume.photoSpacing(volume.grid, yearbook.settings.width, yearbook.settings.height).x) + ((col) * element.getBounds(yearbook.settings.width, yearbook.settings.height).width);
+					//element.setScaleByPixels(Volume.photoSize(volume.grid, yearbook.settings.width, yearbook.settings.height), yearbook.settings.width, yearbook.settings.height);
 					element.setLocationRelative(xOffset, yOffset);
+					
 					//element.text.text = p.firstName + " " + p.lastName;
 					element.person = p;
 					page.addElement(element);
@@ -6486,7 +6536,11 @@ public class Creator {
 	}
 
 	public void refreshNoPageList() {
-		updateCanvas();
+		try {
+			updateCanvas();
+		} catch (SWTException e) {
+			
+		}
 		shell.layout();
 		refreshYearbookName();
 	}

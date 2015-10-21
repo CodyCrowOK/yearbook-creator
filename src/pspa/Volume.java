@@ -114,11 +114,15 @@ public class Volume implements Serializable {
 				grades.add(grade);
 			}
 			
-			String firstName = tokens[columns.get(Keys.FIRSTNAME.toString())];
-			String lastName = tokens[columns.get(Keys.LASTNAME.toString())];
-			String fileName = tokens[columns.get(Keys.FILENAME.toString())];
-			String folderName = tokens[columns.get(Keys.FOLDER.toString())];
+			String firstName, lastName, fileName, folderName;
+			firstName = lastName = fileName = folderName = "";
 			
+			
+			if (tokens.length > columns.get(Keys.FIRSTNAME.toString())) firstName = tokens[columns.get(Keys.FIRSTNAME.toString())];
+			if (tokens.length > columns.get(Keys.LASTNAME.toString())) lastName = tokens[columns.get(Keys.LASTNAME.toString())];
+			if (tokens.length > columns.get(Keys.FILENAME.toString())) fileName = tokens[columns.get(Keys.FILENAME.toString())];
+			if (tokens.length > columns.get(Keys.FOLDER.toString())) folderName = tokens[columns.get(Keys.FOLDER.toString())];
+				
 			Person person;
 
 			try {
@@ -190,13 +194,17 @@ public class Volume implements Serializable {
 		int adjustedHeight = pageHeight;
 		int adjustedWidth = pageWidth;
 		
-		int photoXWidth = (int) ((double) adjustedWidth / (grid.x));
-		int photoYWidth = (int) ((double) adjustedHeight / (grid.y));
+		int photoXWidth = (int) ((double) adjustedWidth / (grid.x + 1));
+		int photoYWidth = (int) ((double) adjustedHeight / (grid.y + 1));
 		
-		int marginX = (int) (1 * (double) photoXWidth / (grid.x)); 
-		int marginY = (int) (1 * (double) photoYWidth / (grid.y));
+		int marginX = (int) ((double) photoXWidth / (grid.x + 1)); 
+		int marginY = (int) ((double) photoYWidth / (grid.y + 1));
 		
 		return new Point(marginX, marginY);
+	}
+	
+	public static Point photoSize(Point grid, int pageWidth, int pageHeight) {
+		return new Point((int) ((double) (pageWidth - (pageWidth * (1.0 / 8.5))) / (grid.x + 1)), (int) ((pageHeight - (pageHeight * (1.0 / 11.0))) / (grid.y + 1)));
 	}
 	
 	@Override

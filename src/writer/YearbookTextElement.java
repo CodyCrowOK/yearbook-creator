@@ -114,6 +114,11 @@ public class YearbookTextElement extends YearbookElement implements Serializable
 		this.y = (double) y / this.pageHeight;
 		
 	}
+	
+	public void setYRelative(int y, int pageHeight) {
+		this.y = (double) y / pageHeight;
+	}
+	
 	@Override
 	public void resize(Display display, int x, int y) {
 		// TODO Auto-generated method stub

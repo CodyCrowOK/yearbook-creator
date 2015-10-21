@@ -45,8 +45,8 @@ public class YearbookPSPAElement extends YearbookImageElement implements Seriali
 	private void computeBounds(Volume volume, int pageWidth, int pageHeight) {
 		margins = Volume.photoSpacing(volume.grid, pageWidth, pageHeight);
 		int width = margins.x * (volume.grid.x - 1);
-		this.setScaleRelative((double) 1.4 * width / pageWidth);
-		
+		//this.setScaleRelative((double) 1.4 * width / pageWidth);
+		this.setScaleByPixels(Volume.photoSize(volume.grid, pageWidth, pageHeight), pageWidth, pageHeight);
 	}
 	
 	@Override
@@ -67,6 +67,19 @@ public class YearbookPSPAElement extends YearbookImageElement implements Seriali
 	@Override
 	public boolean isClickable() {
 		return videos.size() > 0;
+	}
+
+	public void setScaleByPixels(Point photoSpacing, int pageWidth, int pageHeight) {
+		double xRatio = (double) photoSpacing.x / this.getBounds(pageWidth, pageHeight).width;
+		double yRatio = (double) photoSpacing.y / this.getBounds(pageWidth, pageHeight).height;
+		this.scale = xRatio < yRatio ? xRatio : yRatio;
+		System.out.println(scale);
+	}
+
+	public void setScaleByGrid(Point grid, int pageWidth, int pageHeight) {
+		double size = 1.0 / (grid.x + 1.0);
+		int pixels = (int) (size * pageWidth);
+		this.scale = (pixels * this.scale) / this.getBounds(pageWidth, pageHeight).width;
 	}
 
 }
