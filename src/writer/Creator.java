@@ -46,6 +46,8 @@ import command.Command;
 import command.Commands;
 import command.ElementCommand;
 import command.Stack;
+import pdf.PDFUtils;
+import pspa.BoxModel;
 import pspa.Grade;
 import pspa.HomeRoom;
 import pspa.PSPAIndexNotFoundException;
@@ -61,7 +63,7 @@ import reader.ProductKey;
 public class Creator {
 
 	//Meta information
-	public static final String VERSION = "1.02";
+	public static final String VERSION = "1.02a";
 	public static final String COMPANY_NAME = "Digital Express";
 	public static final String SOFTWARE_NAME = "Yearbook Designer";
 
@@ -355,7 +357,7 @@ public class Creator {
 			if (!display.readAndDispatch())	display.sleep();
 		}
 		display.dispose();
-
+		System.exit(0);
 	}
 
 	private void buildExpandBar() {
@@ -4180,7 +4182,7 @@ public class Creator {
 
 					@Override
 					public void handleEvent(Event event) {
-						openPSPATextDialog(volume.textElement);
+						openPSPATextDialog(volume.textElement, window);
 
 					}
 
@@ -4942,6 +4944,8 @@ public class Creator {
 	}
 
 	private void generatePSPAPages(Volume volume, ArrayList<String> items) {
+		
+		
 
 		int initialXOffset = (int) ((1.0 / 8.5) * yearbook.settings.width) / 2;
 		int initialYOffset = (int) ((1.5 / 11.0) * yearbook.settings.height) / 2;
@@ -4949,18 +4953,17 @@ public class Creator {
 		//initialYOffset /= 2;
 		//initialXOffset = initialYOffset = 0;
 
+		BoxModel box = new BoxModel(volume.grid.x, volume.grid.y, (2.0 / 8.5), (3 / 11.0), 0, 0);
+		
 		for (String gradeName : items) {
 			Grade grade = volume.getGradeByName(gradeName);
-
-			//First, add a blank page for the grade.
-			yearbook.addPage("Grade " + gradeName);
 
 			for (HomeRoom h : grade.homeRooms) {
 				int photosPerPage = volume.grid.x * volume.grid.y;
 				int pageCount = (int) Math.ceil(((double) h.people.size() + volume.offset) / photosPerPage);
 
 				for (int i = 0; i < pageCount; i++) {
-					YearbookPage page = new YearbookPage(h.name);
+					YearbookPage page = new YearbookPage(grade.name + ": " + h.name);
 
 					//YearbookImageElement element = new YearbookImageElement(display, fileName, yearbook.settings.width, yearbook.settings.height);
 					//yearbook.page(yearbook.activePage).addElement(element);
@@ -4982,17 +4985,23 @@ public class Creator {
 							int yOffset = initialYOffset + ((row + 1) * Volume.photoSpacing(volume.grid, yearbook.settings.width, yearbook.settings.height).y) + ((row + 1) * element.getBounds(yearbook.settings.width, yearbook.settings.height).height);
 							int xOffset = initialXOffset + ((col + 1) * Volume.photoSpacing(volume.grid, yearbook.settings.width, yearbook.settings.height).x) + ((col + 1) * element.getBounds(yearbook.settings.width, yearbook.settings.height).width);
 							
-							element.setLocationRelative(xOffset, yOffset);
+							//element.setLocationRelative(xOffset, yOffset);
 							//element.setScaleByPixels(Volume.photoSize(volume.grid, yearbook.settings.width, yearbook.settings.height), yearbook.settings.width, yearbook.settings.height);
 							//element.text.text = p.firstName + " " + p.lastName;
+							Point pos = box.cellPosition(yearbook.settings.width, yearbook.settings.height, row, col);
+							element.setLocationRelative(pos.x, pos.y);
+							
+							Point dim = box.cellDimensions(yearbook.settings.width, yearbook.settings.height);
+							element.scale = (double) dim.x / element.getBounds(yearbook.settings.width, yearbook.settings.height).width;
+							
 							element.person = p;
 							page.addElement(element);
 						}
 					} catch (Exception e) {
-						MessageBox box = new MessageBox(shell, SWT.ERROR | SWT.OK);
-						box.setText("Error");
-						box.setMessage("Could not read photos from PSPA volume. Did you eject your PSPA CD?");
-						box.open();
+						MessageBox mbox = new MessageBox(shell, SWT.ERROR | SWT.OK);
+						mbox.setText("Error");
+						mbox.setMessage("Could not read photos from PSPA volume. Did you eject your PSPA CD?");
+						mbox.open();
 					}
 					yearbook.addPage(page);
 					//stack.push(new PageCommand(Commands.ADD_PAGE, page, -1, yearbook.size() - 1));
@@ -5002,7 +5011,7 @@ public class Creator {
 			int photosPerPage = volume.grid.x * volume.grid.y;
 			int pageCount = (int) Math.ceil((double) grade.people.size() / photosPerPage);
 			for (int i = 0; i < pageCount; i++) {
-				YearbookPage page = new YearbookPage("No home room");
+				YearbookPage page = new YearbookPage("Grade " + grade.name + ": No home room");
 
 				//YearbookImageElement element = new YearbookImageElement(display, fileName, yearbook.settings.width, yearbook.settings.height);
 				//yearbook.page(yearbook.activePage).addElement(element);
@@ -5010,7 +5019,7 @@ public class Creator {
 				for (int j = 0; j < photosPerPage && j < grade.people.size() - 1; j++) {
 
 					int index = j + (i * photosPerPage);
-					if (index > grade.people.size() - 1) break; 
+					if (index > grade.people.size() - 1) break;
 
 					Person p = grade.people.get(index);
 					String path = volume.path + File.separator + p.folderName + File.separator + p.fileName;
@@ -5020,10 +5029,20 @@ public class Creator {
 					int col = j % volume.grid.x;
 					int yOffset = initialYOffset + (row * Volume.photoSpacing(volume.grid, yearbook.settings.width, yearbook.settings.height).y) + ((row) * element.getBounds(yearbook.settings.width, yearbook.settings.height).height);
 					int xOffset = initialXOffset + (col * Volume.photoSpacing(volume.grid, yearbook.settings.width, yearbook.settings.height).x) + ((col) * element.getBounds(yearbook.settings.width, yearbook.settings.height).width);
-					//element.setScaleByPixels(Volume.photoSize(volume.grid, yearbook.settings.width, yearbook.settings.height), yearbook.settings.width, yearbook.settings.height);
-					element.setLocationRelative(xOffset, yOffset);
+					int xMarginPixels = (int) (box.getxMargin() * yearbook.settings.width);
+					int yMarginPixels = (int) (box.getyMargin() * yearbook.settings.height);
+					int xPaddingPixels = (int) (box.getxPadding() * yearbook.settings.width);
+					int yPaddingPixels = (int) (box.getyPadding() * yearbook.settings.height);
+					Point pos = box.cellPosition(yearbook.settings.width, yearbook.settings.height, row, col);
+					element.setLocationRelative(pos.x, pos.y);
+					System.out.println("pos.x: " + pos.x + " pos.y:" + pos.y);
+					//System.out.println("padding: " + box.getxPadding() + " " + box.getyPadding());
 					
-					//element.text.text = p.firstName + " " + p.lastName;
+					Point dim = box.cellDimensions(yearbook.settings.width, yearbook.settings.height);
+					//element.scale = ((double) element.getBounds(yearbook.settings.width, yearbook.settings.height).width / dim.x) * ((double) box.dimensions(yearbook.settings.width, yearbook.settings.height).x / yearbook.settings.width);
+					int pixelW;
+					pixelW = ((yearbook.settings.width - xMarginPixels) / box.getColumns()) - xPaddingPixels;
+					element.scale = (double) pixelW / yearbook.settings.width;
 					element.person = p;
 					page.addElement(element);
 				}
@@ -5304,9 +5323,12 @@ public class Creator {
 		textTool.open();
 
 	}
-
-	protected void openPSPATextDialog(YearbookTextElement element) {
-		Shell textTool = new Shell(display, SWT.DIALOG_TRIM);
+	
+	protected void openPSPATextDialog(YearbookTextElement element, Shell shell) {
+		Shell textTool;
+		if (shell == null) textTool = new Shell(display, SWT.DIALOG_TRIM);
+		else textTool = new Shell(shell, SWT.DIALOG_TRIM);
+		
 		textTool.setText("PSPA Text Tool");
 		GridLayout layout = new GridLayout();
 		layout.numColumns = 5;
@@ -5554,6 +5576,11 @@ public class Creator {
 
 		textTool.setSize(250, 200);
 		textTool.open();
+	}
+
+	protected void openPSPATextDialog(YearbookTextElement element) {
+		openPSPATextDialog(element, null);
+
 	}
 
 	protected String imagePicker() {

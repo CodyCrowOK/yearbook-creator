@@ -139,6 +139,7 @@ public class PDFUtils {
 		
 		ArrayList<YearbookElement> dummyList = new ArrayList<YearbookElement>();
 		UserSettings dummySettings = new UserSettings();
+		GC gc;
 		
 		/*
 		 * Do front cover
@@ -148,17 +149,17 @@ public class PDFUtils {
 		org.eclipse.swt.graphics.Image back = new org.eclipse.swt.graphics.Image(display, (int) document.getPageSize().getWidth(), (int) document.getPageSize().getHeight());
 
 		org.eclipse.swt.graphics.Image cover = yearbook.cover(display);
-		
-		GC gc = new GC(front);
-		gc.drawImage(cover, cover.getBounds().width / 2, 0, (int) Math.floor(cover.getBounds().width / 2), cover.getBounds().height, 0, 0, front.getBounds().width, front.getBounds().height);
-		gc.dispose();
-		
-		gc = new GC(back);
-		gc.drawImage(cover, 0, 0, (int) Math.floor(cover.getBounds().width / 2), cover.getBounds().height, 0, 0, back.getBounds().width, back.getBounds().height);
-		gc.dispose();
-		
-		cover.dispose();
+
 		if (yearbook.hasCover) {
+			gc = new GC(front);
+			gc.drawImage(cover, cover.getBounds().width / 2, 0, (int) Math.floor(cover.getBounds().width / 2), cover.getBounds().height, 0, 0, front.getBounds().width, front.getBounds().height);
+			gc.dispose();
+			
+			gc = new GC(back);
+			gc.drawImage(cover, 0, 0, (int) Math.floor(cover.getBounds().width / 2), cover.getBounds().height, 0, 0, back.getBounds().width, back.getBounds().height);
+			gc.dispose();
+			
+			cover.dispose();
 			ImageData imageData = front.getImageData();
 			BufferedImage bi = SWTUtils.convertToAWT(imageData);
 			Image large = Image.getInstance(bi, null);
@@ -166,8 +167,8 @@ public class PDFUtils {
 			
 			document.add(large);
 			document.newPage();
+			front.dispose();
 		}
-		front.dispose();
 			
 		for (int i = 0; i < yearbook.size(); i++) {
 			String str = "Page " + (i + 1) + " of " + yearbook.size();
