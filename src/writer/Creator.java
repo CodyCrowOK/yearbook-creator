@@ -62,7 +62,7 @@ import reader.ProductKey;
 public class Creator {
 
 	//Meta information
-	public static final String VERSION = "1.02a";
+	public static final String VERSION = "1.03";
 	public static final String COMPANY_NAME = "Digital Express";
 	public static final String SOFTWARE_NAME = "Yearbook Designer";
 
@@ -1401,6 +1401,34 @@ public class Creator {
 							yPos.setMaximum(10000);
 							yPos.setSelection((int) (box.y * 10000));
 							
+							Label mxLabel = new Label(boxShell, SWT.NONE);
+							mxLabel.setText("X-margin:");
+							Spinner mxPos = new Spinner(boxShell, SWT.NONE);
+							mxPos.setDigits(2);
+							mxPos.setMaximum(10000);
+							mxPos.setSelection((int) (box.getxMargin() * 10000));
+							
+							Label myLabel = new Label(boxShell, SWT.NONE);
+							myLabel.setText("Y-margin:");
+							Spinner myPos = new Spinner(boxShell, SWT.NONE);
+							myPos.setDigits(2);
+							myPos.setMaximum(10000);
+							myPos.setSelection((int) (box.getyMargin() * 10000));
+							
+							Label pxLabel = new Label(boxShell, SWT.NONE);
+							pxLabel.setText("X Cell Padding:");
+							Spinner pxPos = new Spinner(boxShell, SWT.NONE);
+							pxPos.setDigits(2);
+							pxPos.setMaximum(10000);
+							pxPos.setSelection((int) (box.getxPadding() * 10000));
+							
+							Label pyLabel = new Label(boxShell, SWT.NONE);
+							pyLabel.setText("Y Cell Padding:");
+							Spinner pyPos = new Spinner(boxShell, SWT.NONE);
+							pyPos.setDigits(2);
+							pyPos.setMaximum(10000);
+							pyPos.setSelection((int) (box.getyPadding() * 10000));
+							
 							Button closeButton = new Button(boxShell, SWT.PUSH);
 							closeButton.setText("Close");
 							closeButton.addListener(SWT.Selection, new Listener() {
@@ -1422,13 +1450,22 @@ public class Creator {
 										Event event) {
 									double x = xPos.getSelection() / 10000.0;
 									double y = yPos.getSelection() / 10000.0;
+									double mx = mxPos.getSelection() / 10000.0;
+									double my = myPos.getSelection() / 10000.0;
+									double px = pxPos.getSelection() / 10000.0;
+									double py = pyPos.getSelection() / 10000.0;
 									box.setPosition(x, y);
+									box.setxMargin(mx);
+									box.setyMargin(my);
+									box.setxPadding(px);
+									box.setyPadding(py);
 									redrawBoxModel();
 									//HERE
 								}
 								
 							});
 							
+							boxShell.setSize(400, 600);
 							boxShell.open();
 						}
 						
