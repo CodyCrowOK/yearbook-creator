@@ -46,7 +46,6 @@ import command.Command;
 import command.Commands;
 import command.ElementCommand;
 import command.Stack;
-import pdf.PDFUtils;
 import pspa.BoxModel;
 import pspa.Grade;
 import pspa.HomeRoom;
@@ -56,7 +55,7 @@ import pspa.Volume;
 import reader.ProductKey;
 
 /**
- * The yearbook editor
+ * The yearbook editor god object
  * @author Cody Crow
  *
  */
@@ -757,7 +756,11 @@ public class Creator {
 		
 						@Override
 						public void run() {
-							if (settings.autosave && !saveFileName.isEmpty()) fileSaveItem.getListeners(SWT.Selection)[0].handleEvent(new Event());
+							try {
+								if (settings.autosave && !saveFileName.isEmpty()) fileSaveItem.getListeners(SWT.Selection)[0].handleEvent(new Event());
+							} catch (Throwable t) {
+								//We aren't too concerned with autosave.
+							}
 						}
 						
 					});
@@ -1359,16 +1362,22 @@ public class Creator {
 					});
 
 					menu.setVisible(true);
+				} else if (event.button == 3 && yearbook.page(yearbook.activePage).hasBoxModel()) {
+					Menu menu = new Menu(shell);
+					MenuItem moveItem = new MenuItem(menu, SWT.PUSH);
+					moveItem.setText("PSPA Box Model...");
+					
+					menu.setVisible(true);
 				}
 
 				if (!(isInsertingText || event.button == SWT.BUTTON3)) switch (settings.cursorMode) {
 				case MOVE:
 					if (yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y)) {
-						if (!clipboard.elements.contains(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y))) {
+						if (!clipboard.elements.contains(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y, yearbook.settings.width, yearbook.settings.height))) {
 							if ((event.stateMask & SWT.MOD1) == SWT.MOD1) {
-								selectAnotherElement(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y));
+								selectAnotherElement(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y, yearbook.settings.width, yearbook.settings.height));
 							} else {
-								selectElement(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y));
+								selectElement(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y, yearbook.settings.width, yearbook.settings.height));
 							}
 						}
 
@@ -1382,7 +1391,7 @@ public class Creator {
 					break;
 				case ERASE:
 					if (yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y)) {
-						selectElement(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y));
+						selectElement(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y, yearbook.settings.width, yearbook.settings.height));
 						refresh();
 						MessageBox box = new MessageBox(shell, SWT.ICON_WARNING | SWT.YES | SWT.NO);
 						box.setText("Delete Element");
@@ -1398,10 +1407,10 @@ public class Creator {
 					break;
 				case RESIZE:
 					if (yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y) && (event.stateMask & SWT.MOD1) == SWT.MOD1) {
-						selectAnotherElement(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y));
+						selectAnotherElement(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y, yearbook.settings.width, yearbook.settings.height));
 						refreshNoPageList();
 					} else if (yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y)) {
-						selectElement(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y));
+						selectElement(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y, yearbook.settings.width, yearbook.settings.height));
 						refreshNoPageList();
 					} else {
 						selectElement(null);
@@ -1414,7 +1423,7 @@ public class Creator {
 					break;
 				case ROTATE:
 					if (!yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y)) break;
-					openRotateDialog(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y));
+					openRotateDialog(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y, yearbook.settings.width, yearbook.settings.height));
 					break;
 				default:
 					break;
@@ -1425,8 +1434,8 @@ public class Creator {
 				if (isInsertingText) {
 					YearbookTextElement element;
 					if (yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y)){
-						if (yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y).isText()) {
-							element = (YearbookTextElement) yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y);
+						if (yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y, yearbook.settings.width, yearbook.settings.height).isText()) {
+							element = (YearbookTextElement) yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y, yearbook.settings.width, yearbook.settings.height);
 						} else {
 							element = new YearbookTextElement(event.x, event.y, yearbook.settings.width, yearbook.settings.height);
 							yearbook.page(yearbook.activePage).addElement(element);
@@ -2130,11 +2139,11 @@ public class Creator {
 				if (!(isInsertingText || event.button == SWT.BUTTON3)) switch (settings.cursorMode) {
 				case MOVE:
 					if (yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y)) {
-						if (!clipboard.elements.contains(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y))) {
+						if (!clipboard.elements.contains(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y, yearbook.settings.width, yearbook.settings.height))) {
 							if ((event.stateMask & SWT.MOD1) == SWT.MOD1) {
-								selectAnotherElement(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y));
+								selectAnotherElement(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y, yearbook.settings.width, yearbook.settings.height));
 							} else {
-								selectElement(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y));
+								selectElement(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y, yearbook.settings.width, yearbook.settings.height));
 							}
 						}
 
@@ -2148,7 +2157,7 @@ public class Creator {
 					break;
 				case ERASE:
 					if (yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y)) {
-						selectElement(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y));
+						selectElement(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y, yearbook.settings.width, yearbook.settings.height));
 						refresh();
 						MessageBox box = new MessageBox(shell, SWT.ICON_WARNING | SWT.YES | SWT.NO);
 						box.setText("Delete Element");
@@ -2164,10 +2173,10 @@ public class Creator {
 					break;
 				case RESIZE:
 					if (yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y) && (event.stateMask & SWT.MOD1) == SWT.MOD1) {
-						selectAnotherElement(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y));
+						selectAnotherElement(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y, yearbook.settings.width, yearbook.settings.height));
 						refreshNoPageList();
 					} else if (yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y)) {
-						selectElement(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y));
+						selectElement(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y, yearbook.settings.width, yearbook.settings.height));
 						refreshNoPageList();
 					} else {
 						selectElement(null);
@@ -2180,7 +2189,7 @@ public class Creator {
 					break;
 				case ROTATE:
 					if (!yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y)) break;
-					openRotateDialog(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y));
+					openRotateDialog(yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y, yearbook.settings.width, yearbook.settings.height));
 					break;
 				default:
 					break;
@@ -2191,8 +2200,8 @@ public class Creator {
 				if (isInsertingText) {
 					YearbookTextElement element;
 					if (yearbook.page(yearbook.activePage).isElementAtPoint(event.x, event.y)){
-						if (yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y).isText()) {
-							element = (YearbookTextElement) yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y);
+						if (yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y, yearbook.settings.width, yearbook.settings.height).isText()) {
+							element = (YearbookTextElement) yearbook.page(yearbook.activePage).getElementAtPoint(event.x, event.y, yearbook.settings.width, yearbook.settings.height);
 						} else {
 							element = new YearbookTextElement(event.x, event.y, yearbook.settings.width, yearbook.settings.height);
 							yearbook.page(yearbook.activePage).addElement(element);
@@ -4419,7 +4428,7 @@ public class Creator {
 
 			@Override
 			public void handleEvent(Event event) {
-				System.out.println("Don't forget to add a page chooser.");
+				//System.out.println("Don't forget to add a page chooser.");
 				yearbook.page(yearbook.activePage).clearBackgroundImage();
 				refreshNoPageList();
 
@@ -4991,8 +5000,9 @@ public class Creator {
 							Point pos = box.cellPosition(yearbook.settings.width, yearbook.settings.height, row, col);
 							element.setLocationRelative(pos.x, pos.y);
 							
-							Point dim = box.cellDimensions(yearbook.settings.width, yearbook.settings.height);
-							element.scale = (double) dim.x / element.getBounds(yearbook.settings.width, yearbook.settings.height).width;
+							//Point dim = box.cellDimensions(yearbook.settings.width, yearbook.settings.height);
+							//element.scale = (double) dim.x / element.getBounds(yearbook.settings.width, yearbook.settings.height).width;
+							element.setScalePixels(box.itemDimensions(yearbook.settings.width, yearbook.settings.height).x, yearbook.settings.width);
 							
 							element.person = p;
 							page.addElement(element);
@@ -5003,6 +5013,9 @@ public class Creator {
 						mbox.setMessage("Could not read photos from PSPA volume. Did you eject your PSPA CD?");
 						mbox.open();
 					}
+					
+					page.addElement(new BoxModelElement(box));
+					
 					yearbook.addPage(page);
 					//stack.push(new PageCommand(Commands.ADD_PAGE, page, -1, yearbook.size() - 1));
 				}
@@ -5029,24 +5042,27 @@ public class Creator {
 					int col = j % volume.grid.x;
 					int yOffset = initialYOffset + (row * Volume.photoSpacing(volume.grid, yearbook.settings.width, yearbook.settings.height).y) + ((row) * element.getBounds(yearbook.settings.width, yearbook.settings.height).height);
 					int xOffset = initialXOffset + (col * Volume.photoSpacing(volume.grid, yearbook.settings.width, yearbook.settings.height).x) + ((col) * element.getBounds(yearbook.settings.width, yearbook.settings.height).width);
-					int xMarginPixels = (int) (box.getxMargin() * yearbook.settings.width);
-					int yMarginPixels = (int) (box.getyMargin() * yearbook.settings.height);
-					int xPaddingPixels = (int) (box.getxPadding() * yearbook.settings.width);
-					int yPaddingPixels = (int) (box.getyPadding() * yearbook.settings.height);
+					//int xMarginPixels = (int) (box.getxMargin() * yearbook.settings.width);
+					//int yMarginPixels = (int) (box.getyMargin() * yearbook.settings.height);
+					//int xPaddingPixels = (int) (box.getxPadding() * yearbook.settings.width);
+					//int yPaddingPixels = (int) (box.getyPadding() * yearbook.settings.height);
 					Point pos = box.cellPosition(yearbook.settings.width, yearbook.settings.height, row, col);
 					element.setLocationRelative(pos.x, pos.y);
-					System.out.println("pos.x: " + pos.x + " pos.y:" + pos.y);
+					//System.out.println("pos.x: " + pos.x + " pos.y:" + pos.y);
 					//System.out.println("padding: " + box.getxPadding() + " " + box.getyPadding());
 					
-					Point dim = box.cellDimensions(yearbook.settings.width, yearbook.settings.height);
+					//Point dim = box.cellDimensions(yearbook.settings.width, yearbook.settings.height);
 					//element.scale = ((double) element.getBounds(yearbook.settings.width, yearbook.settings.height).width / dim.x) * ((double) box.dimensions(yearbook.settings.width, yearbook.settings.height).x / yearbook.settings.width);
-					int pixelW;
-					pixelW = ((yearbook.settings.width - xMarginPixels) / box.getColumns()) - xPaddingPixels;
-					element.scale = (double) pixelW / yearbook.settings.width;
+					//int pixelW;
+					//pixelW = ((yearbook.settings.width - xMarginPixels) / box.getColumns()) - xPaddingPixels;
+					//element.scale = (double) pixelW / yearbook.settings.width;
+					element.setScalePixels(box.itemDimensions(yearbook.settings.width, yearbook.settings.height).x, yearbook.settings.width);
 					element.person = p;
 					page.addElement(element);
 				}
 
+				page.addElement(new BoxModelElement(box));
+				
 				yearbook.addPage(page);
 				//stack.push(new PageCommand(Commands.ADD_PAGE, page, -1, yearbook.size() - 1));
 
@@ -6536,6 +6552,24 @@ public class Creator {
 			gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
 			gc.setAlpha(0xff);
 		}
+		
+		gc.setLineWidth(1);
+		for (YearbookElement ye : yearbook.page(activePage).getElements()) {
+			if (ye instanceof BoxModelElement) {
+				BoxModelElement bme = (BoxModelElement) ye;
+				Rectangle rect = new Rectangle(bme.boxModel.position(pageWidth, pageHeight).x, bme.boxModel.position(pageWidth, pageHeight).x, bme.boxModel.dimensions(pageWidth, pageHeight).x, bme.boxModel.dimensions(pageWidth, pageHeight).y);
+				//gc.drawRectangle(rect);
+				
+				for (int i = 0; i < bme.boxModel.getRows(); i++) {
+					for (int j = 0; j < bme.boxModel.getColumns(); j++) {
+						rect = new Rectangle(bme.boxModel.cellPosition(pageWidth, pageHeight, i, j).x, bme.boxModel.cellPosition(pageWidth, pageHeight, i, j).y, bme.boxModel.cellDimensions(pageWidth, pageHeight).x, bme.boxModel.cellDimensions(pageWidth, pageHeight).y);
+						gc.setLineStyle(SWT.LINE_DASH);
+						gc.drawRectangle(rect);
+						gc.setLineStyle(SWT.LINE_SOLID);
+					}
+				}
+			}
+		}
 
 	}
 
@@ -6585,8 +6619,12 @@ public class Creator {
 	private void loadFonts() {
 		File folder = new File("icons/fonts");
 		File[] files = folder.listFiles();
-		for (File f : files) {
-			display.loadFont(f.getPath());
+		try {
+			for (File f : files) {
+				display.loadFont(f.getPath());
+			}
+		} catch (Throwable t) {
+			//If the font doesn't load, it's not our problem.
 		}
 
 		fontNames = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();

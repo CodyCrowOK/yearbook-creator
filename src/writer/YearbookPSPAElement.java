@@ -73,7 +73,6 @@ public class YearbookPSPAElement extends YearbookImageElement implements Seriali
 		double xRatio = (double) photoSpacing.x / this.getBounds(pageWidth, pageHeight).width;
 		double yRatio = (double) photoSpacing.y / this.getBounds(pageWidth, pageHeight).height;
 		this.scale = xRatio < yRatio ? xRatio : yRatio;
-		System.out.println(scale);
 	}
 
 	public void setScaleByGrid(Point grid, int pageWidth, int pageHeight) {

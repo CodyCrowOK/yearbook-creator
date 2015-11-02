@@ -58,7 +58,7 @@ public class YearbookTextElement extends YearbookElement implements Serializable
 		this.rotation = 0;
 		this.rgb = new RGB(0, 0, 0);
 		this.text = "";
-		this.size = 12;
+		this.size = 6;
 		this.fontFamily = "Arial";
 		this.pageWidth = pageWidth;
 		this.pageHeight = pageHeight;

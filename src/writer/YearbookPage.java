@@ -301,4 +301,11 @@ public class YearbookPage implements Serializable {
 			this.elements.set(findElementIndex(element), elementNew);
 		}
 	}
+
+	public boolean hasBoxModel() {
+		for (YearbookElement ye : this.getElements()) {
+			if (ye instanceof BoxModelElement) return true;
+		}
+		return false;
+	}
 }

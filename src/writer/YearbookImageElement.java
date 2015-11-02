@@ -120,6 +120,10 @@ public class YearbookImageElement extends YearbookElement implements Serializabl
 		this.scale *= scale;
 	}
 	
+	public void setScalePixels(int width, int pageWidth) {
+		this.scale = ((double) width) / pageWidth;
+	}
+	
 	public void setLocationRelative(int x, int y) {
 		this.x = (double) x / this.pageWidth;
 		this.y = (double) y / this.pageHeight;

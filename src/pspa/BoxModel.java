@@ -115,6 +115,21 @@ public class BoxModel {
 		int max = columns > rows ? columns : rows;
 		return new Point(p.x / max, p.y / max);
 	}
+	
+	public Point itemDimensions(int pageWidth, int pageHeight) {
+		Point dim = this.cellDimensions(pageWidth, pageHeight);
+		int xMarginPixels = (int) (this.getxMargin() * pageWidth);
+		int yMarginPixels = (int) (this.getyMargin() * pageHeight);
+		int xPaddingPixels = (int) (this.getxPadding() * pageWidth);
+		int yPaddingPixels = (int) (this.getyPadding() * pageHeight);
+		
+		int w = dim.x - xPaddingPixels;
+		int h = dim.y - yPaddingPixels;
+		
+		System.out.println(dim.x + " " + xPaddingPixels);
+		
+		return new Point(w, h);
+	}
 
 	public double getX() {
 		return x;
