@@ -16,6 +16,8 @@ import org.eclipse.swt.graphics.ImageLoader;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Display;
 
+import pspa.BoxModel;
+
 /**
  * Represents a single page in a yearbook.
  * @author Cody Crow
@@ -253,6 +255,31 @@ public class YearbookPage implements Serializable {
 	public void removeElement(YearbookElement selectedElement) {
 		if (this.findElementIndex(selectedElement) >= 0) this.elements.remove(this.findElementIndex(selectedElement));
 	}
+	
+	/**
+	 * Used in redrawing box model
+	 * @param elementId
+	 */
+	public YearbookElement removeElement(long elementId) {
+		for (YearbookElement e : this.getElements()) {
+			System.out.println(elementId + " ?= " + e.elementId);
+			if (e.elementId == elementId) {
+				this.removeElement(e);
+				return e;
+			}
+		}
+		return null;
+	}
+	
+	public YearbookElement getElement(long elementId) {
+		for (YearbookElement e : this.getElements()) {
+			System.out.println(elementId + " ?= " + e.elementId);
+			if (e.elementId == elementId) {
+				return e;
+			}
+		}
+		return null;
+	}
 
 	public void setBackgroundImageData(ImageData imageData) {
 		if (this.backgroundImage != null) {
@@ -307,5 +334,14 @@ public class YearbookPage implements Serializable {
 			if (ye instanceof BoxModelElement) return true;
 		}
 		return false;
+	}
+	
+	public BoxModel getBoxModel() {
+		for (YearbookElement ye : this.getElements()) {
+			if (ye instanceof BoxModelElement) {
+				return ((BoxModelElement) ye).boxModel;
+			}
+		}
+		return null;
 	}
 }

@@ -35,6 +35,7 @@ public class YearbookImageElement extends YearbookElement implements Serializabl
 	transient private Image image;
 	
 	public YearbookImageElement() {
+		generateRandomElementId();
 		this.border = new YearbookElementBorder();
 	}
 	
@@ -52,7 +53,6 @@ public class YearbookImageElement extends YearbookElement implements Serializabl
 	}
 	
 	private void construct(Display display, ImageData imageData, int pageWidth, int pageHeight) {
-		generateRandomElementId();
 		scale = 1;
 		this.imageData = imageData;
 		if (imageData == null && display == null) return;

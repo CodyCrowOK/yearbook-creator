@@ -1364,8 +1364,75 @@ public class Creator {
 					menu.setVisible(true);
 				} else if (event.button == 3 && yearbook.page(yearbook.activePage).hasBoxModel()) {
 					Menu menu = new Menu(shell);
-					MenuItem moveItem = new MenuItem(menu, SWT.PUSH);
-					moveItem.setText("PSPA Box Model...");
+					MenuItem boxItem = new MenuItem(menu, SWT.PUSH);
+					boxItem.setText("PSPA Box Model...");
+					boxItem.addListener(SWT.Selection, new Listener() {
+
+						@Override
+						public void handleEvent(
+								Event event) {
+							BoxModel box = yearbook.page(yearbook.activePage).getBoxModel();
+							int pageWidth = yearbook.settings.width;
+							int pageHeight = yearbook.settings.height;
+							
+							/*
+							if (box != null) for (YearbookElement e : yearbook.page(yearbook.activePage).getElements()) {
+								if (box.elementIds.contains(e.elementId)) System.out.println(e.elementId);
+							}
+							*/
+							
+							Shell boxShell = new Shell(shell, SWT.SHELL_TRIM);
+							boxShell.setLayout(new ColumnLayout());
+							
+							Label posLabel = new Label(boxShell, SWT.NONE);
+							posLabel.setText("Position (%):");
+							
+							Label xLabel = new Label(boxShell, SWT.NONE);
+							xLabel.setText("x:");
+							Spinner xPos = new Spinner(boxShell, SWT.NONE);
+							xPos.setDigits(2);
+							xPos.setMaximum(10000);
+							xPos.setSelection((int) (box.x * 10000));
+							
+							Label yLabel = new Label(boxShell, SWT.NONE);
+							yLabel.setText("y");
+							Spinner yPos = new Spinner(boxShell, SWT.NONE);
+							yPos.setDigits(2);
+							yPos.setMaximum(10000);
+							yPos.setSelection((int) (box.y * 10000));
+							
+							Button closeButton = new Button(boxShell, SWT.PUSH);
+							closeButton.setText("Close");
+							closeButton.addListener(SWT.Selection, new Listener() {
+
+								@Override
+								public void handleEvent(
+										Event event) {
+									boxShell.close();
+								}
+								
+							});
+							
+							Button applyButton = new Button(boxShell, SWT.PUSH);
+							applyButton.setText("Apply");
+							applyButton.addListener(SWT.Selection, new Listener() {
+
+								@Override
+								public void handleEvent(
+										Event event) {
+									double x = xPos.getSelection() / 10000.0;
+									double y = yPos.getSelection() / 10000.0;
+									box.setPosition(x, y);
+									redrawBoxModel();
+									//HERE
+								}
+								
+							});
+							
+							boxShell.open();
+						}
+						
+					});
 					
 					menu.setVisible(true);
 				}
@@ -4963,6 +5030,7 @@ public class Creator {
 		//initialXOffset = initialYOffset = 0;
 
 		BoxModel box = new BoxModel(volume.grid.x, volume.grid.y, (2.0 / 8.5), (3 / 11.0), 0, 0);
+		box.offset = volume.offset;
 		
 		for (String gradeName : items) {
 			Grade grade = volume.getGradeByName(gradeName);
@@ -5006,6 +5074,7 @@ public class Creator {
 							
 							element.person = p;
 							page.addElement(element);
+							box.elementIds.push(element.elementId);
 						}
 					} catch (Exception e) {
 						MessageBox mbox = new MessageBox(shell, SWT.ERROR | SWT.OK);
@@ -5059,6 +5128,7 @@ public class Creator {
 					element.setScalePixels(box.itemDimensions(yearbook.settings.width, yearbook.settings.height).x, yearbook.settings.width);
 					element.person = p;
 					page.addElement(element);
+					box.elementIds.push(element.elementId);
 				}
 
 				page.addElement(new BoxModelElement(box));
@@ -6629,6 +6699,32 @@ public class Creator {
 
 		fontNames = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
 		GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts();
+	}
+	
+	private void redrawBoxModel() {
+		if (!yearbook.page(yearbook.activePage).hasBoxModel()) return;
+		ArrayDeque<YearbookPSPAElement> elements = new ArrayDeque<YearbookPSPAElement>();
+		
+		for (Long id : yearbook.page(yearbook.activePage).getBoxModel().elementIds) {
+			YearbookPSPAElement element = (YearbookPSPAElement) yearbook.page(yearbook.activePage).getElement(id);
+			if (element == null) continue;
+			elements.push(element);
+		}
+		
+		BoxModel box = yearbook.page(yearbook.activePage).getBoxModel();
+		int photosPerPage = box.getRows() * box.getColumns();
+
+		for (int j = 0 + box.offset; j < photosPerPage + box.offset; j++) {
+			if (elements.isEmpty()) break;
+			YearbookPSPAElement element = elements.pollFirst();
+			
+			int row = j / box.getColumns();
+			int col = j % box.getRows();Point pos = box.cellPosition(yearbook.settings.width, yearbook.settings.height, row, col);
+			element.setLocationRelative(pos.x, pos.y);
+			element.setScalePixels(box.itemDimensions(yearbook.settings.width, yearbook.settings.height).x, yearbook.settings.width);
+		}
+		
+		refreshNoPageList();
 	}
 
 	public static void main(String[] args) {

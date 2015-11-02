@@ -1,5 +1,8 @@
 package pspa;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
+
 import org.eclipse.swt.graphics.Point;
 
 /**
@@ -11,11 +14,11 @@ public class BoxModel {
 	/**
 	 * x coordinate
 	 */
-	double x;
+	public double x;
 	/**
 	 * y coordinate
 	 */
-	double y;
+	public double y;
 	/**
 	 * rows in the grid (max of rows and columns)
 	 */
@@ -44,10 +47,18 @@ public class BoxModel {
 	 * (expressed as a ratio of the page height)
 	 */
 	double yPadding;
+	/**
+	 * a Deque of element IDs, which allows for identifying which elements
+	 * belong to a box model after the act of drawing to a page
+	 */
+	public Deque<Long> elementIds;
+	
+	public int offset;
 	
 	public BoxModel() {
 		rows = columns = 0;
 		xMargin = yMargin = xPadding = yPadding = 0;
+		elementIds = new ArrayDeque<Long>();
 	}
 	
 	public BoxModel(int rows, int columns) {
@@ -193,5 +204,10 @@ public class BoxModel {
 
 	public void setyPadding(double yPadding) {
 		this.yPadding = yPadding;
+	}
+	
+	public void setPosition(double x, double y) {
+		this.x = x;
+		this.y = y;
 	}
 }
