@@ -1416,18 +1416,11 @@ public class Creator {
 							myPos.setSelection((int) (box.getyMargin() * 10000));
 							
 							Label pxLabel = new Label(boxShell, SWT.NONE);
-							pxLabel.setText("X Cell Padding:");
+							pxLabel.setText("Cell Padding:");
 							Spinner pxPos = new Spinner(boxShell, SWT.NONE);
 							pxPos.setDigits(2);
 							pxPos.setMaximum(10000);
 							pxPos.setSelection((int) (box.getxPadding() * 10000));
-							
-							Label pyLabel = new Label(boxShell, SWT.NONE);
-							pyLabel.setText("Y Cell Padding:");
-							Spinner pyPos = new Spinner(boxShell, SWT.NONE);
-							pyPos.setDigits(2);
-							pyPos.setMaximum(10000);
-							pyPos.setSelection((int) (box.getyPadding() * 10000));
 							
 							Button closeButton = new Button(boxShell, SWT.PUSH);
 							closeButton.setText("Close");
@@ -1453,12 +1446,10 @@ public class Creator {
 									double mx = mxPos.getSelection() / 10000.0;
 									double my = myPos.getSelection() / 10000.0;
 									double px = pxPos.getSelection() / 10000.0;
-									double py = pyPos.getSelection() / 10000.0;
 									box.setPosition(x, y);
 									box.setxMargin(mx);
 									box.setyMargin(my);
 									box.setxPadding(px);
-									box.setyPadding(py);
 									redrawBoxModel();
 									//HERE
 								}
@@ -5066,7 +5057,7 @@ public class Creator {
 		//initialYOffset /= 2;
 		//initialXOffset = initialYOffset = 0;
 
-		BoxModel box = new BoxModel(volume.grid.x, volume.grid.y, (2.0 / 8.5), (3 / 11.0), 0, 0);
+		BoxModel box = new BoxModel(volume.grid.y, volume.grid.x, (2.0 / 8.5), (3 / 11.0), Measures.inchesToPercent(.5, yearbook.settings.xInches()), 0);
 		box.offset = volume.offset;
 		
 		for (String gradeName : items) {
@@ -6661,22 +6652,6 @@ public class Creator {
 		}
 		
 		gc.setLineWidth(1);
-		for (YearbookElement ye : yearbook.page(activePage).getElements()) {
-			if (ye instanceof BoxModelElement) {
-				BoxModelElement bme = (BoxModelElement) ye;
-				Rectangle rect = new Rectangle(bme.boxModel.position(pageWidth, pageHeight).x, bme.boxModel.position(pageWidth, pageHeight).x, bme.boxModel.dimensions(pageWidth, pageHeight).x, bme.boxModel.dimensions(pageWidth, pageHeight).y);
-				//gc.drawRectangle(rect);
-				
-				for (int i = 0; i < bme.boxModel.getRows(); i++) {
-					for (int j = 0; j < bme.boxModel.getColumns(); j++) {
-						rect = new Rectangle(bme.boxModel.cellPosition(pageWidth, pageHeight, i, j).x, bme.boxModel.cellPosition(pageWidth, pageHeight, i, j).y, bme.boxModel.cellDimensions(pageWidth, pageHeight).x, bme.boxModel.cellDimensions(pageWidth, pageHeight).y);
-						gc.setLineStyle(SWT.LINE_DASH);
-						gc.drawRectangle(rect);
-						gc.setLineStyle(SWT.LINE_SOLID);
-					}
-				}
-			}
-		}
 
 	}
 
@@ -6756,7 +6731,8 @@ public class Creator {
 			YearbookPSPAElement element = elements.pollFirst();
 			
 			int row = j / box.getColumns();
-			int col = j % box.getRows();Point pos = box.cellPosition(yearbook.settings.width, yearbook.settings.height, row, col);
+			int col = j % box.getRows();
+			Point pos = box.cellPosition(yearbook.settings.width, yearbook.settings.height, row, col);
 			element.setLocationRelative(pos.x, pos.y);
 			element.setScalePixels(box.itemDimensions(yearbook.settings.width, yearbook.settings.height).x, yearbook.settings.width);
 		}

@@ -57,7 +57,8 @@ public class BoxModel {
 	
 	public BoxModel() {
 		rows = columns = 0;
-		xMargin = yMargin = xPadding = yPadding = 0;
+		xMargin = yMargin = 0;
+		xPadding = yPadding = 0;
 		elementIds = new ArrayDeque<Long>();
 	}
 	
@@ -92,7 +93,14 @@ public class BoxModel {
 	public Point position(int pageWidth, int pageHeight) {
 		int x = (int) (this.x * pageWidth);
 		int y = (int) (this.y * pageHeight);
-		return new Point(x, y);
+		int offset = 0;
+		if (rows > columns) {
+			offset = (int) ((((double) (rows - columns)) / 2.0) * this.cellDimensions(pageWidth, pageHeight).x);
+			System.out.println("inside");
+		} else {
+			System.out.println(rows + " " + columns);
+		}
+		return new Point(x + offset, y);
 	}
 	
 	public Point dimensions(int pageWidth, int pageHeight) {
@@ -124,20 +132,20 @@ public class BoxModel {
 	public Point cellDimensions(int pageWidth, int pageHeight) {
 		Point p = this.dimensions(pageWidth, pageHeight);
 		int max = columns > rows ? columns : rows;
-		return new Point(p.x / max, p.y / max);
+		int x = (int) (p.x / max);
+		int y = (int) (p.y / max);
+		return new Point(x, y);
 	}
 	
 	public Point itemDimensions(int pageWidth, int pageHeight) {
 		Point dim = this.cellDimensions(pageWidth, pageHeight);
-		int xMarginPixels = (int) (this.getxMargin() * pageWidth);
-		int yMarginPixels = (int) (this.getyMargin() * pageHeight);
 		int xPaddingPixels = (int) (this.getxPadding() * pageWidth);
 		int yPaddingPixels = (int) (this.getyPadding() * pageHeight);
 		
 		int w = dim.x - xPaddingPixels;
 		int h = dim.y - yPaddingPixels;
 		
-		System.out.println(dim.x + " " + xPaddingPixels);
+		//System.out.println(dim.x + " " + xPaddingPixels);
 		
 		return new Point(w, h);
 	}
@@ -179,7 +187,7 @@ public class BoxModel {
 	}
 
 	public void setxMargin(double xMargin) {
-		this.xMargin = xMargin;
+		this.xMargin = xMargin < .99 ? xMargin : .99;
 	}
 
 	public double getyMargin() {
