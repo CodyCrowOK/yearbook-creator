@@ -1384,43 +1384,51 @@ public class Creator {
 							Shell boxShell = new Shell(shell, SWT.SHELL_TRIM);
 							boxShell.setLayout(new ColumnLayout());
 							
+							Label lbl = new Label(boxShell, SWT.NONE);
+							lbl.setText("All values are in inches.");
+							
 							Label posLabel = new Label(boxShell, SWT.NONE);
-							posLabel.setText("Position (%):");
+							posLabel.setText("Position:");
 							
 							Label xLabel = new Label(boxShell, SWT.NONE);
-							xLabel.setText("x:");
+							xLabel.setText("X:");
 							Spinner xPos = new Spinner(boxShell, SWT.NONE);
 							xPos.setDigits(2);
 							xPos.setMaximum(10000);
-							xPos.setSelection((int) (box.x * 10000));
+							int value = (int) (Measures.percentToInches(box.x, yearbook.settings.xInches()) * 100);
+							xPos.setSelection(value);
 							
 							Label yLabel = new Label(boxShell, SWT.NONE);
-							yLabel.setText("y");
+							yLabel.setText("Y:");
 							Spinner yPos = new Spinner(boxShell, SWT.NONE);
 							yPos.setDigits(2);
 							yPos.setMaximum(10000);
-							yPos.setSelection((int) (box.y * 10000));
+							value = (int) (Measures.percentToInches(box.y, yearbook.settings.yInches()) * 100);
+							yPos.setSelection(value);
 							
 							Label mxLabel = new Label(boxShell, SWT.NONE);
 							mxLabel.setText("X-margin:");
 							Spinner mxPos = new Spinner(boxShell, SWT.NONE);
 							mxPos.setDigits(2);
 							mxPos.setMaximum(10000);
-							mxPos.setSelection((int) (box.getxMargin() * 10000));
+							value = (int) (Measures.percentToInches(box.getxMargin(), yearbook.settings.xInches()) * 100);
+							mxPos.setSelection(value);
 							
 							Label myLabel = new Label(boxShell, SWT.NONE);
 							myLabel.setText("Y-margin:");
 							Spinner myPos = new Spinner(boxShell, SWT.NONE);
 							myPos.setDigits(2);
 							myPos.setMaximum(10000);
-							myPos.setSelection((int) (box.getyMargin() * 10000));
+							value = (int) (Measures.percentToInches(box.getyMargin(), yearbook.settings.yInches()) * 100);
+							myPos.setSelection(value);
 							
 							Label pxLabel = new Label(boxShell, SWT.NONE);
 							pxLabel.setText("Cell Padding:");
 							Spinner pxPos = new Spinner(boxShell, SWT.NONE);
 							pxPos.setDigits(2);
 							pxPos.setMaximum(10000);
-							pxPos.setSelection((int) (box.getxPadding() * 10000));
+							value = (int) (Measures.percentToInches(box.getxPadding(), yearbook.settings.xInches()) * 100);
+							pxPos.setSelection(value);
 							
 							Button closeButton = new Button(boxShell, SWT.PUSH);
 							closeButton.setText("Close");
@@ -1441,17 +1449,28 @@ public class Creator {
 								@Override
 								public void handleEvent(
 										Event event) {
-									double x = xPos.getSelection() / 10000.0;
-									double y = yPos.getSelection() / 10000.0;
-									double mx = mxPos.getSelection() / 10000.0;
-									double my = myPos.getSelection() / 10000.0;
-									double px = pxPos.getSelection() / 10000.0;
+									double x = xPos.getSelection() / 100.0;
+									double y = yPos.getSelection() / 100.0;
+									double mx = mxPos.getSelection() / 100.0;
+									double my = myPos.getSelection() / 100.0;
+									double px = pxPos.getSelection() / 100.0;
+									x = Measures.inchesToPercent(x, yearbook.settings.xInches());
+									y = Measures.inchesToPercent(y, yearbook.settings.yInches());
+									mx = Measures.inchesToPercent(mx, yearbook.settings.xInches());
+									my = Measures.inchesToPercent(my, yearbook.settings.yInches());
+									px = Measures.inchesToPercent(px, yearbook.settings.xInches());
 									box.setPosition(x, y);
 									box.setxMargin(mx);
 									box.setyMargin(my);
 									box.setxPadding(px);
-									redrawBoxModel();
-									//HERE
+									if (Measures.percentToPixels(px, yearbook.settings.width) >= box.cellDimensions(yearbook.settings.width, yearbook.settings.height).x) {
+										MessageBox box = new MessageBox(boxShell, SWT.NONE);
+										box.setText("Error");
+										box.setMessage("Padding must be smaller than the width of the image.");
+										box.open();
+									} else {
+										redrawBoxModel();
+									}
 								}
 								
 							});
@@ -2223,8 +2242,120 @@ public class Creator {
 						
 						});
 					}
+					
+					menu.setVisible(true);
+				} else if (event.button == 3 && yearbook.page(yearbook.activePage).hasBoxModel()) {
+					Menu menu = new Menu(shell);
+					MenuItem boxItem = new MenuItem(menu, SWT.PUSH);
+					boxItem.setText("PSPA Box Model...");
+					boxItem.addListener(SWT.Selection, new Listener() {
 
-					//HERE
+						@Override
+						public void handleEvent(
+								Event event) {
+							BoxModel box = yearbook.page(yearbook.activePage).getBoxModel();
+							int pageWidth = yearbook.settings.width;
+							int pageHeight = yearbook.settings.height;
+							
+							Shell boxShell = new Shell(shell, SWT.SHELL_TRIM);
+							boxShell.setLayout(new ColumnLayout());
+							
+							Label lbl = new Label(boxShell, SWT.NONE);
+							lbl.setText("All values are in inches.");
+							
+							Label posLabel = new Label(boxShell, SWT.NONE);
+							posLabel.setText("Position:");
+							
+							Label xLabel = new Label(boxShell, SWT.NONE);
+							xLabel.setText("X:");
+							Spinner xPos = new Spinner(boxShell, SWT.NONE);
+							xPos.setDigits(2);
+							xPos.setMaximum(10000);
+							int value = (int) (Measures.percentToInches(box.x, yearbook.settings.xInches()) * 100);
+							xPos.setSelection(value);
+							
+							Label yLabel = new Label(boxShell, SWT.NONE);
+							yLabel.setText("Y:");
+							Spinner yPos = new Spinner(boxShell, SWT.NONE);
+							yPos.setDigits(2);
+							yPos.setMaximum(10000);
+							value = (int) (Measures.percentToInches(box.y, yearbook.settings.yInches()) * 100);
+							yPos.setSelection(value);
+							
+							Label mxLabel = new Label(boxShell, SWT.NONE);
+							mxLabel.setText("X-margin:");
+							Spinner mxPos = new Spinner(boxShell, SWT.NONE);
+							mxPos.setDigits(2);
+							mxPos.setMaximum(10000);
+							value = (int) (Measures.percentToInches(box.getxMargin(), yearbook.settings.xInches()) * 100);
+							mxPos.setSelection(value);
+							
+							Label myLabel = new Label(boxShell, SWT.NONE);
+							myLabel.setText("Y-margin:");
+							Spinner myPos = new Spinner(boxShell, SWT.NONE);
+							myPos.setDigits(2);
+							myPos.setMaximum(10000);
+							value = (int) (Measures.percentToInches(box.getyMargin(), yearbook.settings.yInches()) * 100);
+							myPos.setSelection(value);
+							
+							Label pxLabel = new Label(boxShell, SWT.NONE);
+							pxLabel.setText("Cell Padding:");
+							Spinner pxPos = new Spinner(boxShell, SWT.NONE);
+							pxPos.setDigits(2);
+							pxPos.setMaximum(10000);
+							value = (int) (Measures.percentToInches(box.getxPadding(), yearbook.settings.xInches()) * 100);
+							pxPos.setSelection(value);
+							
+							Button closeButton = new Button(boxShell, SWT.PUSH);
+							closeButton.setText("Close");
+							closeButton.addListener(SWT.Selection, new Listener() {
+
+								@Override
+								public void handleEvent(
+										Event event) {
+									boxShell.close();
+								}
+								
+							});
+							
+							Button applyButton = new Button(boxShell, SWT.PUSH);
+							applyButton.setText("Apply");
+							applyButton.addListener(SWT.Selection, new Listener() {
+
+								@Override
+								public void handleEvent(
+										Event event) {
+									double x = xPos.getSelection() / 100.0;
+									double y = yPos.getSelection() / 100.0;
+									double mx = mxPos.getSelection() / 100.0;
+									double my = myPos.getSelection() / 100.0;
+									double px = pxPos.getSelection() / 100.0;
+									x = Measures.inchesToPercent(x, yearbook.settings.xInches());
+									y = Measures.inchesToPercent(y, yearbook.settings.yInches());
+									mx = Measures.inchesToPercent(mx, yearbook.settings.xInches());
+									my = Measures.inchesToPercent(my, yearbook.settings.yInches());
+									px = Measures.inchesToPercent(px, yearbook.settings.xInches());
+									box.setPosition(x, y);
+									box.setxMargin(mx);
+									box.setyMargin(my);
+									box.setxPadding(px);
+									if (Measures.percentToPixels(px, yearbook.settings.width) >= box.cellDimensions(yearbook.settings.width, yearbook.settings.height).x) {
+										MessageBox box = new MessageBox(boxShell, SWT.NONE);
+										box.setText("Error");
+										box.setMessage("Padding must be smaller than the width of the image.");
+										box.open();
+									} else {
+										redrawBoxModel();
+									}
+								}
+								
+							});
+							
+							boxShell.setSize(400, 600);
+							boxShell.open();
+						}
+						
+					});
 					
 					menu.setVisible(true);
 				}
@@ -5057,7 +5188,7 @@ public class Creator {
 		//initialYOffset /= 2;
 		//initialXOffset = initialYOffset = 0;
 
-		BoxModel box = new BoxModel(volume.grid.y, volume.grid.x, (2.0 / 8.5), (3 / 11.0), Measures.inchesToPercent(.5, yearbook.settings.xInches()), 0);
+		BoxModel box = new BoxModel(volume.grid.y, volume.grid.x, (2.0 / 8.5), (3 / 11.0), Measures.inchesToPercent(.75, yearbook.settings.xInches()), 0);
 		box.offset = volume.offset;
 		
 		for (String gradeName : items) {
