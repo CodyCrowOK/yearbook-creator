@@ -226,6 +226,7 @@ public class Creator {
 
 		this.initializeCanvas();
 
+		
 		pagesListMenu = new Menu(pagesList);
 		pagesList.setMenu(pagesListMenu);
 		pagesListMenu.addMenuListener(new MenuAdapter()
@@ -344,6 +345,7 @@ public class Creator {
 				});
 			}
 		});
+		
 
 		this.buildPagesListDnD();
 
@@ -3359,7 +3361,7 @@ public class Creator {
 		insertTextItem.setText("&Text");
 
 		insertImageItem = new MenuItem(insertMenu, SWT.PUSH);
-		insertImageItem.setText("&Image");
+		insertImageItem.setText("&Image Box");
 
 		insertVideoItem = new MenuItem(insertMenu, SWT.PUSH);
 		insertVideoItem.setText("&Video");
@@ -4142,6 +4144,93 @@ public class Creator {
 
 			@Override
 			public void handleEvent(Event event) {
+				
+				/*
+				 * First, pop up a window to get the dimensions.
+				 */
+				
+				Shell dimShell = new Shell(shell, SWT.SHELL_TRIM);
+				dimShell.setLayout(new ColumnLayout());
+				
+				Label lbl = new Label(dimShell, SWT.NONE);
+				lbl.setText("Image Box Dimensions (inches):");
+				
+				Label posLabel = new Label(dimShell, SWT.NONE);
+				posLabel.setText("Position:");
+				
+				Label xLabel = new Label(dimShell, SWT.NONE);
+				xLabel.setText("X:");
+				Spinner xPos = new Spinner(dimShell, SWT.NONE);
+				xPos.setDigits(2);
+				xPos.setMaximum(10000);
+				int value = (int) (.25 * 100);
+				xPos.setSelection(value);
+				
+				Label yLabel = new Label(dimShell, SWT.NONE);
+				yLabel.setText("Y:");
+				Spinner yPos = new Spinner(dimShell, SWT.NONE);
+				yPos.setDigits(2);
+				yPos.setMaximum(10000);
+				value = (int) (.25 * 100);
+				yPos.setSelection(value);
+				
+				Label mxLabel = new Label(dimShell, SWT.NONE);
+				mxLabel.setText("Width:");
+				Spinner mxPos = new Spinner(dimShell, SWT.NONE);
+				mxPos.setDigits(2);
+				mxPos.setMaximum(10000);
+				value = (int) (.25 * 100);
+				mxPos.setSelection(value);
+				
+				Label myLabel = new Label(dimShell, SWT.NONE);
+				myLabel.setText("Height:");
+				Spinner myPos = new Spinner(dimShell, SWT.NONE);
+				myPos.setDigits(2);
+				myPos.setMaximum(10000);
+				value = (int) (.25 * 100);
+				myPos.setSelection(value);
+				
+				Button closeButton = new Button(dimShell, SWT.PUSH);
+				closeButton.setText("Cancel");
+				closeButton.addListener(SWT.Selection, new Listener() {
+
+					@Override
+					public void handleEvent(
+							Event event) {
+						dimShell.close();
+					}
+					
+				});
+				
+				Button applyButton = new Button(dimShell, SWT.PUSH);
+				applyButton.setText("Insert");
+				applyButton.addListener(SWT.Selection, new Listener() {
+
+					@Override
+					public void handleEvent(
+							Event event) {
+						double x = xPos.getSelection() / 100.0;
+						double y = yPos.getSelection() / 100.0;
+						double w = mxPos.getSelection() / 100.0;
+						double h = myPos.getSelection() / 100.0;
+						x = Measures.inchesToPercent(x, yearbook.settings.xInches());
+						y = Measures.inchesToPercent(y, yearbook.settings.yInches());
+						w = Measures.inchesToPercent(w, yearbook.settings.xInches());
+						h = Measures.inchesToPercent(h, yearbook.settings.yInches());
+						
+						ImageBoxElement e = new ImageBoxElement(x, y, w, h, yearbook.settings.width, yearbook.settings.height);
+						yearbook.page(yearbook.activePage).addElement(e);
+						
+						dimShell.close();
+						refreshNoPageList();
+					}
+					
+				});
+				
+				dimShell.setSize(400, 400);
+				dimShell.open();
+				
+				/*
 				String fileName = imagePicker();
 				if (fileName == null) return;
 				
@@ -4173,7 +4262,7 @@ public class Creator {
 					YearbookImageElement element = new YearbookImageElement(display, fileName, yearbook.settings.width, yearbook.settings.height);
 					stack.push(new ElementCommand(Commands.ADD_ELEMENT, null, element.copy(), yearbook.page(yearbook.activePage).id));
 					yearbook.page(yearbook.activePage).addElement(element);
-				}
+				}*/
 				refreshNoPageList();
 			}
 
@@ -4887,9 +4976,9 @@ public class Creator {
 					cutBtn.setText("Cut");
 					copyBtn.setText("Copy");
 					pasteBtn.setText("Paste");
-					textBtn.setText("Insert Text");
-					imageBtn.setText("Insert Image");
-					videoBtn.setText("Insert Video");
+					textBtn.setText("Text");
+					imageBtn.setText("Image");
+					videoBtn.setText("Video");
 					moveBtn.setText("Move Mode");
 					resizeBtn.setText("Resize Mode");
 					selectBtn.setText("Select Mode");
@@ -6588,6 +6677,37 @@ public class Creator {
 			 */
 			tr.dispose();
 		}
+		
+		/*
+		 * Display image boxes.
+		 */
+		gc.setLineStyle(SWT.LINE_DASH);
+		gc.setForeground(display.getSystemColor(SWT.COLOR_GRAY));
+		gc.setLineWidth(1);
+		
+		ArrayList<ImageBoxElement> imageBoxes = new ArrayList<ImageBoxElement>();
+		for (YearbookElement e : yearbook.page(activePage).getElements()) {
+			if (e instanceof ImageBoxElement) imageBoxes.add((ImageBoxElement) e);
+		}
+		if (!isReader) for (ImageBoxElement e : imageBoxes) {
+			gc.setAlpha(e.alpha);
+			
+			if (e.hasRGB()) {
+				gc.setBackground(e.getColor(display));
+				gc.fillRectangle(e.getBounds(yearbook.settings.width, yearbook.settings.height));
+			}
+			
+			if (e.hasImage()) {
+				e.drawImage(gc, yearbook.settings.width, yearbook.settings.height);
+			}
+			
+			gc.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
+			gc.drawRectangle(e.getBounds(yearbook.settings.width, yearbook.settings.height));
+		}
+		
+		gc.setAlpha(255);
+		gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
+		gc.setLineStyle(SWT.LINE_SOLID);
 
 
 
@@ -6783,6 +6903,8 @@ public class Creator {
 		}
 		
 		gc.setLineWidth(1);
+		
+		
 
 	}
 
