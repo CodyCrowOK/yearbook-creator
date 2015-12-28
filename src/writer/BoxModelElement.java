@@ -57,4 +57,10 @@ public class BoxModelElement extends YearbookElement implements Serializable {
 		return this;
 	}
 
+	@Override
+	public void dispose() {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

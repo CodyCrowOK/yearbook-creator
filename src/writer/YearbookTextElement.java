@@ -180,4 +180,11 @@ public class YearbookTextElement extends YearbookElement implements Serializable
 	public RGB getRgb() {
 		return rgb;
 	}
+
+	@Override
+	public void dispose() {
+		font.dispose();
+		color.dispose();
+		
+	}
 }

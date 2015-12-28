@@ -23,7 +23,7 @@ public class YearbookImageElement extends YearbookElement implements Serializabl
 	public double scale;
 	
 	public Image getImage(Display display) {
-		if (image == null) {
+		if (image == null && image.isDisposed()) {
 			image = new Image(display, imageData);
 		}
 		return image;
@@ -50,6 +50,29 @@ public class YearbookImageElement extends YearbookElement implements Serializabl
 	public YearbookImageElement(Display display, ImageData imageData, int pageWidth, int pageHeight) {
 		this();
 		this.construct(display, imageData, pageWidth, pageHeight);
+	}
+	
+	/**
+	 * 
+	 * @param display
+	 * @param imageData
+	 * @param pageWidth
+	 * @param pageHeight
+	 * @param constraint The desired width of the new element in px.
+	 */
+	public YearbookImageElement(Display display, ImageData imageData, int pageWidth, int pageHeight, int constraint) {
+		this();
+		this.construct(display, imageData, pageWidth, pageHeight);
+		this.scale = (double) constraint / this.getBounds(pageWidth, pageHeight).width;
+	}
+	
+	public YearbookImageElement(Display display, String fileName, int pageWidth, int pageHeight, int constraint) {
+		this();
+		Image tmp = new Image(display, fileName);
+		imageData = tmp.getImageData();
+		tmp.dispose();
+		this.construct(display, imageData, pageWidth, pageHeight);
+		this.scale = (double) constraint / this.getBounds(pageWidth, pageHeight).width;
 	}
 	
 	private void construct(Display display, ImageData imageData, int pageWidth, int pageHeight) {
@@ -210,5 +233,11 @@ public class YearbookImageElement extends YearbookElement implements Serializabl
 	
 	public boolean isPSPA() {
 		return false;
+	}
+
+	@Override
+	public void dispose() {
+		image.dispose();
+		
 	}
 }

@@ -36,7 +36,7 @@ public class ProductKey {
 		conn.setRequestProperty("Content-Length", String.valueOf(postDataBytes.length));
 		conn.setDoOutput(true);
 		conn.getOutputStream().write(postDataBytes);
-		return conn.getResponseCode();
+		return conn.getResponseCode() == 403 ? 403 : 202;
 	}
 
 	public static String generateKeys(URL url, int n) throws IOException {

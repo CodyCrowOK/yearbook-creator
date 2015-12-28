@@ -91,6 +91,11 @@ abstract public class YearbookElement implements Serializable {
 	 */
 	abstract public YearbookElement copy();
 	
+	/**
+	 * Dispose of system resources
+	 */
+	abstract public void dispose();
+	
 	public void generateRandomElementId() {
 		elementId = (long) (Math.random() * (Math.pow(2, 63) - 1));
 	}

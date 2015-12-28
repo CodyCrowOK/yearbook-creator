@@ -133,4 +133,10 @@ public class YearbookClickableElement extends YearbookElement implements Clickab
 		
 	}
 
+	@Override
+	public void dispose() {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

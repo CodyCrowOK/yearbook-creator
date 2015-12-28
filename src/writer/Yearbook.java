@@ -1,4 +1,5 @@
 package writer;
+import java.awt.Desktop;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -9,6 +10,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -204,6 +207,29 @@ public class Yearbook implements Serializable {
 		});
 		
 		//PDFUtils.convertYearbookToPDF(fileName, yearbook, display);
+	}
+	
+	public static void previewPDF(Yearbook yearbook, Display display) {
+		display.asyncExec(new Runnable() {
+
+			@Override
+			public void run() {
+				String fileName = Creator.RESOURCE_DIR + File.separator + "~" + Integer.toString((int) (Math.random() * 1000000)) + "-tmp.pdf";
+				
+				try {
+					PDFUtils.convertYearbookToPDF(fileName, yearbook, display);
+					Desktop dt = Desktop.getDesktop();
+					dt.open(new File(fileName));
+					Thread.sleep(2000);
+						
+					Files.delete(new File(fileName).toPath());
+					
+				} catch (DocumentException | IOException | InterruptedException e) {
+					Logger.printStackTrace(e);
+				}
+			}
+			
+		});
 	}
 	
 	public static void exportToPNG(Yearbook yearbook, String folderName, Display display) throws IOException {

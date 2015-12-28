@@ -1312,6 +1312,7 @@ public class Reader {
 			JOptionPane.showMessageDialog(frame, "Something went wrong.\n\t" + e);
 			e.printStackTrace();
 			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+			
 		}
 	}
 

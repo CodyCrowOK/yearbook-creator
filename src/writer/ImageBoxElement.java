@@ -22,11 +22,11 @@ public class ImageBoxElement extends YearbookElement implements Serializable {
 	private static final long serialVersionUID = -2345346947340949879L;
 	public YearbookImageElement imageElement;
 	
-	private double x;
-	private double y;
-	private double width;
-	private double height;
-	private RGB rgb;
+	//private double x;
+	//private double y;
+	public double width;
+	public double height;
+	public RGB rgb;
 	public int alpha; //0 to 255
 	
 	transient private Color bgColor;
@@ -39,6 +39,7 @@ public class ImageBoxElement extends YearbookElement implements Serializable {
 		this(x, y, w, h);
 		this.pageHeight = pageHeight;
 		this.pageWidth = pageWidth;
+		
 	}
 	
 	/**
@@ -82,7 +83,6 @@ public class ImageBoxElement extends YearbookElement implements Serializable {
 			if (!this.hasColor()) this.bgColor = new Color(device, rgb);
 		} else {
 			this.bgColor = new Color(device, 0xff, 0xff, 0xff);
-			this.alpha = 0;
 		}
 		return this.bgColor;
 	}
@@ -146,7 +146,82 @@ public class ImageBoxElement extends YearbookElement implements Serializable {
 		e.pageWidth = this.pageWidth;
 		return e;
 	}
-
+	
+	public void drawImage(GC gc, int pageWidth, int pageHeight) {
+		if (!this.hasImage()) return;
+		
+		Image image = this.imageElement.getImage();
+		int destX, destY, srcX, srcY, srcWidth, srcHeight, destWidth, destHeight;
+		/*
+		 * Initialize to where variables would be if image was the same size as box.
+		 */
+		
+		srcX = srcY = 0;
+		destX = this.getBounds(pageWidth, pageHeight).x;
+		destY = this.getBounds(pageWidth, pageHeight).y;
+		srcWidth = this.imageElement.getBounds(pageWidth, pageHeight).width;
+		srcHeight = this.imageElement.getBounds(pageWidth, pageHeight).height;
+		destWidth = this.getBounds(pageWidth, pageHeight).width;
+		destHeight = this.getBounds(pageWidth, pageHeight).height;
+		
+		/*
+		 * Adjust for other factors.
+		 */
+		
+		if (this.imageElement.getBounds(pageWidth, pageHeight).x > 0) {
+			destX += this.imageElement.getBounds(pageWidth, pageHeight).x;
+		} else {
+			srcX += Math.abs(this.imageElement.getBounds(pageWidth, pageHeight).x);
+		}
+		
+		if (this.imageElement.getBounds(pageWidth, pageHeight).y > 0) {
+			destY += this.imageElement.getBounds(pageWidth, pageHeight).y;
+		} else {
+			srcY += Math.abs(this.imageElement.getBounds(pageWidth, pageHeight).y);
+		}
+		
+		int a = Math.abs(this.imageElement.getBounds(pageWidth, pageHeight).x);
+		int b = this.getBounds(pageWidth, pageHeight).width;
+		int d = this.imageElement.getBounds(pageWidth, pageHeight).width;
+		int c = d - (a + b);
+		
+		if (this.imageElement.getBounds(pageWidth, pageHeight).width - a > b) {
+			destWidth -= c;
+			destWidth = Math.abs(destWidth);
+		}
+		
+		a = Math.abs(this.imageElement.getBounds(pageWidth, pageHeight).y);
+		b = this.getBounds(pageWidth, pageHeight).height;
+		d = this.imageElement.getBounds(pageWidth, pageHeight).height;
+		c = d - (a + b);
+		
+		if (this.imageElement.getBounds(pageWidth, pageHeight).height - a > b) {
+			destHeight -= c;
+			destHeight = Math.abs(destHeight);
+		}
+		
+		
+		boolean draw = true;
+		try {
+			assertion(srcX >= 0);
+			assertion(srcY >= 0);
+			assertion(srcWidth > 0);
+			assertion(srcHeight > 0);
+			assertion(destX >= 0);
+			assertion(destY >= 0);
+			assertion(destWidth > 0);
+			assertion(destHeight > 0);
+		} catch (Exception e) {
+			Logger.printStackTrace(e);
+			draw = false;
+		}
+		
+		if (draw) gc.drawImage(image, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight);
+		//TODO: Make this work on edges
+		
+	}
+	
+	/*
 	public void drawImage(GC gc, int pageWidth, int pageHeight) {
 		if (!this.hasImage()) return;
 		
@@ -158,18 +233,64 @@ public class ImageBoxElement extends YearbookElement implements Serializable {
 		
 		//int scaledW, scaledH;
 		//scaledW = this.imageElement.scale * this.imageElement.getBounds(pageWidth, pageHeight).width;
-		int srcX = this.imageElement.getBounds(pageWidth, pageHeight).x;
-		int srcY = this.imageElement.getBounds(pageWidth, pageHeight).y;
+		//int srcX = this.imageElement.getBounds(pageWidth, pageHeight).x;
+		//int srcY = this.imageElement.getBounds(pageWidth, pageHeight).y;
+		int srcX, srcY;
+		srcX = srcY = 0;
+		if (this.imageElement.getBounds(pageWidth, pageHeight).x < 0) srcX = 0 - this.imageElement.getBounds(pageWidth, pageHeight).x;
+		if (this.imageElement.getBounds(pageWidth, pageHeight).y < 0) srcY = 0 - this.imageElement.getBounds(pageWidth, pageHeight).y;
 		
 		int srcWidth = this.imageElement.getBounds(pageWidth, pageHeight).width - srcX;
 		int srcHeight = this.imageElement.getBounds(pageWidth, pageHeight).height - srcY;
 		
 		
-		gc.drawImage(image, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight);
 		
-		image.dispose();
-		image = null;
+		double w2h = (double) srcWidth / srcHeight;
 		
+		if (srcWidth < srcHeight) destWidth *= w2h;
+		else destHeight /= w2h;
+		
+		destWidth *= this.imageElement.scale;
+		destHeight *= this.imageElement.scale;
+		
+		int extraX, extraY = 0;
+		
+		
+		gc.drawImage(image, srcX, 
+				srcY, 
+				image.getBounds().width, 
+				image.getBounds().height, 
+				this.getBounds(pageWidth, pageHeight).x + this.imageElement.getBounds(pageWidth, pageHeight).x, 
+				this.getBounds(pageWidth, pageHeight).y + this.imageElement.getBounds(pageWidth, pageHeight).y, 
+				destWidth, 
+				destHeight);
+		
+		//gc.drawImage(image, 0, 0, Math.abs(srcWidth), Math.abs(srcHeight), Math.max(destX, 0), Math.max(destY, 0), Math.abs(destWidth), Math.abs(destHeight));
+		
+	}
+	*/
+	@Override
+	public void dispose() {
+		
+		if (imageElement != null) imageElement.dispose();
+		
+	}
+	
+	private void assertion(boolean e) throws Exception {
+		if (!e) {
+			throw new Exception("Assertion failed.");
+		}
+	}
+
+	public void setZoom(double z) {
+		//double currentZoom = (this.imageElement.getBounds(1000, 1000).width / this.getBounds(1000, 1000).width);
+		//z = x * imageW / boxW
+		int boxW = this.getBounds(1000, 1000).width;
+		int imageW = this.imageElement.getBounds(1000, 1000).width;
+		boxW = boxW > 0 ? boxW : 1;
+		imageW = imageW > 0 ? imageW : 1;
+		double x = z * (boxW / imageW);
+		this.imageElement.scale /= x;
 	}
 
 }

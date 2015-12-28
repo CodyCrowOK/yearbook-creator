@@ -14,6 +14,7 @@ import java.util.Deque;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import org.apache.pdfbox.exceptions.COSVisitorException;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.eclipse.swt.*;
@@ -42,10 +43,13 @@ import org.eclipse.swt.graphics.Transform;
 import org.eclipse.swt.layout.*;
 import org.eclipse.swt.widgets.*;
 
+import com.itextpdf.text.DocumentException;
+
 import command.Command;
 import command.Commands;
 import command.ElementCommand;
 import command.Stack;
+import pdf.PDFUtils;
 import pspa.BoxModel;
 import pspa.Grade;
 import pspa.HomeRoom;
@@ -96,6 +100,7 @@ public class Creator {
 	private MenuItem fileSaveItem;
 	private MenuItem fileSaveAsItem;
 	private MenuItem fileAutosaveItem;
+	private MenuItem filePreviewItem;
 	private MenuItem fileExportItem;
 	private MenuItem fileExportJPEGItem;
 	private MenuItem fileExportVideoItem;
@@ -199,7 +204,7 @@ public class Creator {
 		stack = new Stack();
 
 		//canvasHeight = (int) (.80 * display.getClientArea().height);
-		canvasHeight = (int) (.62 * (5.0 / 8.0) * display.getClientArea().width);
+		canvasHeight = (int) (.8 * (5.0 / 8.0) * display.getClientArea().width);
 
 		shell.setSize(800, 600);
 
@@ -871,6 +876,23 @@ public class Creator {
 					int trueX = event.x;
 					int trueY = event.y;
 					Menu menu = new Menu(shell);
+					
+					if (yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height) instanceof ImageBoxElement) {
+						MenuItem tbItem = new MenuItem(menu, SWT.PUSH);
+						tbItem.setText("Tool Box");
+						tbItem.addListener(SWT.Selection, new Listener() {
+
+							@Override
+							public void handleEvent(
+									Event event) {
+								openImageToolbox((ImageBoxElement) yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height));
+								
+							}
+							
+						});
+					}
+					
+					
 					MenuItem moveItem = new MenuItem(menu, SWT.PUSH);
 					moveItem.setText("Move");
 					moveItem.addListener(SWT.Selection, new Listener() {
@@ -1588,6 +1610,7 @@ public class Creator {
 							newX = selectedElement.getBounds().x + xDiff;
 							newY = selectedElement.getBounds().y + yDiff;
 							YearbookElement orig = selectedElement.copy();
+							orig.dispose();
 							yearbook.page(yearbook.activePage).findElement(selectedElement).setLocationRelative(newX, newY);
 							stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, selectedElement.copy(), yearbook.page(yearbook.activePage).id));
 						}
@@ -1595,6 +1618,7 @@ public class Creator {
 						int newX, newY;
 						for (YearbookElement element : clipboard.elements) {
 							YearbookElement orig = element.copy();
+							orig.dispose();
 							newX = element.getBounds().x + xDiff;
 							newY = element.getBounds().y + yDiff;
 							element.setLocationRelative(newX, newY);
@@ -1739,6 +1763,24 @@ public class Creator {
 					int trueX = event.x;
 					int trueY = event.y;
 					Menu menu = new Menu(shell);
+					
+					if (yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height) instanceof ImageBoxElement) {
+						MenuItem tbItem = new MenuItem(menu, SWT.PUSH);
+						tbItem.setText("Tool Box");
+						tbItem.addListener(SWT.Selection, new Listener() {
+
+							@Override
+							public void handleEvent(
+									Event event) {
+								openImageToolbox((ImageBoxElement) yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height));
+								
+							}
+							
+						});
+					}
+					
+					
+					
 					MenuItem moveItem = new MenuItem(menu, SWT.PUSH);
 					moveItem.setText("Move");
 					moveItem.addListener(SWT.Selection, new Listener() {
@@ -3292,6 +3334,11 @@ public class Creator {
 
 		new MenuItem(fileMenu, SWT.SEPARATOR);
 
+		filePreviewItem = new MenuItem(fileMenu, SWT.PUSH);
+		filePreviewItem.setText("Preview (PDF)");
+		
+		new MenuItem(fileMenu, SWT.SEPARATOR);
+
 		fileExportItem = new MenuItem(fileMenu, SWT.PUSH);
 		fileExportItem.setText("&Export to PDF (Print)");
 
@@ -3771,7 +3818,7 @@ public class Creator {
 					box.setText("Open Yearbook");
 					box.setMessage("Something went wrong while trying to open your file.\n\t" + e.getMessage());
 					box.open();
-					e.printStackTrace();
+					Logger.printStackTrace(e);
 				}
 			}
 
@@ -3785,7 +3832,7 @@ public class Creator {
 					try {
 						Yearbook.saveToDisk(yearbook, saveFileName);
 					} catch (IOException e) {
-						e.printStackTrace();
+						Logger.printStackTrace(e);
 					}
 				else fileSaveAsItem.getListeners(SWT.Selection)[0].handleEvent(event);				
 			}
@@ -3809,7 +3856,7 @@ public class Creator {
 					box.setText("Save Yearbook");
 					box.setMessage("Something went wrong while trying to save your file.\n\t" + e.getMessage());
 					box.open();
-					e.printStackTrace();
+					Logger.printStackTrace(e);
 				}
 
 			}
@@ -3821,6 +3868,16 @@ public class Creator {
 			@Override
 			public void handleEvent(Event event) {
 				settings.autosave = !settings.autosave;
+				
+			}
+			
+		});
+		
+		filePreviewItem.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				Yearbook.previewPDF(yearbook, display);
 				
 			}
 			
@@ -3842,7 +3899,7 @@ public class Creator {
 					box.setText("Error");
 					box.setMessage("PDF export was unsuccessful. Please save and restart " + Creator.SOFTWARE_NAME + " and then try again.");
 					box.open();
-					e.printStackTrace();
+					Logger.printStackTrace(e);
 				}
 			}
 
@@ -3864,7 +3921,7 @@ public class Creator {
 					box.setText("Error");
 					box.setMessage("PNG export was unsuccessful. Please save and restart " + Creator.SOFTWARE_NAME + " and then try again.");
 					box.open();
-					e.printStackTrace();
+					Logger.printStackTrace(e);
 				}
 
 			}
@@ -3893,8 +3950,7 @@ public class Creator {
 				try {
 					FileUtilities.copyDirectory(new File(Creator.READER_DIR), new File(directory.getPath()));
 				} catch (IOException e2) {
-					// TODO Auto-generated catch block
-					e2.printStackTrace();
+					Logger.printStackTrace(e2);
 				}
 				
 
@@ -3912,7 +3968,7 @@ public class Creator {
 							try {
 								for (Video v : element.getVideos()) Files.copy(Paths.get(v.getSrc()), Paths.get(directory.getPath() + File.separator + v.getSrc()), StandardCopyOption.REPLACE_EXISTING);
 							} catch (IOException e1) {
-								e1.printStackTrace();
+								Logger.printStackTrace(e1);
 							}
 						}
 					}
@@ -3976,7 +4032,7 @@ public class Creator {
 					box.setText("Save Yearbook");
 					box.setMessage("Something went wrong while trying to export your video yearbook.\n\t" + e.getMessage());
 					box.open();
-					e.printStackTrace();
+					Logger.printStackTrace(e);
 				}
 			}
 
@@ -4179,7 +4235,7 @@ public class Creator {
 				Spinner mxPos = new Spinner(dimShell, SWT.NONE);
 				mxPos.setDigits(2);
 				mxPos.setMaximum(10000);
-				value = (int) (.25 * 100);
+				value = (int) (4 * 100);
 				mxPos.setSelection(value);
 				
 				Label myLabel = new Label(dimShell, SWT.NONE);
@@ -4187,7 +4243,7 @@ public class Creator {
 				Spinner myPos = new Spinner(dimShell, SWT.NONE);
 				myPos.setDigits(2);
 				myPos.setMaximum(10000);
-				value = (int) (.25 * 100);
+				value = (int) (4 * 100);
 				myPos.setSelection(value);
 				
 				Button closeButton = new Button(dimShell, SWT.PUSH);
@@ -4221,48 +4277,21 @@ public class Creator {
 						ImageBoxElement e = new ImageBoxElement(x, y, w, h, yearbook.settings.width, yearbook.settings.height);
 						yearbook.page(yearbook.activePage).addElement(e);
 						
+						openImageToolbox(e);
+						
 						dimShell.close();
 						refreshNoPageList();
 					}
+
+					
+
+					
 					
 				});
 				
 				dimShell.setSize(400, 400);
 				dimShell.open();
 				
-				/*
-				String fileName = imagePicker();
-				if (fileName == null) return;
-				
-				String[] tok = fileName.split("\\.");
-				if (tok.length > 1) if ("pdf".equalsIgnoreCase(tok[tok.length - 1])) {
-					//Convert pdf to images
-					try {
-						PDDocument document = PDDocument.loadNonSeq(new File(fileName), null);
-						@SuppressWarnings("unchecked")
-						ArrayList<PDPage> pdPages = (ArrayList<PDPage>) document.getDocumentCatalog().getAllPages();
-						ArrayList<java.awt.Image> awtImages = new ArrayList<java.awt.Image>();
-						for (PDPage pdPage : pdPages) {
-							awtImages.add(pdPage.convertToImage(BufferedImage.TYPE_INT_RGB, 300));
-						}
-						
-						for (java.awt.Image image : awtImages) {
-							ImageData newData = SWTUtils.convertAWTImageToSWT(image);
-							YearbookImageElement element = new YearbookImageElement(display, newData, yearbook.settings.width, yearbook.settings.height);
-							stack.push(new ElementCommand(Commands.ADD_ELEMENT, null, element.copy(), yearbook.page(yearbook.activePage).id));
-							yearbook.page(yearbook.activePage).addElement(element);
-						}
-					} catch (Throwable t) {
-						MessageBox box = new MessageBox(shell, SWT.ERROR);
-						box.setText("Error");
-						box.setMessage("Could not import pdf as images successfully. Please try again.");
-						box.open();
-					}
-				} else {
-					YearbookImageElement element = new YearbookImageElement(display, fileName, yearbook.settings.width, yearbook.settings.height);
-					stack.push(new ElementCommand(Commands.ADD_ELEMENT, null, element.copy(), yearbook.page(yearbook.activePage).id));
-					yearbook.page(yearbook.activePage).addElement(element);
-				}*/
 				refreshNoPageList();
 			}
 
@@ -4291,7 +4320,7 @@ public class Creator {
 							try {
 								attachVideoToImage((YearbookImageElement) selectedElement);
 							} catch (IOException e) {
-								e.printStackTrace();
+								Logger.printStackTrace(e);
 							}
 							return;
 						}
@@ -4314,7 +4343,7 @@ public class Creator {
 					stack.push(new ElementCommand(Commands.ADD_ELEMENT, null, e.copy(), yearbook.page(yearbook.activePage).id));
 					yearbook.page(yearbook.activePage).addElement(e);
 				} catch (IOException e) {
-					e.printStackTrace();
+					Logger.printStackTrace(e);
 				}
 
 				modeReset();
@@ -4579,7 +4608,7 @@ public class Creator {
 							box.setText("Error");
 							box.setMessage("An unknown error occurred.\n\t" + e);
 							box.open();
-							e.printStackTrace();
+							Logger.printStackTrace(e);
 						}
 						
 						if (nameRevCombo.getSelectionIndex() > 0) {
@@ -5084,7 +5113,7 @@ public class Creator {
 							keyShell.setSize(200, 500);
 							keyShell.open();
 						} catch (IOException e1) {
-							e1.printStackTrace();
+							Logger.printStackTrace(e1);
 						}
 
 						dialog.close();
@@ -5265,6 +5294,229 @@ public class Creator {
 
 		window.pack();
 		window.open();
+	}
+	
+	private void openImageToolbox(ImageBoxElement el) {
+		ImageBoxElement e = (ImageBoxElement) yearbook.page(yearbook.activePage).findElement(el);
+		
+		Shell dimShell = new Shell(shell, SWT.SHELL_TRIM);
+		dimShell.setLayout(new ColumnLayout());
+		
+		Label lbl = new Label(dimShell, SWT.NONE);
+		lbl.setText("Tool Box:");
+		
+		Button clearBtn = new Button(dimShell, SWT.PUSH);
+		clearBtn.setText("Clear image");
+		clearBtn.addSelectionListener(new SelectionListener() {
+
+			@Override
+			public void widgetSelected(SelectionEvent ev) {
+				try {
+					e.imageElement.getImage().dispose();
+				} catch (Throwable t) {}
+				e.imageElement = null;
+				refreshNoPageList();
+			}
+
+			@Override
+			public void widgetDefaultSelected(SelectionEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+		});
+		
+		Button imageBtn = new Button(dimShell, SWT.PUSH);
+		imageBtn.setText("Add Image...");
+		imageBtn.addSelectionListener(new SelectionListener() {
+
+			@Override
+			public void widgetSelected(SelectionEvent e1) {
+				String fileName = imagePicker();
+				if (fileName == null) return;
+				
+				String[] tok = fileName.split("\\.");
+				if (tok.length > 1) if ("pdf".equalsIgnoreCase(tok[tok.length - 1])) {
+					//Convert pdf to images
+					try {
+						PDDocument document = PDDocument.loadNonSeq(new File(fileName), null);
+						@SuppressWarnings("unchecked")
+						ArrayList<PDPage> pdPages = (ArrayList<PDPage>) document.getDocumentCatalog().getAllPages();
+						ArrayList<java.awt.Image> awtImages = new ArrayList<java.awt.Image>();
+						for (PDPage pdPage : pdPages) {
+							awtImages.add(pdPage.convertToImage(BufferedImage.TYPE_INT_RGB, 300));
+							break;
+						}
+						
+						for (java.awt.Image image : awtImages) {
+							ImageData newData = SWTUtils.convertAWTImageToSWT(image);
+							YearbookImageElement element = new YearbookImageElement(display, newData, yearbook.settings.width, yearbook.settings.height, e.getBounds(yearbook.settings.width, yearbook.settings.height).width);
+							e.imageElement = element;
+						}
+					} catch (Throwable t) {
+						MessageBox box = new MessageBox(shell, SWT.ERROR);
+						box.setText("Error");
+						box.setMessage("Could not import pdf as images successfully. Please try again or convert to an image format first.");
+						box.open();
+					}
+				} else {
+					YearbookImageElement element = new YearbookImageElement(display, fileName, yearbook.settings.width, yearbook.settings.height, e.getBounds(yearbook.settings.width, yearbook.settings.height).width);
+					e.imageElement = element;
+				}
+				
+				refreshNoPageList();
+			}
+
+			@Override
+			public void widgetDefaultSelected(SelectionEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+		});
+		
+		Button colorBtn = new Button(dimShell, SWT.PUSH);
+		colorBtn.setText("Background Color");
+		colorBtn.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				ColorDialog cd = new ColorDialog(dimShell);
+				RGB rgb = cd.open();
+				if (rgb != null) e.rgb = rgb;
+			}
+			
+		});
+		
+		Label posLabel = new Label(dimShell, SWT.NONE);
+		posLabel.setText("Position (inches):");
+		
+		Label xLabel = new Label(dimShell, SWT.NONE);
+		xLabel.setText("X:");
+		Spinner xPos = new Spinner(dimShell, SWT.NONE);
+		xPos.setDigits(2);
+		xPos.setMaximum(10000);
+		
+		int value = (int) (Measures.percentToInches(e.x, yearbook.settings.xInches()) * 100);
+		xPos.setSelection(value);
+		
+		Label yLabel = new Label(dimShell, SWT.NONE);
+		yLabel.setText("Y:");
+		Spinner yPos = new Spinner(dimShell, SWT.NONE);
+		yPos.setDigits(2);
+		yPos.setMaximum(10000);
+		value = (int) (Measures.percentToInches(e.y, yearbook.settings.yInches()) * 100);
+		yPos.setSelection(value);
+		
+		Label mxLabel = new Label(dimShell, SWT.NONE);
+		mxLabel.setText("Width:");
+		Spinner mxPos = new Spinner(dimShell, SWT.NONE);
+		mxPos.setDigits(2);
+		mxPos.setMaximum(10000);
+		value = (int) (Measures.percentToInches(e.width, yearbook.settings.xInches()) * 100);
+		mxPos.setSelection(value);
+		
+		Label myLabel = new Label(dimShell, SWT.NONE);
+		myLabel.setText("Height:");
+		Spinner myPos = new Spinner(dimShell, SWT.NONE);
+		myPos.setDigits(2);
+		myPos.setMaximum(10000);
+		value = (int) (Measures.percentToInches(e.height, yearbook.settings.yInches()) * 100);
+		myPos.setSelection(value);
+		
+		Label xoLabel = new Label(dimShell, SWT.NONE);
+		xoLabel.setText("X offset:");
+		Spinner xoPos = new Spinner(dimShell, SWT.NONE);
+		xoPos.setDigits(2);
+		xoPos.setMaximum(1000000);
+		xoPos.setMinimum(-1000000);
+		xoPos.setSelection(0);
+		
+		Label yoLabel = new Label(dimShell, SWT.NONE);
+		yoLabel.setText("Y offset:");
+		Spinner yoPos = new Spinner(dimShell, SWT.NONE);
+		yoPos.setDigits(2);
+		yoPos.setMaximum(1000000);
+		yoPos.setMinimum(-1000000);
+		yoPos.setSelection(0);
+		
+		Label zLabel = new Label(dimShell, SWT.NONE);
+		zLabel.setText("Zoom (%):");
+		Spinner zPos = new Spinner(dimShell, SWT.NONE);
+		zPos.setDigits(2);
+		zPos.setMaximum(1000000);
+		zPos.setMinimum(1);
+		value = 10000;
+		zPos.setSelection(value);
+		
+		Label aLbl = new Label(dimShell, SWT.NONE);
+		aLbl.setText("Alpha (Transparency):");
+		Spinner alpha = new Spinner(dimShell, SWT.NONE);
+		alpha.setMaximum(255);
+		value = 255;
+		alpha.setSelection(value);
+		
+		Button closeButton = new Button(dimShell, SWT.PUSH);
+		closeButton.setText("Close");
+		closeButton.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(
+					Event event) {
+				dimShell.close();
+			}
+			
+		});
+		
+		Button applyButton = new Button(dimShell, SWT.PUSH);
+		applyButton.setText("Apply");
+		applyButton.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(
+					Event event) {
+				double x = xPos.getSelection() / 100.0;
+				double y = yPos.getSelection() / 100.0;
+				double w = mxPos.getSelection() / 100.0;
+				double h = myPos.getSelection() / 100.0;
+				double xo = xoPos.getSelection() / 100.0;
+				double yo = yoPos.getSelection() / 100.0;
+				double z = (double) zPos.getSelection() / 10000.0;
+				x = Measures.inchesToPercent(x, yearbook.settings.xInches());
+				y = Measures.inchesToPercent(y, yearbook.settings.yInches());
+				w = Measures.inchesToPercent(w, yearbook.settings.xInches());
+				h = Measures.inchesToPercent(h, yearbook.settings.yInches());
+				xo = Measures.inchesToPercent(xo, yearbook.settings.xInches());
+				yo = Measures.inchesToPercent(yo, yearbook.settings.yInches());
+				
+				int a = alpha.getSelection();
+				
+				e.x = x;
+				e.y = y;
+				e.width = w;
+				e.height = h;
+				e.alpha = a;
+				if (e.hasImage()) {
+					e.imageElement.x = xo;
+					e.imageElement.y = yo;
+					e.setZoom(z);
+					
+				}
+				/*
+				 * 
+				 * Make sure it only paints inside the bounds!
+				 * context menu
+				 * 
+				 */
+
+				
+				refreshNoPageList();
+			}
+			
+		});
+		
+		dimShell.setSize(400, 800);
+		dimShell.open();
 	}
 
 	private void generatePSPAPages(Volume volume, ArrayList<String> items) {
@@ -6689,7 +6941,14 @@ public class Creator {
 		for (YearbookElement e : yearbook.page(activePage).getElements()) {
 			if (e instanceof ImageBoxElement) imageBoxes.add((ImageBoxElement) e);
 		}
-		if (!isReader) for (ImageBoxElement e : imageBoxes) {
+		for (ImageBoxElement e : imageBoxes) {
+			
+			Transform tr = new Transform(display);
+			tr.translate(e.getBounds(pageWidth, pageHeight).x + e.getBounds(pageWidth, pageHeight).width / 2, e.getBounds(pageWidth, pageHeight).y + e.getBounds(pageWidth, pageHeight).height / 2);
+			tr.rotate(e.rotation);
+			tr.translate(-e.getBounds(pageWidth, pageHeight).x - e.getBounds(pageWidth, pageHeight).width / 2, e.getBounds(pageWidth, -pageHeight).y - e.getBounds(pageWidth, pageHeight).height / 2);
+			gc.setTransform(tr);
+			
 			gc.setAlpha(e.alpha);
 			
 			if (e.hasRGB()) {
@@ -6702,7 +6961,7 @@ public class Creator {
 			}
 			
 			gc.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
-			gc.drawRectangle(e.getBounds(yearbook.settings.width, yearbook.settings.height));
+			if (!isReader) gc.drawRectangle(e.getBounds(yearbook.settings.width, yearbook.settings.height));
 		}
 		
 		gc.setAlpha(255);
