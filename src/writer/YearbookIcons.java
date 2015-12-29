@@ -97,6 +97,10 @@ public class YearbookIcons {
 		return new Image(display, "icons/rotate.png");
 	}
 	
+	static Image pagesList(Display display) {
+		return new Image(display, "icons/page-list.png");
+	}
+	
 	public static Image navFront(Display display) {
 		return new Image(display, "icons/go-front.png");
 	}

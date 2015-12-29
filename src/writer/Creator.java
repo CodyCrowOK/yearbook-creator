@@ -162,7 +162,9 @@ public class Creator {
 	Button selectBtn;
 	Button eraseBtn;
 	Button rotateBtn;
+	Button pagesListBtn;
 
+	private Shell pagesListShell;
 
 	private Composite content;
 
@@ -171,7 +173,7 @@ public class Creator {
 	private GridData canvasGridData;
 
 	private List pagesList;
-	private final Menu pagesListMenu;
+	private Menu pagesListMenu;
 
 	private Yearbook yearbook;
 
@@ -222,142 +224,14 @@ public class Creator {
 		gridLayout = new GridLayout(8, false);
 		content = new Composite(shell, SWT.NONE);
 		content.setLayout(gridLayout);
-
-		pagesList = new List(content, SWT.BORDER | SWT.V_SCROLL | SWT.MULTI);
-		listGridData = new GridData(SWT.FILL, SWT.FILL, true, true);
-		listGridData.horizontalSpan = 1;
-		listGridData.heightHint = 150;
-		pagesList.setLayoutData(listGridData);
-
 		this.initializeCanvas();
-
 		
-		pagesListMenu = new Menu(pagesList);
-		pagesList.setMenu(pagesListMenu);
-		pagesListMenu.addMenuListener(new MenuAdapter()
-		{
-			public void menuShown(MenuEvent e)
-			{
-				MenuItem[] items = pagesListMenu.getItems();
-				for (int i = 0; i < items.length; i++)
-				{
-					items[i].dispose();
-				}
-				int selectedPageIndices[] = pagesList.getSelectionIndices();
-				for (int i : selectedPageIndices) {
-					if (i < 0 || i > pagesList.getItemCount()) return;
-				}
-				MenuItem item1 = new MenuItem(pagesListMenu, SWT.NONE);
-				item1.setText("Rename");
-				item1.addListener(SWT.Selection, new Listener() {
-
-					@Override
-					public void handleEvent(Event event) {
-						final Shell dialog = new Shell(shell, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
-						dialog.setText("Enter Name");
-						dialog.setSize(400, 300);
-						FormLayout formLayout = new FormLayout();
-						formLayout.marginWidth = 10;
-						formLayout.marginHeight = 10;
-						formLayout.spacing = 10;
-						dialog.setLayout(formLayout);
-
-						Label label = new Label(dialog, SWT.NONE);
-						label.setText("New name:");
-						FormData data = new FormData();
-						label.setLayoutData(data);
-
-						Button cancel = new Button(dialog, SWT.PUSH);
-						cancel.setText("Cancel");
-						data = new FormData();
-						data.width = 60;
-						data.right = new FormAttachment(100, 0);
-						data.bottom = new FormAttachment(100, 0);
-						cancel.setLayoutData(data);
-						cancel.addSelectionListener(new SelectionAdapter () {
-							@Override
-							public void widgetSelected(SelectionEvent e) {
-								dialog.close();
-								dialog.dispose();
-							}
-						});
-
-						final Text text = new Text(dialog, SWT.BORDER);
-						data = new FormData();
-						data.width = 200;
-						data.left = new FormAttachment(label, 0, SWT.DEFAULT);
-						data.right = new FormAttachment(100, 0);
-						data.top = new FormAttachment(label, 0, SWT.CENTER);
-						data.bottom = new FormAttachment(cancel, 0, SWT.DEFAULT);
-						text.setLayoutData(data);
-
-						Button ok = new Button(dialog, SWT.PUSH);
-						ok.setText("OK");
-						data = new FormData();
-						data.width = 60;
-						data.right = new FormAttachment(cancel, 0, SWT.DEFAULT);
-						data.bottom = new FormAttachment(100, 0);
-						ok.setLayoutData(data);
-						ok.addSelectionListener(new SelectionAdapter() {
-							@Override
-							public void widgetSelected (SelectionEvent e) {
-								for (int i : selectedPageIndices) {
-									yearbook.page(i).name = text.getText();
-								}
-
-								refresh();
-								dialog.close();
-								dialog.dispose();
-							}
-						});
-
-						dialog.setDefaultButton (ok);
-						dialog.pack();
-						dialog.open();
-
-					}
-
-				});
-
-				MenuItem item2 = new MenuItem(pagesListMenu, SWT.NONE);
-				item2.setText("Delete");
-				item2.addListener(SWT.Selection, new Listener() {
-
-					@Override
-					public void handleEvent(Event event) {
-						MessageBox messageBox = new MessageBox(shell, SWT.ICON_WARNING | SWT.YES | SWT.NO);
-						messageBox.setText("Delete Page");
-						if (selectedPageIndices.length == 1) messageBox.setMessage("Are you sure you want to delete this page?\n\t" + yearbook.page(selectedPageIndices[0]));
-						else messageBox.setMessage("Are you sure you want to delete these pages?");
-						int yesno = messageBox.open();
-						if (yesno == SWT.YES) {
-							/*for (int i : selectedPageIndices) {
-								stack.push(new PageCommand(Commands.REMOVE_PAGE, yearbook.page(i), i, -1));	
-							}*/
-							if (yearbook.size() == 1) {
-								MessageBox box = new MessageBox(shell, SWT.ICON_WARNING);
-								box.setText("Invalid action");
-								box.setMessage("Action denied:\n\tYou must have at least one page at all times.");
-								box.open();
-								return;
-							}
-							yearbook.removePages(selectedPageIndices);
-							refresh();
-						}
-
-					}
-
-				});
-			}
-		});
 		
-
-		this.buildPagesListDnD();
 
 		this.buildExpandBar();
 
 		this.finalPrep();
-
+		
 		shell.setMaximized(true);
 		while (!shell.isDisposed()) {
 			if (!display.readAndDispatch())	display.sleep();
@@ -648,6 +522,142 @@ public class Creator {
 
 		bar.setSpacing(8);
 	}
+	
+	private void openPagesList() {
+		pagesListShell = new Shell(shell, SWT.NONE);
+		pagesListShell.setLayout(new GridLayout(1, false));
+		pagesListShell.setSize(300, 700);
+		
+		pagesList = new List(pagesListShell, SWT.BORDER | SWT.V_SCROLL | SWT.MULTI);
+		listGridData = new GridData(SWT.FILL, SWT.FILL, true, true);
+		listGridData.horizontalSpan = 1;
+		listGridData.exclude = true;
+		pagesList.setLayoutData(listGridData);
+
+
+		
+		pagesListMenu = new Menu(pagesList);
+		pagesList.setMenu(pagesListMenu);
+		pagesListMenu.addMenuListener(new MenuAdapter()
+		{
+			public void menuShown(MenuEvent e)
+			{
+				MenuItem[] items = pagesListMenu.getItems();
+				for (int i = 0; i < items.length; i++)
+				{
+					items[i].dispose();
+				}
+				int selectedPageIndices[] = pagesList.getSelectionIndices();
+				for (int i : selectedPageIndices) {
+					if (i < 0 || i > pagesList.getItemCount()) return;
+				}
+				MenuItem item1 = new MenuItem(pagesListMenu, SWT.NONE);
+				item1.setText("Rename");
+				item1.addListener(SWT.Selection, new Listener() {
+
+					@Override
+					public void handleEvent(Event event) {
+						final Shell dialog = new Shell(shell, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
+						dialog.setText("Enter Name");
+						dialog.setSize(400, 300);
+						FormLayout formLayout = new FormLayout();
+						formLayout.marginWidth = 10;
+						formLayout.marginHeight = 10;
+						formLayout.spacing = 10;
+						dialog.setLayout(formLayout);
+
+						Label label = new Label(dialog, SWT.NONE);
+						label.setText("New name:");
+						FormData data = new FormData();
+						label.setLayoutData(data);
+
+						Button cancel = new Button(dialog, SWT.PUSH);
+						cancel.setText("Cancel");
+						data = new FormData();
+						data.width = 60;
+						data.right = new FormAttachment(100, 0);
+						data.bottom = new FormAttachment(100, 0);
+						cancel.setLayoutData(data);
+						cancel.addSelectionListener(new SelectionAdapter () {
+							@Override
+							public void widgetSelected(SelectionEvent e) {
+								dialog.close();
+								dialog.dispose();
+							}
+						});
+
+						final Text text = new Text(dialog, SWT.BORDER);
+						data = new FormData();
+						data.width = 200;
+						data.left = new FormAttachment(label, 0, SWT.DEFAULT);
+						data.right = new FormAttachment(100, 0);
+						data.top = new FormAttachment(label, 0, SWT.CENTER);
+						data.bottom = new FormAttachment(cancel, 0, SWT.DEFAULT);
+						text.setLayoutData(data);
+
+						Button ok = new Button(dialog, SWT.PUSH);
+						ok.setText("OK");
+						data = new FormData();
+						data.width = 60;
+						data.right = new FormAttachment(cancel, 0, SWT.DEFAULT);
+						data.bottom = new FormAttachment(100, 0);
+						ok.setLayoutData(data);
+						ok.addSelectionListener(new SelectionAdapter() {
+							@Override
+							public void widgetSelected (SelectionEvent e) {
+								for (int i : selectedPageIndices) {
+									yearbook.page(i).name = text.getText();
+								}
+
+								refresh();
+								dialog.close();
+								dialog.dispose();
+							}
+						});
+
+						dialog.setDefaultButton (ok);
+						dialog.pack();
+						dialog.open();
+
+					}
+
+				});
+
+				MenuItem item2 = new MenuItem(pagesListMenu, SWT.NONE);
+				item2.setText("Delete");
+				item2.addListener(SWT.Selection, new Listener() {
+
+					@Override
+					public void handleEvent(Event event) {
+						MessageBox messageBox = new MessageBox(shell, SWT.ICON_WARNING | SWT.YES | SWT.NO);
+						messageBox.setText("Delete Page");
+						if (selectedPageIndices.length == 1) messageBox.setMessage("Are you sure you want to delete this page?\n\t" + yearbook.page(selectedPageIndices[0]));
+						else messageBox.setMessage("Are you sure you want to delete these pages?");
+						int yesno = messageBox.open();
+						if (yesno == SWT.YES) {
+							/*for (int i : selectedPageIndices) {
+								stack.push(new PageCommand(Commands.REMOVE_PAGE, yearbook.page(i), i, -1));	
+							}*/
+							if (yearbook.size() == 1) {
+								MessageBox box = new MessageBox(shell, SWT.ICON_WARNING);
+								box.setText("Invalid action");
+								box.setMessage("Action denied:\n\tYou must have at least one page at all times.");
+								box.open();
+								return;
+							}
+							yearbook.removePages(selectedPageIndices);
+							refresh();
+						}
+
+					}
+
+				});
+			}
+		});
+		
+
+		this.buildPagesListDnD();
+	}
 
 	private void updateLayoutTree() {
 		File layoutRoot = new File(LAYOUTS_DIR);
@@ -785,7 +795,11 @@ public class Creator {
 			public void paintControl(PaintEvent e) {
 				int srcY = (int) (((double) (content.getBounds().height + toolbarWrapper.getBounds().height + 17) / shell.getBounds().height) * bg.getBounds().height);
 				int srcHeight = bg.getBounds().height - srcY;
-				e.gc.drawImage(bg, 0, srcY, bg.getBounds().width, srcHeight, 0, content.getBounds().height + toolbarWrapper.getBounds().height + 17, shell.getBounds().width, shell.getBounds().height - (content.getBounds().height + toolbarWrapper.getBounds().height + 17));
+				try {
+					e.gc.drawImage(bg, 0, srcY, bg.getBounds().width, srcHeight, 0, content.getBounds().height + toolbarWrapper.getBounds().height + 17, shell.getBounds().width, shell.getBounds().height - (content.getBounds().height + toolbarWrapper.getBounds().height + 17));
+				} catch (Throwable t) {
+					//Ignore.
+				}
 			}
 			
 		});
@@ -6344,7 +6358,10 @@ public class Creator {
 		rotateBtn.setImage(YearbookIcons.rotate(display));
 		rotateBtn.pack();
 
-
+		pagesListBtn = new Button(toolbarWrapper, SWT.PUSH);
+		pagesListBtn.setImage(YearbookIcons.pagesList(display));
+		pagesListBtn.setText("Switch Page");
+		pagesListBtn.pack();
 
 
 
@@ -6567,6 +6584,17 @@ public class Creator {
 				shell.setCursor(display.getSystemCursor(SWT.CURSOR_UPARROW));
 			}
 		});
+		
+		pagesListBtn.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				openPagesList();
+				pagesListShell.open();
+				
+			}
+			
+		});
 
 		
 		
@@ -6602,10 +6630,12 @@ public class Creator {
 	}
 
 	private void updatePageList() {
+		/*
+		 * Do nothing.
 		pagesList.removeAll();
 		for (int i = 0; i < yearbook.size(); i++) {
 			pagesList.add("Page " + (i + 1) + ": " + yearbook.page(i).name);
-		}
+		}*/
 	}
 
 	private void updateCanvas() {
