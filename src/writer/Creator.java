@@ -165,9 +165,11 @@ public class Creator {
 	Button rotateBtn;
 	Button pagesListBtn;
 	Button bgListBtn;
+	Button caListBtn;
 
 	private Shell pagesListShell;
 	private Shell bgListShell;
+	private Shell caListShell;
 
 	private Composite content;
 
@@ -232,6 +234,7 @@ public class Creator {
 
 		initPagesList();
 		initBackgroundsList();
+		initClipartList();
 
 		this.buildExpandBar();
 
@@ -765,6 +768,63 @@ public class Creator {
 		}
 		composite.setSize(composite.computeSize(SWT.DEFAULT, SWT.DEFAULT));
 		
+	}
+	
+	private void initClipartList() {
+		caListShell = new Shell(shell, SWT.SHELL_TRIM);
+		caListShell.setLayout(new FillLayout());
+		caListShell.setSize(300, 700);
+		caListShell.setText("Clip Art");
+		
+		caListShell.addListener(SWT.Close, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				event.doit = false;
+				caListShell.setVisible(false);
+				
+			}
+			
+		});
+		
+		File clipartRoot = new File(CLIPART_DIR);
+		File[] clipartFiles = clipartRoot.listFiles();
+
+		Tree tree = new Tree(caListShell, SWT.BORDER);
+		populateFileTree(tree, clipartFiles);
+		tree.addSelectionListener(new SelectionListener() {
+
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				try {
+					TreeItem item = ((TreeItem) e.item);
+					String path = (String) item.getData("path");
+					File f = new File(path);
+					if (f.isDirectory()) return;
+					MessageBox box = new MessageBox(shell, SWT.ICON_QUESTION | SWT.OK | SWT.CANCEL);
+					box.setText("Insert Clip Art");
+					box.setMessage("Would you like to insert this clip art?");
+					int response = box.open();
+					if ((response & SWT.CANCEL) == SWT.CANCEL || path == null) return;
+					YearbookImageElement element = new YearbookImageElement(display, path, yearbook.settings.width, yearbook.settings.height);
+					stack.push(new ElementCommand(Commands.ADD_ELEMENT, null, element.copy(), yearbook.page(yearbook.activePage).id));
+					yearbook.page(yearbook.activePage).addElement(element);
+					refreshNoPageList();
+				} catch (Exception ex) {
+					//Ignore
+				}
+
+
+			}
+
+			@Override
+			public void widgetDefaultSelected(SelectionEvent e) {
+				// TODO Auto-generated method stub
+
+			}
+
+		});
+
 	}
 
 	private void updateLayoutTree() {
@@ -6476,6 +6536,11 @@ public class Creator {
 		bgListBtn.setText("Backgrounds");
 		bgListBtn.pack();
 
+		caListBtn = new Button(toolbarWrapper, SWT.PUSH);
+		caListBtn.setImage(YearbookIcons.pagesList(display));
+		caListBtn.setText("Clip Art");
+		caListBtn.pack();
+
 
 
 
@@ -6714,6 +6779,16 @@ public class Creator {
 			@Override
 			public void handleEvent(Event event) {
 				bgListShell.open();
+				
+			}
+			
+		});
+		
+		caListBtn.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				caListShell.open();
 				
 			}
 			
