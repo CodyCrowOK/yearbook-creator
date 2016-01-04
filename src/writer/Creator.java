@@ -6761,28 +6761,31 @@ public class Creator {
 		rotateBtn.setImage(YearbookIcons.rotate(display));
 		rotateBtn.pack();
 
+		Label sep6 = new Label(toolbarWrapper, SWT.NONE);
+		sep6.setText("   ");
+
 		pagesListBtn = new Button(toolbarWrapper, SWT.PUSH);
 		pagesListBtn.setImage(YearbookIcons.pagesList(display));
 		pagesListBtn.setText("Switch Page");
 		pagesListBtn.pack();
 
 		ladderListBtn = new Button(toolbarWrapper, SWT.PUSH);
-		ladderListBtn.setImage(YearbookIcons.pagesList(display));
+		ladderListBtn.setImage(YearbookIcons.ladder(display));
 		ladderListBtn.setText("Ladder View");
 		ladderListBtn.pack();
 
 		bgListBtn = new Button(toolbarWrapper, SWT.PUSH);
-		bgListBtn.setImage(YearbookIcons.pagesList(display));
+		bgListBtn.setImage(YearbookIcons.bg(display));
 		bgListBtn.setText("Backgrounds");
 		bgListBtn.pack();
 
 		caListBtn = new Button(toolbarWrapper, SWT.PUSH);
-		caListBtn.setImage(YearbookIcons.pagesList(display));
+		caListBtn.setImage(YearbookIcons.clipart(display));
 		caListBtn.setText("Clip Art");
 		caListBtn.pack();
 
 		loListBtn = new Button(toolbarWrapper, SWT.PUSH);
-		loListBtn.setImage(YearbookIcons.pagesList(display));
+		loListBtn.setImage(YearbookIcons.layouts(display));
 		loListBtn.setText("Layouts");
 		loListBtn.pack();
 

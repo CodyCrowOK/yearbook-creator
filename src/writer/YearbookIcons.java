@@ -124,4 +124,20 @@ public class YearbookIcons {
 	public static Image pause(Display display) {
 		return new Image(display, "icons/pause.png");
 	}
+	
+	public static Image ladder(Display display) {
+		return new Image(display, "icons/ladder.png");
+	}
+	
+	public static Image clipart(Display display) {
+		return new Image(display, "icons/clipart.png");
+	}
+	
+	public static Image bg(Display display) {
+		return new Image(display, "icons/background-tiny.png");
+	}
+	
+	public static Image layouts(Display display) {
+		return new Image(display, "icons/layouts.png");
+	}
 }
