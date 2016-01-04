@@ -164,11 +164,13 @@ public class Creator {
 	Button eraseBtn;
 	Button rotateBtn;
 	Button pagesListBtn;
+	Button ladderListBtn;
 	Button bgListBtn;
 	Button caListBtn;
 	Button loListBtn;
 
 	private Shell pagesListShell;
+	private Shell ladderListShell;
 	private Shell bgListShell;
 	private Shell caListShell;
 	private Shell loListShell;
@@ -235,6 +237,7 @@ public class Creator {
 		
 
 		initPagesList();
+		//initLadderList();
 		initBackgroundsList();
 		initClipartList();
 		initLayoutList();
@@ -673,6 +676,91 @@ public class Creator {
 			}
 			
 		});
+	}
+	
+	private void openLadderList() {
+		ladderListShell = new Shell(shell, SWT.SHELL_TRIM);
+		ladderListShell.setLayout(new FillLayout());
+		ladderListShell.setSize(600, 800);
+		ladderListShell.setText("Ladder View");
+		
+		
+		ScrolledComposite sc = new ScrolledComposite(ladderListShell, SWT.V_SCROLL);
+		Composite composite = new Composite(sc, SWT.NONE);
+		sc.setContent(composite);
+		composite.setLayout(new ColumnLayout());
+		ArrayDeque<Image> images = new ArrayDeque<Image>();
+		
+		for (int i = 0; i < yearbook.size(); i++) {
+			Image image = new Image(display, 580, (int) ((11.0 / 8.0) * 580));
+			images.add(image);
+			GC gc = new GC(image);
+			
+			Creator.paintPage(gc, display, yearbook, new ArrayList<YearbookElement>(), null, new UserSettings(), i, 580, (int) ((11.0 / 8.0) * 580), false, true);
+			gc.dispose();
+			
+			Label label = new Label(composite, SWT.NONE);
+			label.setText(Integer.toString(i));
+			label.setImage(image);
+			label.addMouseTrackListener(new MouseTrackListener() {
+
+				@Override
+				public void mouseEnter(MouseEvent e) {
+					ladderListShell.setCursor(display.getSystemCursor(SWT.CURSOR_HAND));
+
+				}
+
+				@Override
+				public void mouseExit(MouseEvent e) {
+					ladderListShell.setCursor(display.getSystemCursor(SWT.CURSOR_ARROW));
+
+				}
+
+				@Override
+				public void mouseHover(MouseEvent e) {
+
+				}
+
+			});
+			
+			label.addMouseListener(new MouseListener() {
+
+				@Override
+				public void mouseDoubleClick(MouseEvent e) {
+					// TODO Auto-generated method stub
+					
+				}
+
+				@Override
+				public void mouseDown(MouseEvent e) {
+					int page = Integer.parseInt(label.getText());
+					yearbook.activePage = page;
+					refreshNoPageList();
+					
+				}
+
+				@Override
+				public void mouseUp(MouseEvent e) {
+					// TODO Auto-generated method stub
+					
+				}
+				
+			});
+		}
+		
+		ladderListShell.addListener(SWT.Close, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				for (Image i : images) {
+					i.dispose();
+				}
+			}
+			
+		});
+		composite.setSize(composite.computeSize(SWT.DEFAULT, SWT.DEFAULT));
+	
+		ladderListShell.open();
 	}
 	
 	private void initBackgroundsList() {
@@ -6678,6 +6766,11 @@ public class Creator {
 		pagesListBtn.setText("Switch Page");
 		pagesListBtn.pack();
 
+		ladderListBtn = new Button(toolbarWrapper, SWT.PUSH);
+		ladderListBtn.setImage(YearbookIcons.pagesList(display));
+		ladderListBtn.setText("Ladder View");
+		ladderListBtn.pack();
+
 		bgListBtn = new Button(toolbarWrapper, SWT.PUSH);
 		bgListBtn.setImage(YearbookIcons.pagesList(display));
 		bgListBtn.setText("Backgrounds");
@@ -6921,6 +7014,16 @@ public class Creator {
 			public void handleEvent(Event event) {
 				refresh();
 				pagesListShell.open();
+				
+			}
+			
+		});
+		
+		ladderListBtn.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				openLadderList();
 				
 			}
 			
