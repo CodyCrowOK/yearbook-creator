@@ -18,6 +18,7 @@ import org.apache.pdfbox.exceptions.COSVisitorException;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.eclipse.swt.*;
+import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.dnd.DND;
 import org.eclipse.swt.dnd.DragSource;
 import org.eclipse.swt.dnd.DragSourceAdapter;
@@ -163,8 +164,10 @@ public class Creator {
 	Button eraseBtn;
 	Button rotateBtn;
 	Button pagesListBtn;
+	Button bgListBtn;
 
 	private Shell pagesListShell;
+	private Shell bgListShell;
 
 	private Composite content;
 
@@ -226,7 +229,9 @@ public class Creator {
 		content.setLayout(gridLayout);
 		this.initializeCanvas();
 		
-		
+
+		initPagesList();
+		initBackgroundsList();
 
 		this.buildExpandBar();
 
@@ -523,18 +528,13 @@ public class Creator {
 		bar.setSpacing(8);
 	}
 	
-	private void openPagesList() {
-		pagesListShell = new Shell(shell, SWT.NONE);
-		pagesListShell.setLayout(new GridLayout(1, false));
+	private void initPagesList() {
+		pagesListShell = new Shell(shell, SWT.SHELL_TRIM);
+		pagesListShell.setLayout(new FillLayout());
 		pagesListShell.setSize(300, 700);
+		pagesListShell.setText("Switch Active Page");
 		
 		pagesList = new List(pagesListShell, SWT.BORDER | SWT.V_SCROLL | SWT.MULTI);
-		listGridData = new GridData(SWT.FILL, SWT.FILL, true, true);
-		listGridData.horizontalSpan = 1;
-		listGridData.exclude = true;
-		pagesList.setLayoutData(listGridData);
-
-
 		
 		pagesListMenu = new Menu(pagesList);
 		pagesList.setMenu(pagesListMenu);
@@ -657,6 +657,114 @@ public class Creator {
 		
 
 		this.buildPagesListDnD();
+		
+		pagesListShell.addListener(SWT.Close, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				event.doit = false;
+				pagesListShell.setVisible(false);
+			}
+			
+		});
+	}
+	
+	private void initBackgroundsList() {
+		bgListShell = new Shell(shell, SWT.SHELL_TRIM);
+		bgListShell.setLayout(new FillLayout());
+		bgListShell.setSize(300, 700);
+		bgListShell.setText("Backgrounds");
+		
+		bgListShell.addListener(SWT.Close, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				event.doit = false;
+				bgListShell.setVisible(false);
+				
+			}
+			
+		});
+		
+		ScrolledComposite sc = new ScrolledComposite(bgListShell, SWT.V_SCROLL);
+		Composite composite = new Composite(sc, SWT.NONE);
+		sc.setContent(composite);
+		composite.setLayout(new ColumnLayout());
+		
+		
+		File backgroundsRoot = new File(BACKGROUNDS_DIR);
+		File[] backgroundsList = backgroundsRoot.listFiles();
+
+		//Convert them to thumbnails to save RAM.
+		int i = 0;
+		for (File f : backgroundsList) {
+			try {
+				Image large = new Image(display, new ImageData(f.getAbsolutePath()));
+				Image thumbnail = new Image(display, 116, 150);
+				GC gc = new GC(thumbnail);
+				gc.drawImage(large, 0, 0, large.getBounds().width, large.getBounds().height, 0, 0, thumbnail.getBounds().width, thumbnail.getBounds().height);
+				gc.dispose();
+				large.dispose();
+				Label label = new Label(composite, SWT.NONE);
+				label.setText(Integer.toString(i));
+				label.setImage(thumbnail);
+
+				label.addMouseTrackListener(new MouseTrackListener() {
+
+					@Override
+					public void mouseEnter(MouseEvent e) {
+						bgListShell.setCursor(display.getSystemCursor(SWT.CURSOR_HAND));
+
+					}
+
+					@Override
+					public void mouseExit(MouseEvent e) {
+						bgListShell.setCursor(display.getSystemCursor(SWT.CURSOR_ARROW));
+
+					}
+
+					@Override
+					public void mouseHover(MouseEvent e) {
+
+					}
+
+				});
+
+				label.addMouseListener(new MouseListener() {
+
+					@Override
+					public void mouseDoubleClick(MouseEvent e) {
+
+					}
+
+					@Override
+					public void mouseDown(MouseEvent e) {
+						int index = Integer.parseInt(label.getText());
+						MessageBox box = new MessageBox(shell, SWT.ICON_QUESTION | SWT.OK | SWT.CANCEL);
+						box.setText("Change Background");
+						box.setMessage("Set this as the background for page " + Integer.toString(yearbook.activePage + 1) + "?");
+						int result = box.open();
+						if ((result & SWT.CANCEL) == SWT.CANCEL) return;
+						Image bg = new Image(display, new ImageData(backgroundsList[index].getAbsolutePath()));
+						yearbook.page(yearbook.activePage).setBackgroundImageData(bg.getImageData());
+						bg.dispose();
+						refreshNoPageList();
+					}
+
+					@Override
+					public void mouseUp(MouseEvent e) {
+
+					}
+
+				});
+
+			} catch (SWTException e) {
+				//Ignore
+			}
+			i++;
+		}
+		composite.setSize(composite.computeSize(SWT.DEFAULT, SWT.DEFAULT));
+		
 	}
 
 	private void updateLayoutTree() {
@@ -6363,6 +6471,11 @@ public class Creator {
 		pagesListBtn.setText("Switch Page");
 		pagesListBtn.pack();
 
+		bgListBtn = new Button(toolbarWrapper, SWT.PUSH);
+		bgListBtn.setImage(YearbookIcons.pagesList(display));
+		bgListBtn.setText("Backgrounds");
+		bgListBtn.pack();
+
 
 
 
@@ -6589,8 +6702,18 @@ public class Creator {
 
 			@Override
 			public void handleEvent(Event event) {
-				openPagesList();
+				refresh();
 				pagesListShell.open();
+				
+			}
+			
+		});
+		
+		bgListBtn.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				bgListShell.open();
 				
 			}
 			
@@ -6630,12 +6753,11 @@ public class Creator {
 	}
 
 	private void updatePageList() {
-		/*
-		 * Do nothing.
+		
 		pagesList.removeAll();
 		for (int i = 0; i < yearbook.size(); i++) {
 			pagesList.add("Page " + (i + 1) + ": " + yearbook.page(i).name);
-		}*/
+		}
 	}
 
 	private void updateCanvas() {
