@@ -67,7 +67,7 @@ import reader.ProductKey;
 public class Creator {
 
 	//Meta information
-	public static final String VERSION = "1.03a";
+	public static final String VERSION = "1.04";
 	public static final String COMPANY_NAME = "Digital Express";
 	public static final String SOFTWARE_NAME = "Yearbook Designer";
 
@@ -166,10 +166,12 @@ public class Creator {
 	Button pagesListBtn;
 	Button bgListBtn;
 	Button caListBtn;
+	Button loListBtn;
 
 	private Shell pagesListShell;
 	private Shell bgListShell;
 	private Shell caListShell;
+	private Shell loListShell;
 
 	private Composite content;
 
@@ -235,8 +237,9 @@ public class Creator {
 		initPagesList();
 		initBackgroundsList();
 		initClipartList();
+		initLayoutList();
 
-		this.buildExpandBar();
+		//this.buildExpandBar();
 
 		this.finalPrep();
 		
@@ -820,6 +823,150 @@ public class Creator {
 			@Override
 			public void widgetDefaultSelected(SelectionEvent e) {
 				// TODO Auto-generated method stub
+
+			}
+
+		});
+
+	}
+	
+	private void initLayoutList() {
+		loListShell = new Shell(shell, SWT.SHELL_TRIM);
+		loListShell.setLayout(new ColumnLayout());
+		loListShell.setSize(350, 700);
+		loListShell.setText("Layouts");
+		
+		loListShell.addListener(SWT.Close, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				event.doit = false;
+				loListShell.layout();
+				loListShell.setVisible(false);
+				
+			}
+			
+		});
+		
+		Button addBtn = new Button(loListShell, SWT.PUSH);
+		addBtn.setText("Create New Layout");
+
+		addBtn.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				if (!clipboard.elements.isEmpty()) {
+					MessageBox box = new MessageBox(shell, SWT.OK | SWT.CANCEL | SWT.ICON_QUESTION);
+					box.setText("Create New Layout");
+					box.setMessage("Would you like to create a new layout from the selected elements?");
+					int res = box.open();
+					if ((res & SWT.CANCEL) == SWT.CANCEL) return;
+
+
+					final Shell dialog = new Shell(shell, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
+					dialog.setText("Create New Layout");
+					dialog.setSize(400, 300);
+					FormLayout formLayout = new FormLayout();
+					formLayout.marginWidth = 10;
+					formLayout.marginHeight = 10;
+					formLayout.spacing = 10;
+					dialog.setLayout(formLayout);
+
+					Label label = new Label(dialog, SWT.NONE);
+					label.setText("Layout Name:");
+					FormData data = new FormData();
+					label.setLayoutData(data);
+
+					Button cancel = new Button(dialog, SWT.PUSH);
+					cancel.setText("Cancel");
+					data = new FormData();
+					data.width = 60;
+					data.right = new FormAttachment(100, 0);
+					data.bottom = new FormAttachment(100, 0);
+					cancel.setLayoutData(data);
+					cancel.addSelectionListener(new SelectionAdapter () {
+						@Override
+						public void widgetSelected(SelectionEvent e) {
+							dialog.close();
+							dialog.dispose();
+						}
+					});
+
+					final Text text = new Text(dialog, SWT.BORDER);
+					data = new FormData();
+					data.width = 200;
+					data.left = new FormAttachment(label, 0, SWT.DEFAULT);
+					data.right = new FormAttachment(100, 0);
+					data.top = new FormAttachment(label, 0, SWT.CENTER);
+					data.bottom = new FormAttachment(cancel, 0, SWT.DEFAULT);
+					text.setLayoutData(data);
+
+					Button ok = new Button(dialog, SWT.PUSH);
+					ok.setText("OK");
+					data = new FormData();
+					data.width = 60;
+					data.right = new FormAttachment(cancel, 0, SWT.DEFAULT);
+					data.bottom = new FormAttachment(100, 0);
+					ok.setLayoutData(data);
+					ok.addSelectionListener(new SelectionAdapter() {
+						@Override
+						public void widgetSelected (SelectionEvent e) {
+							YearbookLayout yep = new YearbookLayout(text.getText(), clipboard.elements);
+							try {
+								yep.save();
+							} catch (IOException e1) {
+								MessageBox box = new MessageBox(shell, SWT.ERROR | SWT.OK);
+								box.setText("Error");
+								box.setMessage("Yearbook layout " + text.getText() + " could not be saved. Please try again.");
+								box.open();
+							}
+
+							dialog.close();
+							dialog.dispose();
+							refreshNoPageList();
+							updateLayoutTree();
+						}
+					});
+
+					dialog.setDefaultButton (ok);
+					dialog.pack();
+					dialog.open();
+				}
+
+			}
+
+		});
+
+		layoutTree = new Tree(loListShell, SWT.BORDER);
+		updateLayoutTree();
+
+		layoutTree.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+
+
+		layoutTree.addSelectionListener(new SelectionListener() {
+
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				try {
+					TreeItem item = ((TreeItem) e.item);
+					String path = (String) item.getData("path");
+					File f = new File(path);
+					if (f.isDirectory()) return;
+					MessageBox box = new MessageBox(shell, SWT.ICON_QUESTION | SWT.OK | SWT.CANCEL);
+					box.setText("Insert Layout");
+					box.setMessage("Would you like to insert this layout?");
+					int response = box.open();
+					if ((response & SWT.CANCEL) == SWT.CANCEL || path == null) return;
+					YearbookLayout layout = YearbookLayout.read(path);
+					yearbook.page(yearbook.activePage).layouts.push(layout);
+					refreshNoPageList();
+				} catch (Exception ex) {
+					//Ignore
+				}
+			}
+
+			@Override
+			public void widgetDefaultSelected(SelectionEvent e) {
 
 			}
 
@@ -6541,6 +6688,11 @@ public class Creator {
 		caListBtn.setText("Clip Art");
 		caListBtn.pack();
 
+		loListBtn = new Button(toolbarWrapper, SWT.PUSH);
+		loListBtn.setImage(YearbookIcons.pagesList(display));
+		loListBtn.setText("Layouts");
+		loListBtn.pack();
+
 
 
 
@@ -6789,6 +6941,16 @@ public class Creator {
 			@Override
 			public void handleEvent(Event event) {
 				caListShell.open();
+				
+			}
+			
+		});
+		
+		loListBtn.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				loListShell.open();
 				
 			}
 			
