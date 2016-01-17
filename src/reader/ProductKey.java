@@ -1,15 +1,12 @@
 package reader;
 
 import java.io.BufferedReader;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.ProtocolException;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -36,7 +33,35 @@ public class ProductKey {
 		conn.setRequestProperty("Content-Length", String.valueOf(postDataBytes.length));
 		conn.setDoOutput(true);
 		conn.getOutputStream().write(postDataBytes);
-		return conn.getResponseCode() == 403 ? 403 : 202;
+		if (conn.getResponseCode() == 403) return 403;
+		//If the user isn't connected to the internet, let's still do our best to validate their key. 
+		else if (validate_luhn(key)) return 202;
+		else return 403;
+	}
+
+	/**
+	 * Validates potential product keys using the Luhn mod 10 algorithm,
+	 * with the assumption that the check digit is 7.
+	 * Luhn mod 10 is described in ISO 7812.
+	 * Doesn't check for duplicates, because that's obviously not possible.
+	 * @param key number to be validated
+	 * @return true if check digit is 7
+	 */
+	public static boolean validate_luhn(String key) {
+		int sum = 0;
+		boolean alternate = false;
+		for (int i = key.length() - 1; i >= 0; i--) {
+			int n = Integer.parseInt(key.substring(i, i + 1));
+			if (alternate) {
+				n *= 2;
+				if (n > 9) {
+					n = (n % 10) + 1;
+				}
+			}
+			sum += n;
+			alternate = !alternate;
+		}
+		return sum % 10 == 7;
 	}
 
 	public static String generateKeys(URL url, int n) throws IOException {

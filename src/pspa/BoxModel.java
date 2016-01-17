@@ -1,5 +1,6 @@
 package pspa;
 
+import java.io.Serializable;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
@@ -10,7 +11,9 @@ import org.eclipse.swt.graphics.Point;
  * @author Cody Crow
  *
  */
-public class BoxModel {
+public class BoxModel implements Serializable {
+	private static final long serialVersionUID = 4984096031674652844L;
+	
 	/**
 	 * x coordinate
 	 */

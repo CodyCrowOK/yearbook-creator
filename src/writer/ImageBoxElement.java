@@ -28,6 +28,7 @@ public class ImageBoxElement extends YearbookElement implements Serializable {
 	public double height;
 	public RGB rgb;
 	public int alpha; //0 to 255
+	public boolean pan;
 	
 	transient private Color bgColor;
 	
@@ -64,6 +65,7 @@ public class ImageBoxElement extends YearbookElement implements Serializable {
 		this.y = y;
 		this.width = w;
 		this.height = h;
+		pan = false;
 	}
 	
 	public boolean hasImage() {
@@ -147,6 +149,7 @@ public class ImageBoxElement extends YearbookElement implements Serializable {
 		return e;
 	}
 	
+	/*
 	public void drawImage(GC gc, int pageWidth, int pageHeight) {
 		if (!this.hasImage()) return;
 		
@@ -154,7 +157,7 @@ public class ImageBoxElement extends YearbookElement implements Serializable {
 		int destX, destY, srcX, srcY, srcWidth, srcHeight, destWidth, destHeight;
 		/*
 		 * Initialize to where variables would be if image was the same size as box.
-		 */
+		 *
 		
 		srcX = srcY = 0;
 		destX = this.getBounds(pageWidth, pageHeight).x;
@@ -166,7 +169,7 @@ public class ImageBoxElement extends YearbookElement implements Serializable {
 		
 		/*
 		 * Adjust for other factors.
-		 */
+		 *
 		
 		if (this.imageElement.getBounds(pageWidth, pageHeight).x > 0) {
 			destX += this.imageElement.getBounds(pageWidth, pageHeight).x;
@@ -219,56 +222,8 @@ public class ImageBoxElement extends YearbookElement implements Serializable {
 		if (draw) gc.drawImage(image, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight);
 		//TODO: Make this work on edges
 		
-	}
+	}*/
 	
-	/*
-	public void drawImage(GC gc, int pageWidth, int pageHeight) {
-		if (!this.hasImage()) return;
-		
-		Image image = this.imageElement.getImage();
-		int destX = this.getBounds(pageWidth, pageHeight).x;
-		int destY = this.getBounds(pageWidth, pageHeight).y;
-		int destWidth = this.getBounds(pageWidth, pageHeight).width;
-		int destHeight = this.getBounds(pageWidth, pageHeight).height;
-		
-		//int scaledW, scaledH;
-		//scaledW = this.imageElement.scale * this.imageElement.getBounds(pageWidth, pageHeight).width;
-		//int srcX = this.imageElement.getBounds(pageWidth, pageHeight).x;
-		//int srcY = this.imageElement.getBounds(pageWidth, pageHeight).y;
-		int srcX, srcY;
-		srcX = srcY = 0;
-		if (this.imageElement.getBounds(pageWidth, pageHeight).x < 0) srcX = 0 - this.imageElement.getBounds(pageWidth, pageHeight).x;
-		if (this.imageElement.getBounds(pageWidth, pageHeight).y < 0) srcY = 0 - this.imageElement.getBounds(pageWidth, pageHeight).y;
-		
-		int srcWidth = this.imageElement.getBounds(pageWidth, pageHeight).width - srcX;
-		int srcHeight = this.imageElement.getBounds(pageWidth, pageHeight).height - srcY;
-		
-		
-		
-		double w2h = (double) srcWidth / srcHeight;
-		
-		if (srcWidth < srcHeight) destWidth *= w2h;
-		else destHeight /= w2h;
-		
-		destWidth *= this.imageElement.scale;
-		destHeight *= this.imageElement.scale;
-		
-		int extraX, extraY = 0;
-		
-		
-		gc.drawImage(image, srcX, 
-				srcY, 
-				image.getBounds().width, 
-				image.getBounds().height, 
-				this.getBounds(pageWidth, pageHeight).x + this.imageElement.getBounds(pageWidth, pageHeight).x, 
-				this.getBounds(pageWidth, pageHeight).y + this.imageElement.getBounds(pageWidth, pageHeight).y, 
-				destWidth, 
-				destHeight);
-		
-		//gc.drawImage(image, 0, 0, Math.abs(srcWidth), Math.abs(srcHeight), Math.max(destX, 0), Math.max(destY, 0), Math.abs(destWidth), Math.abs(destHeight));
-		
-	}
-	*/
 	@Override
 	public void dispose() {
 		
@@ -283,14 +238,8 @@ public class ImageBoxElement extends YearbookElement implements Serializable {
 	}
 
 	public void setZoom(double z) {
-		//double currentZoom = (this.imageElement.getBounds(1000, 1000).width / this.getBounds(1000, 1000).width);
-		//z = x * imageW / boxW
-		int boxW = this.getBounds(1000, 1000).width;
-		int imageW = this.imageElement.getBounds(1000, 1000).width;
-		boxW = boxW > 0 ? boxW : 1;
-		imageW = imageW > 0 ? imageW : 1;
-		double x = z * (boxW / imageW);
-		this.imageElement.scale /= x;
+		//Screw it.
+		this.imageElement.scale = z;
 	}
 
 }

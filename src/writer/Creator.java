@@ -14,7 +14,6 @@ import java.util.Deque;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import org.apache.pdfbox.exceptions.COSVisitorException;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.eclipse.swt.*;
@@ -67,7 +66,7 @@ import reader.ProductKey;
 public class Creator {
 
 	//Meta information
-	public static final String VERSION = "1.04";
+	public static final String VERSION = "2.00 pre-alpha";
 	public static final String COMPANY_NAME = "Digital Express";
 	public static final String SOFTWARE_NAME = "Yearbook Designer";
 
@@ -203,7 +202,6 @@ public class Creator {
 
 	private Tree layoutTree;
 	private String[] fontNames;
-	Image bg;
 
 	private Creator() {
 		display = new Display();
@@ -237,12 +235,9 @@ public class Creator {
 		
 
 		initPagesList();
-		//initLadderList();
 		initBackgroundsList();
 		initClipartList();
 		initLayoutList();
-
-		//this.buildExpandBar();
 
 		this.finalPrep();
 		
@@ -254,289 +249,6 @@ public class Creator {
 		System.exit(0);
 	}
 
-	private void buildExpandBar() {
-		
-		ExpandBar bar = new ExpandBar(content, SWT.V_SCROLL);
-
-		GridData data = new GridData(SWT.FILL, SWT.FILL, true, true);
-		data.horizontalSpan = 2;
-		data.minimumHeight = canvasHeight;
-		bar.setLayoutData(data);
-
-		bar.setLayout(new FillLayout());
-
-		Composite composite = new Composite(bar, SWT.NONE);
-		composite.setLayout(new ColumnLayout());
-
-		//Load backgrounds into list.
-		File backgroundsRoot = new File(BACKGROUNDS_DIR);
-		File[] backgroundsList = backgroundsRoot.listFiles();
-
-		//Convert them to thumbnails to save RAM.
-		int i = 0;
-		for (File f : backgroundsList) {
-			try {
-				Image large = new Image(display, new ImageData(f.getAbsolutePath()));
-				Image thumbnail = new Image(display, 116, 150);
-				GC gc = new GC(thumbnail);
-				gc.drawImage(large, 0, 0, large.getBounds().width, large.getBounds().height, 0, 0, thumbnail.getBounds().width, thumbnail.getBounds().height);
-				gc.dispose();
-				large.dispose();
-				Label label = new Label(composite, SWT.NONE);
-				label.setText(Integer.toString(i));
-				label.setImage(thumbnail);
-
-				label.addMouseTrackListener(new MouseTrackListener() {
-
-					@Override
-					public void mouseEnter(MouseEvent e) {
-						shell.setCursor(display.getSystemCursor(SWT.CURSOR_HAND));
-
-					}
-
-					@Override
-					public void mouseExit(MouseEvent e) {
-						shell.setCursor(display.getSystemCursor(SWT.CURSOR_ARROW));
-
-					}
-
-					@Override
-					public void mouseHover(MouseEvent e) {
-
-					}
-
-				});
-
-				label.addMouseListener(new MouseListener() {
-
-					@Override
-					public void mouseDoubleClick(MouseEvent e) {
-
-					}
-
-					@Override
-					public void mouseDown(MouseEvent e) {
-						int index = Integer.parseInt(label.getText());
-						MessageBox box = new MessageBox(shell, SWT.ICON_QUESTION | SWT.OK | SWT.CANCEL);
-						box.setText("Change Background");
-						box.setMessage("Set this as the background for page " + Integer.toString(yearbook.activePage + 1) + "?");
-						int result = box.open();
-						if ((result & SWT.CANCEL) == SWT.CANCEL) return;
-						Image bg = new Image(display, new ImageData(backgroundsList[index].getAbsolutePath()));
-						yearbook.page(yearbook.activePage).setBackgroundImageData(bg.getImageData());
-						bg.dispose();
-						refreshNoPageList();
-					}
-
-					@Override
-					public void mouseUp(MouseEvent e) {
-
-					}
-
-				});
-
-			} catch (SWTException e) {
-				//Ignore
-			}
-			i++;
-		}
-
-		ExpandItem item0 = new ExpandItem(bar, SWT.NONE, 0);
-		item0.setText("Backgrounds");
-		item0.setHeight(composite.computeSize(SWT.DEFAULT, SWT.DEFAULT).y);
-		item0.setControl(composite);
-
-		//Clip art tree
-
-		composite = new Composite(bar, SWT.NONE);
-		composite.setLayout(new FillLayout());
-
-		File clipartRoot = new File(CLIPART_DIR);
-		File[] clipartFiles = clipartRoot.listFiles();
-
-		Tree tree = new Tree(composite, SWT.BORDER);
-		populateFileTree(tree, clipartFiles);
-		tree.addSelectionListener(new SelectionListener() {
-
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				try {
-					TreeItem item = ((TreeItem) e.item);
-					String path = (String) item.getData("path");
-					File f = new File(path);
-					if (f.isDirectory()) return;
-					MessageBox box = new MessageBox(shell, SWT.ICON_QUESTION | SWT.OK | SWT.CANCEL);
-					box.setText("Insert Clip Art");
-					box.setMessage("Would you like to insert this clip art?");
-					int response = box.open();
-					if ((response & SWT.CANCEL) == SWT.CANCEL || path == null) return;
-					YearbookImageElement element = new YearbookImageElement(display, path, yearbook.settings.width, yearbook.settings.height);
-					stack.push(new ElementCommand(Commands.ADD_ELEMENT, null, element.copy(), yearbook.page(yearbook.activePage).id));
-					yearbook.page(yearbook.activePage).addElement(element);
-					refreshNoPageList();
-				} catch (Exception ex) {
-					//Ignore
-				}
-
-
-			}
-
-			@Override
-			public void widgetDefaultSelected(SelectionEvent e) {
-				// TODO Auto-generated method stub
-
-			}
-
-		});
-
-
-		ExpandItem item1 = new ExpandItem(bar, SWT.NONE, 1);
-		item1.setText("Clip Art");
-		//item1.setHeight(composite.computeSize(SWT.DEFAULT, SWT.DEFAULT).y);
-		item1.setHeight((int) Math.ceil(.92 * canvasHeight));
-		item1.setControl(composite);
-
-		//Layouts
-
-		composite = new Composite(bar, SWT.NONE);
-		GridLayout layout = new GridLayout();
-
-		composite.setLayout(layout);
-
-		Button addBtn = new Button(composite, SWT.PUSH);
-		addBtn.setText("Create New Layout");
-
-		addBtn.addListener(SWT.Selection, new Listener() {
-
-			@Override
-			public void handleEvent(Event event) {
-				if (!clipboard.elements.isEmpty()) {
-					MessageBox box = new MessageBox(shell, SWT.OK | SWT.CANCEL | SWT.ICON_QUESTION);
-					box.setText("Create New Layout");
-					box.setMessage("Would you like to create a new layout from the selected elements?");
-					int res = box.open();
-					if ((res & SWT.CANCEL) == SWT.CANCEL) return;
-
-
-					final Shell dialog = new Shell(shell, SWT.DIALOG_TRIM | SWT.APPLICATION_MODAL);
-					dialog.setText("Create New Layout");
-					dialog.setSize(400, 300);
-					FormLayout formLayout = new FormLayout();
-					formLayout.marginWidth = 10;
-					formLayout.marginHeight = 10;
-					formLayout.spacing = 10;
-					dialog.setLayout(formLayout);
-
-					Label label = new Label(dialog, SWT.NONE);
-					label.setText("Layout Name:");
-					FormData data = new FormData();
-					label.setLayoutData(data);
-
-					Button cancel = new Button(dialog, SWT.PUSH);
-					cancel.setText("Cancel");
-					data = new FormData();
-					data.width = 60;
-					data.right = new FormAttachment(100, 0);
-					data.bottom = new FormAttachment(100, 0);
-					cancel.setLayoutData(data);
-					cancel.addSelectionListener(new SelectionAdapter () {
-						@Override
-						public void widgetSelected(SelectionEvent e) {
-							dialog.close();
-							dialog.dispose();
-						}
-					});
-
-					final Text text = new Text(dialog, SWT.BORDER);
-					data = new FormData();
-					data.width = 200;
-					data.left = new FormAttachment(label, 0, SWT.DEFAULT);
-					data.right = new FormAttachment(100, 0);
-					data.top = new FormAttachment(label, 0, SWT.CENTER);
-					data.bottom = new FormAttachment(cancel, 0, SWT.DEFAULT);
-					text.setLayoutData(data);
-
-					Button ok = new Button(dialog, SWT.PUSH);
-					ok.setText("OK");
-					data = new FormData();
-					data.width = 60;
-					data.right = new FormAttachment(cancel, 0, SWT.DEFAULT);
-					data.bottom = new FormAttachment(100, 0);
-					ok.setLayoutData(data);
-					ok.addSelectionListener(new SelectionAdapter() {
-						@Override
-						public void widgetSelected (SelectionEvent e) {
-							YearbookLayout yep = new YearbookLayout(text.getText(), clipboard.elements);
-							try {
-								yep.save();
-							} catch (IOException e1) {
-								MessageBox box = new MessageBox(shell, SWT.ERROR | SWT.OK);
-								box.setText("Error");
-								box.setMessage("Yearbook layout " + text.getText() + " could not be saved. Please try again.");
-								box.open();
-							}
-
-							dialog.close();
-							dialog.dispose();
-							refreshNoPageList();
-							updateLayoutTree();
-						}
-					});
-
-					dialog.setDefaultButton (ok);
-					dialog.pack();
-					dialog.open();
-				}
-
-			}
-
-		});
-
-		layoutTree = new Tree(composite, SWT.BORDER);
-		updateLayoutTree();
-
-		layoutTree.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-
-		ExpandItem item2 = new ExpandItem(bar, SWT.NONE, 2);
-		item2.setText("Layouts");
-		item2.setHeight((int) Math.ceil(.9 * canvasHeight));
-		item2.setControl(composite);
-
-		layoutTree.addSelectionListener(new SelectionListener() {
-
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				try {
-					TreeItem item = ((TreeItem) e.item);
-					String path = (String) item.getData("path");
-					File f = new File(path);
-					if (f.isDirectory()) return;
-					MessageBox box = new MessageBox(shell, SWT.ICON_QUESTION | SWT.OK | SWT.CANCEL);
-					box.setText("Insert Layout");
-					box.setMessage("Would you like to insert this layout?");
-					int response = box.open();
-					if ((response & SWT.CANCEL) == SWT.CANCEL || path == null) return;
-					YearbookLayout layout = YearbookLayout.read(path);
-					yearbook.page(yearbook.activePage).layouts.push(layout);
-					refreshNoPageList();
-				} catch (Exception ex) {
-					//Ignore
-				}
-			}
-
-			@Override
-			public void widgetDefaultSelected(SelectionEvent e) {
-
-			}
-
-		});
-
-
-		composite.pack();
-
-		bar.setSpacing(8);
-	}
-	
 	private void initPagesList() {
 		pagesListShell = new Shell(shell, SWT.SHELL_TRIM);
 		pagesListShell.setLayout(new FillLayout());
@@ -679,6 +391,7 @@ public class Creator {
 	}
 	
 	private void openLadderList() {
+		if (!(ladderListShell == null || ladderListShell.isDisposed())) return;
 		ladderListShell = new Shell(shell, SWT.SHELL_TRIM);
 		ladderListShell.setLayout(new FillLayout());
 		ladderListShell.setSize(600, 800);
@@ -1141,8 +854,6 @@ public class Creator {
 	}
 
 	private void finalPrep() {
-		bg = YearbookImages.creatorBackground(display);
-
 		/*
 		 * Handle global shortcuts
 		 */
@@ -1191,21 +902,6 @@ public class Creator {
 
 			}
 		}, 600000L, 600000L);
-		
-		shell.addPaintListener(new PaintListener() {
-
-			@Override
-			public void paintControl(PaintEvent e) {
-				int srcY = (int) (((double) (content.getBounds().height + toolbarWrapper.getBounds().height + 17) / shell.getBounds().height) * bg.getBounds().height);
-				int srcHeight = bg.getBounds().height - srcY;
-				try {
-					e.gc.drawImage(bg, 0, srcY, bg.getBounds().width, srcHeight, 0, content.getBounds().height + toolbarWrapper.getBounds().height + 17, shell.getBounds().width, shell.getBounds().height - (content.getBounds().height + toolbarWrapper.getBounds().height + 17));
-				} catch (Throwable t) {
-					//Ignore.
-				}
-			}
-			
-		});
 		
 		
 
@@ -5714,6 +5410,7 @@ public class Creator {
 	}
 	
 	private void openImageToolbox(ImageBoxElement el) {
+		Spinner zPos;
 		ImageBoxElement e = (ImageBoxElement) yearbook.page(yearbook.activePage).findElement(el);
 		
 		Shell dimShell = new Shell(shell, SWT.SHELL_TRIM);
@@ -5745,52 +5442,6 @@ public class Creator {
 		
 		Button imageBtn = new Button(dimShell, SWT.PUSH);
 		imageBtn.setText("Add Image...");
-		imageBtn.addSelectionListener(new SelectionListener() {
-
-			@Override
-			public void widgetSelected(SelectionEvent e1) {
-				String fileName = imagePicker();
-				if (fileName == null) return;
-				
-				String[] tok = fileName.split("\\.");
-				if (tok.length > 1) if ("pdf".equalsIgnoreCase(tok[tok.length - 1])) {
-					//Convert pdf to images
-					try {
-						PDDocument document = PDDocument.loadNonSeq(new File(fileName), null);
-						@SuppressWarnings("unchecked")
-						ArrayList<PDPage> pdPages = (ArrayList<PDPage>) document.getDocumentCatalog().getAllPages();
-						ArrayList<java.awt.Image> awtImages = new ArrayList<java.awt.Image>();
-						for (PDPage pdPage : pdPages) {
-							awtImages.add(pdPage.convertToImage(BufferedImage.TYPE_INT_RGB, 300));
-							break;
-						}
-						
-						for (java.awt.Image image : awtImages) {
-							ImageData newData = SWTUtils.convertAWTImageToSWT(image);
-							YearbookImageElement element = new YearbookImageElement(display, newData, yearbook.settings.width, yearbook.settings.height, e.getBounds(yearbook.settings.width, yearbook.settings.height).width);
-							e.imageElement = element;
-						}
-					} catch (Throwable t) {
-						MessageBox box = new MessageBox(shell, SWT.ERROR);
-						box.setText("Error");
-						box.setMessage("Could not import pdf as images successfully. Please try again or convert to an image format first.");
-						box.open();
-					}
-				} else {
-					YearbookImageElement element = new YearbookImageElement(display, fileName, yearbook.settings.width, yearbook.settings.height, e.getBounds(yearbook.settings.width, yearbook.settings.height).width);
-					e.imageElement = element;
-				}
-				
-				refreshNoPageList();
-			}
-
-			@Override
-			public void widgetDefaultSelected(SelectionEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
-		});
 		
 		Button colorBtn = new Button(dimShell, SWT.PUSH);
 		colorBtn.setText("Background Color");
@@ -5859,12 +5510,62 @@ public class Creator {
 		
 		Label zLabel = new Label(dimShell, SWT.NONE);
 		zLabel.setText("Zoom (%):");
-		Spinner zPos = new Spinner(dimShell, SWT.NONE);
+		zPos = new Spinner(dimShell, SWT.NONE);
 		zPos.setDigits(2);
 		zPos.setMaximum(1000000);
 		zPos.setMinimum(1);
 		value = 10000;
 		zPos.setSelection(value);
+		
+
+		imageBtn.addSelectionListener(new SelectionListener() {
+
+			@Override
+			public void widgetSelected(SelectionEvent e1) {
+				String fileName = imagePicker();
+				if (fileName == null) return;
+				
+				String[] tok = fileName.split("\\.");
+				if (tok.length > 1) if ("pdf".equalsIgnoreCase(tok[tok.length - 1])) {
+					//Convert pdf to images
+					try {
+						PDDocument document = PDDocument.loadNonSeq(new File(fileName), null);
+						@SuppressWarnings("unchecked")
+						ArrayList<PDPage> pdPages = (ArrayList<PDPage>) document.getDocumentCatalog().getAllPages();
+						ArrayList<java.awt.Image> awtImages = new ArrayList<java.awt.Image>();
+						for (PDPage pdPage : pdPages) {
+							awtImages.add(pdPage.convertToImage(BufferedImage.TYPE_INT_RGB, 300));
+							break;
+						}
+						
+						for (java.awt.Image image : awtImages) {
+							ImageData newData = SWTUtils.convertAWTImageToSWT(image);
+							YearbookImageElement element = new YearbookImageElement(display, newData, yearbook.settings.width, yearbook.settings.height, e.getBounds(yearbook.settings.width, yearbook.settings.height).width);
+							e.imageElement = element;
+						}
+					} catch (Throwable t) {
+						MessageBox box = new MessageBox(shell, SWT.ERROR);
+						box.setText("Error");
+						box.setMessage("Could not import pdf as images successfully. Please try again or convert to an image format first.");
+						box.open();
+					}
+				} else {
+					YearbookImageElement element = new YearbookImageElement(display, fileName, yearbook.settings.width, yearbook.settings.height, e.getBounds(yearbook.settings.width, yearbook.settings.height).width);
+					e.imageElement = element;
+				}
+				
+				refreshNoPageList();
+				
+				zPos.setSelection((int) (10000 * e.imageElement.scale));
+			}
+
+			@Override
+			public void widgetDefaultSelected(SelectionEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+		});
 		
 		Label aLbl = new Label(dimShell, SWT.NONE);
 		aLbl.setText("Alpha (Transparency):");
@@ -7184,7 +6885,7 @@ public class Creator {
 			image.dispose();
 			gc.setAlpha(0xff);
 		}
-		gc.drawText("Front Cover", (yearbook.settings.width / 2) - (gc.textExtent("Front Cover").x / 2), yearbook.settings.height / 2, true);
+		gc.drawText("Inside Front Cover", (yearbook.settings.width / 2) - (gc.textExtent("Inside Front Cover").x / 2), yearbook.settings.height / 2, true);
 		gc.dispose();		
 	}
 
@@ -7200,22 +6901,8 @@ public class Creator {
 			image.dispose();
 			gc.setAlpha(0xff);
 		}
-		gc.drawText("Back Cover", (yearbook.settings.width / 2) - (gc.textExtent("Back Cover").x / 2), yearbook.settings.height / 2, true);
+		gc.drawText("Inside Back Cover", (yearbook.settings.width / 2) - (gc.textExtent("Inside Back Cover").x / 2), yearbook.settings.height / 2, true);
 		gc.dispose();		
-	}
-
-	/**
-	 * This function handles the painting of the canvas for the currently
-	 * selected yearbook page.
-	 * @param activePage The page to draw on the canvas.
-	 * @deprecated Use updateCanvas() instead.
-	 */
-	@Deprecated
-	private void loadActivePage(int activePage) {
-		GC gc;
-		gc = new GC(canvas);
-		paintPage(gc, display, yearbook, clipboard.elements, selectionRectangle, settings, activePage, yearbook.settings.width, yearbook.settings.height, false, false);
-		gc.dispose();
 	}
 
 	public static void paintPage(GC gc, Display display, Yearbook yearbook, 
@@ -7452,11 +7139,13 @@ public class Creator {
 			}
 			
 			if (e.hasImage()) {
-				e.drawImage(gc, yearbook.settings.width, yearbook.settings.height);
+				gc.setClipping(e.getBounds());
+				gc.drawImage(e.imageElement.getImage(display), 0, 0, e.imageElement.getImage(display).getBounds().width, e.imageElement.getImage(display).getBounds().height, e.imageElement.getBounds(pageWidth, pageHeight).x, e.imageElement.getBounds(pageWidth, pageHeight).y, e.imageElement.getBounds(pageWidth, pageHeight).width, e.imageElement.getBounds(pageWidth, pageHeight).height);
 			}
 			
 			gc.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
 			if (!isReader) gc.drawRectangle(e.getBounds(yearbook.settings.width, yearbook.settings.height));
+			gc.setClipping((Rectangle) null);
 		}
 		
 		gc.setAlpha(255);
