@@ -66,7 +66,7 @@ import reader.ProductKey;
 public class Creator {
 
 	//Meta information
-	public static final String VERSION = "2.00 pre-alpha";
+	public static final String VERSION = "2.00";
 	public static final String COMPANY_NAME = "Digital Express";
 	public static final String SOFTWARE_NAME = "Yearbook Designer";
 
@@ -991,6 +991,18 @@ public class Creator {
 					Menu menu = new Menu(shell);
 					
 					if (yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height) instanceof ImageBoxElement) {
+						MenuItem panItem = new MenuItem(menu, SWT.CHECK);
+						panItem.setText("Pan Image");
+						panItem.setSelection(((ImageBoxElement) yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height)).pan);
+						panItem.addListener(SWT.Selection, new Listener() {
+
+							@Override
+							public void handleEvent(Event event) {
+								((ImageBoxElement) yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height)).pan = !((ImageBoxElement) yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height)).pan;
+							}
+							
+						});
+						
 						MenuItem tbItem = new MenuItem(menu, SWT.PUSH);
 						tbItem.setText("Tool Box");
 						tbItem.addListener(SWT.Selection, new Listener() {
@@ -1716,26 +1728,28 @@ public class Creator {
 					if (Math.abs(xDiff) < 5 && Math.abs(yDiff) < 5) xDiff = yDiff = 0;
 
 					if (clipboard.elements.size() == 0) return;
-					if (clipboard.elements.size() == 1) {
-						YearbookElement selectedElement = clipboard.elements.get(0);
-						if (yearbook.page(yearbook.activePage).findElement(selectedElement) != null && event.button == 1) {
-							int newX, newY;
-							newX = selectedElement.getBounds().x + xDiff;
-							newY = selectedElement.getBounds().y + yDiff;
-							YearbookElement orig = selectedElement.copy();
-							orig.dispose();
-							yearbook.page(yearbook.activePage).findElement(selectedElement).setLocationRelative(newX, newY);
-							stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, selectedElement.copy(), yearbook.page(yearbook.activePage).id));
-						}
-					} else {
+					else {
 						int newX, newY;
 						for (YearbookElement element : clipboard.elements) {
-							YearbookElement orig = element.copy();
-							orig.dispose();
-							newX = element.getBounds().x + xDiff;
-							newY = element.getBounds().y + yDiff;
-							element.setLocationRelative(newX, newY);
-							stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, element.copy(), yearbook.page(yearbook.activePage).id));
+							try {
+								YearbookElement orig = element.copy();
+								if (element instanceof ImageBoxElement && ((ImageBoxElement) element).pan && ((ImageBoxElement) element).hasImage()) {
+									newX = ((ImageBoxElement) element).imageElement.getBounds(yearbook.settings.width, yearbook.settings.height).x + xDiff;
+									newY = ((ImageBoxElement) element).imageElement.getBounds(yearbook.settings.width, yearbook.settings.height).y + yDiff;
+									((ImageBoxElement) element).imageElement.setLocationRelative(newX, newY);
+								} else {
+									newX = element.getBounds(yearbook.settings.width, yearbook.settings.height).x + xDiff;
+									newY = element.getBounds(yearbook.settings.width, yearbook.settings.height).y + yDiff;
+									element.setLocationRelative(newX, newY);
+									newX = ((ImageBoxElement) element).imageElement.getBounds(yearbook.settings.width, yearbook.settings.height).x + xDiff;
+									newY = ((ImageBoxElement) element).imageElement.getBounds(yearbook.settings.width, yearbook.settings.height).y + yDiff;
+									((ImageBoxElement) element).imageElement.setLocationRelative(newX, newY);
+								}
+								newX = newY = xDiff = yDiff = 0;
+								stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, element.copy(), yearbook.page(yearbook.activePage).id));
+							} catch (Exception e) {
+								//Ignore
+							}
 						}
 					}
 
@@ -1878,6 +1892,19 @@ public class Creator {
 					Menu menu = new Menu(shell);
 					
 					if (yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height) instanceof ImageBoxElement) {
+						MenuItem panItem = new MenuItem(menu, SWT.CHECK);
+						panItem.setText("Pan Image");
+						panItem.setSelection(((ImageBoxElement) yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height)).pan);
+						panItem.addListener(SWT.Selection, new Listener() {
+
+							@Override
+							public void handleEvent(Event event) {
+								((ImageBoxElement) yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height)).pan = !((ImageBoxElement) yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height)).pan;
+							}
+							
+						});
+						
+						
 						MenuItem tbItem = new MenuItem(menu, SWT.PUSH);
 						tbItem.setText("Tool Box");
 						tbItem.addListener(SWT.Selection, new Listener() {
@@ -2616,24 +2643,28 @@ public class Creator {
 					if (Math.abs(xDiff) < 5 && Math.abs(yDiff) < 5) xDiff = yDiff = 0;
 
 					if (clipboard.elements.size() == 0) return;
-					if (clipboard.elements.size() == 1) {
-						YearbookElement selectedElement = clipboard.elements.get(0);
-						YearbookElement orig = selectedElement.copy();
-						if (yearbook.page(yearbook.activePage).findElement(selectedElement) != null && event.button == 1) {
-							int newX, newY;
-							newX = selectedElement.getBounds().x + xDiff;
-							newY = selectedElement.getBounds().y + yDiff;
-							yearbook.page(yearbook.activePage).findElement(selectedElement).setLocationRelative(newX, newY);
-							stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, yearbook.page(yearbook.activePage).findElement(selectedElement).copy(), yearbook.page(yearbook.activePage).id));
-						}
-					} else {
+					else {
 						int newX, newY;
 						for (YearbookElement element : clipboard.elements) {
-							YearbookElement orig = element.copy();
-							newX = element.getBounds().x + xDiff;
-							newY = element.getBounds().y + yDiff;
-							element.setLocationRelative(newX, newY);
-							stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, element.copy(), yearbook.page(yearbook.activePage).id));
+							try {
+								YearbookElement orig = element.copy();
+								if (element instanceof ImageBoxElement && ((ImageBoxElement) element).pan && ((ImageBoxElement) element).hasImage()) {
+									newX = ((ImageBoxElement) element).imageElement.getBounds(yearbook.settings.width, yearbook.settings.height).x + xDiff;
+									newY = ((ImageBoxElement) element).imageElement.getBounds(yearbook.settings.width, yearbook.settings.height).y + yDiff;
+									((ImageBoxElement) element).imageElement.setLocationRelative(newX, newY);
+								} else {
+									newX = element.getBounds(yearbook.settings.width, yearbook.settings.height).x + xDiff;
+									newY = element.getBounds(yearbook.settings.width, yearbook.settings.height).y + yDiff;
+									element.setLocationRelative(newX, newY);
+									newX = ((ImageBoxElement) element).imageElement.getBounds(yearbook.settings.width, yearbook.settings.height).x + xDiff;
+									newY = ((ImageBoxElement) element).imageElement.getBounds(yearbook.settings.width, yearbook.settings.height).y + yDiff;
+									((ImageBoxElement) element).imageElement.setLocationRelative(newX, newY);
+								}
+								newX = newY = xDiff = yDiff = 0;
+								stack.push(new ElementCommand(Commands.CHANGE_ELEMENT, orig, element.copy(), yearbook.page(yearbook.activePage).id));
+							} catch (Exception e) {
+								//Ignore
+							}
 						}
 					}
 
@@ -5459,6 +5490,8 @@ public class Creator {
 		Label posLabel = new Label(dimShell, SWT.NONE);
 		posLabel.setText("Position (inches):");
 		
+		int value;
+		/*
 		Label xLabel = new Label(dimShell, SWT.NONE);
 		xLabel.setText("X:");
 		Spinner xPos = new Spinner(dimShell, SWT.NONE);
@@ -5475,6 +5508,7 @@ public class Creator {
 		yPos.setMaximum(10000);
 		value = (int) (Measures.percentToInches(e.y, yearbook.settings.yInches()) * 100);
 		yPos.setSelection(value);
+		*/
 		
 		Label mxLabel = new Label(dimShell, SWT.NONE);
 		mxLabel.setText("Width:");
@@ -5515,6 +5549,7 @@ public class Creator {
 		zPos.setMaximum(1000000);
 		zPos.setMinimum(1);
 		value = 10000;
+		if (el.hasImage()) value = (int) (el.imageElement.scale * 10000);
 		zPos.setSelection(value);
 		
 
@@ -5593,15 +5628,15 @@ public class Creator {
 			@Override
 			public void handleEvent(
 					Event event) {
-				double x = xPos.getSelection() / 100.0;
-				double y = yPos.getSelection() / 100.0;
+				//double x = xPos.getSelection() / 100.0;
+				//double y = yPos.getSelection() / 100.0;
 				double w = mxPos.getSelection() / 100.0;
 				double h = myPos.getSelection() / 100.0;
 				double xo = xoPos.getSelection() / 100.0;
 				double yo = yoPos.getSelection() / 100.0;
 				double z = (double) zPos.getSelection() / 10000.0;
-				x = Measures.inchesToPercent(x, yearbook.settings.xInches());
-				y = Measures.inchesToPercent(y, yearbook.settings.yInches());
+				//x = Measures.inchesToPercent(x, yearbook.settings.xInches());
+				//y = Measures.inchesToPercent(y, yearbook.settings.yInches());
 				w = Measures.inchesToPercent(w, yearbook.settings.xInches());
 				h = Measures.inchesToPercent(h, yearbook.settings.yInches());
 				xo = Measures.inchesToPercent(xo, yearbook.settings.xInches());
@@ -5609,8 +5644,8 @@ public class Creator {
 				
 				int a = alpha.getSelection();
 				
-				e.x = x;
-				e.y = y;
+				//e.x = x;
+				//e.y = y;
 				e.width = w;
 				e.height = h;
 				e.alpha = a;
@@ -5620,13 +5655,6 @@ public class Creator {
 					e.setZoom(z);
 					
 				}
-				/*
-				 * 
-				 * Make sure it only paints inside the bounds!
-				 * context menu
-				 * 
-				 */
-
 				
 				refreshNoPageList();
 			}
@@ -7139,12 +7167,12 @@ public class Creator {
 			}
 			
 			if (e.hasImage()) {
-				gc.setClipping(e.getBounds());
+				gc.setClipping(e.getBounds(pageWidth, pageHeight));
 				gc.drawImage(e.imageElement.getImage(display), 0, 0, e.imageElement.getImage(display).getBounds().width, e.imageElement.getImage(display).getBounds().height, e.imageElement.getBounds(pageWidth, pageHeight).x, e.imageElement.getBounds(pageWidth, pageHeight).y, e.imageElement.getBounds(pageWidth, pageHeight).width, e.imageElement.getBounds(pageWidth, pageHeight).height);
 			}
 			
 			gc.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
-			if (!isReader) gc.drawRectangle(e.getBounds(yearbook.settings.width, yearbook.settings.height));
+			if (!isReader) gc.drawRectangle(e.getBounds(yearbook.settings.width - 1, yearbook.settings.height - 1));
 			gc.setClipping((Rectangle) null);
 		}
 		
