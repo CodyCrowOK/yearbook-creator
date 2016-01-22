@@ -21,6 +21,7 @@ public class YearbookTextElement extends YearbookElement implements Serializable
 	public boolean italic;
 	public boolean underline;
 	public boolean shadow;
+	public TextElementAlign align;
 	
 	private RGB rgb;
 	transient private Font font;
@@ -58,10 +59,11 @@ public class YearbookTextElement extends YearbookElement implements Serializable
 		this.rotation = 0;
 		this.rgb = new RGB(0, 0, 0);
 		this.text = "";
-		this.size = 6;
+		this.size = 7;
 		this.fontFamily = "Arial";
 		this.pageWidth = pageWidth;
 		this.pageHeight = pageHeight;
+		this.align = TextElementAlign.LEFT;
 		this.border = new YearbookElementBorder();
 	}
 	
@@ -179,6 +181,41 @@ public class YearbookTextElement extends YearbookElement implements Serializable
 
 	public RGB getRgb() {
 		return rgb;
+	}
+	
+	public void draw(GC gc, int x, int y) {
+		TextLayout tl = new TextLayout(gc.getDevice());
+		tl.setText(this.text);
+		tl.setWidth(gc.textExtent(this.text).x > 0 ? gc.textExtent(this.text).x : 5);
+		System.out.println(tl.getWidth());
+		switch (this.align) {
+		case JUSTIFY:
+			tl.setJustify(true);
+			tl.setAlignment(SWT.LEFT);
+			break;
+		case LEFT:
+			tl.setAlignment(SWT.LEFT);
+			tl.setJustify(false);
+			break;
+		case CENTER:
+			tl.setAlignment(SWT.CENTER);
+			tl.setJustify(false);
+			break;
+		case RIGHT:
+			tl.setAlignment(SWT.RIGHT);
+			tl.setJustify(false);
+			break;
+		}
+		tl.setFont(this.getFont(gc.getDevice()));
+		//if (font != null) tl.setFont(this.font);
+		
+		//TextStyle ts = new TextStyle();
+		//ts.underlineColor = this.getColor(gc.getDevice());
+		//ts.underlineStyle = SWT.UNDERLINE_SINGLE;
+		//if (text.length() > 0) tl.setStyle(ts, 0, this.text.length() - 1);
+		
+		tl.draw(gc, x, y);
+		tl.dispose();
 	}
 
 	@Override

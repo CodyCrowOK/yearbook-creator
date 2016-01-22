@@ -1017,6 +1017,21 @@ public class Creator {
 						});
 					}
 					
+					if (yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height) instanceof YearbookPSPAElement) {
+						MenuItem tbItem = new MenuItem(menu, SWT.PUSH);
+						tbItem.setText("Text Box");
+						tbItem.addListener(SWT.Selection, new Listener() {
+
+							@Override
+							public void handleEvent(
+									Event event) {
+								openPSPATextDialog(((YearbookPSPAElement) yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height)).text, shell);
+								
+							}
+							
+						});
+					}
+					
 					
 					MenuItem moveItem = new MenuItem(menu, SWT.PUSH);
 					moveItem.setText("Move");
@@ -1918,6 +1933,22 @@ public class Creator {
 							
 						});
 					}
+
+					if (yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height) instanceof YearbookPSPAElement) {
+						MenuItem tbItem = new MenuItem(menu, SWT.PUSH);
+						tbItem.setText("Text Box");
+						tbItem.addListener(SWT.Selection, new Listener() {
+
+							@Override
+							public void handleEvent(
+									Event event) {
+								openPSPATextDialog(((YearbookPSPAElement) yearbook.page(yearbook.activePage).getElementAtPoint(trueX, trueY, yearbook.settings.width, yearbook.settings.height)).text, shell);
+								
+							}
+							
+						});
+					}
+
 					
 					
 					
@@ -3116,14 +3147,14 @@ public class Creator {
 		Shell textTool = new Shell(display, SWT.DIALOG_TRIM);
 		textTool.setText("Text Tool");
 		GridLayout layout = new GridLayout();
-		layout.numColumns = 10;
+		layout.numColumns = 12;
 		layout.makeColumnsEqualWidth = true;
 		textTool.setLayout(layout);
 
 		Text textbox = new Text(textTool, SWT.BORDER | SWT.MULTI);
 		textbox.setText(element.text);
 		GridData textboxData = new GridData(SWT.FILL, SWT.FILL, true, true);
-		textboxData.horizontalSpan = 10;
+		textboxData.horizontalSpan = 12;
 		textbox.setLayoutData(textboxData);
 
 		ColorDialog colorDialog = new ColorDialog(textTool, SWT.APPLICATION_MODAL | SWT.DIALOG_TRIM);
@@ -3162,7 +3193,23 @@ public class Creator {
 		int index = Arrays.binarySearch(fontSizes, Integer.toString(element.size));
 		if (index >= 0) sizeCombo.select(index);
 		else sizeCombo.select(4);
-
+		
+		Combo alignCombo = new Combo(textTool, SWT.DROP_DOWN);
+		GridData alignData = new GridData(SWT.FILL, SWT.FILL, true, false);
+		alignData.horizontalSpan = 2;
+		alignCombo.setLayoutData(alignData);
+		String[] alignments = {
+				"Left",
+				"Center",
+				"Right",
+				"Justify"
+		};
+		for (String s : alignments) {
+			alignCombo.add(s);
+		}
+		alignCombo.select(0);
+		
+		
 
 		Combo fontCombo = new Combo(textTool, SWT.DROP_DOWN);
 		GridData fontData  = new GridData(SWT.FILL, SWT.FILL, true, false);
@@ -3197,9 +3244,6 @@ public class Creator {
 		f = new Font(display, fd);
 		italic.setFont(f);
 		f.dispose();
-
-		Button underline = new Button(styleWrapper, SWT.PUSH);
-		underline.setText("U");
 
 		Button shadow = new Button(styleWrapper, SWT.PUSH);
 		shadow.setText("S");
@@ -3262,6 +3306,31 @@ public class Creator {
 			}
 
 		});
+		
+		alignCombo.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				String s;
+				s = alignCombo.getText();
+				switch (s) {
+				case "Left":
+					element.align = TextElementAlign.LEFT;
+					break;
+				case "Center":
+					element.align = TextElementAlign.CENTER;
+					break;
+				case "Right":
+					element.align = TextElementAlign.RIGHT;
+					break;
+				case "Justify":
+					element.align = TextElementAlign.JUSTIFY;
+					break;
+				}
+				refreshNoPageList();
+			}
+			
+		});
 
 		fontCombo.addListener(SWT.Selection, new Listener() {
 
@@ -3288,16 +3357,6 @@ public class Creator {
 			@Override
 			public void handleEvent(Event event) {
 				element.toggleItalic();
-				refresh();
-			}
-
-		});
-
-		underline.addListener(SWT.Selection, new Listener() {
-
-			@Override
-			public void handleEvent(Event event) {
-				element.toggleUnderline();
 				refresh();
 			}
 
@@ -4459,7 +4518,7 @@ public class Creator {
 						box.setMessage("Please select an area of the page to link to the video.");
 						box.open();
 						return;
-					} else if (selectedElement != null && selectedElement.isImage()) {
+					} else if (selectedElement != null && selectedElement.isImage() && !(selectedElement instanceof ImageBoxElement)) {
 						if (selectionRectangle == null) {
 							try {
 								attachVideoToImage((YearbookImageElement) selectedElement);
@@ -4468,6 +4527,8 @@ public class Creator {
 							}
 							return;
 						}
+					} else if (selectedElement != null && selectedElement instanceof ImageBoxElement && ((ImageBoxElement) selectedElement).hasImage()) {
+						//Ignore
 					}
 				}
 
@@ -4486,7 +4547,7 @@ public class Creator {
 					YearbookClickableElement e = new YearbookClickableElement(new Video(fileName), selectionRectangle, canvas.getBounds().height, canvas.getBounds().width);
 					stack.push(new ElementCommand(Commands.ADD_ELEMENT, null, e.copy(), yearbook.page(yearbook.activePage).id));
 					yearbook.page(yearbook.activePage).addElement(e);
-				} catch (IOException e) {
+				} catch (Exception e) {
 					Logger.printStackTrace(e);
 				}
 
@@ -5675,7 +5736,7 @@ public class Creator {
 		//initialYOffset /= 2;
 		//initialXOffset = initialYOffset = 0;
 
-		BoxModel box = new BoxModel(volume.grid.y, volume.grid.x, (2.0 / 8.5), (3 / 11.0), Measures.inchesToPercent(.75, yearbook.settings.xInches()), 0);
+		BoxModel box = new BoxModel(volume.grid.y, volume.grid.x, (2.0 / 8.5), (3 / 11.0), Measures.inchesToPercent(.4, yearbook.settings.xInches()), 0);
 		box.offset = volume.offset;
 		
 		for (String gradeName : items) {
@@ -6146,7 +6207,52 @@ public class Creator {
 		styleData = new GridData(SWT.FILL, SWT.FILL, true, false);
 		styleData.horizontalSpan = 3;
 		borderBtn.setLayoutData(styleData);
+		
+		//HERE
+		Combo alignCombo = new Combo(textTool, SWT.DROP_DOWN);
+		GridData alignData = new GridData(SWT.FILL, SWT.FILL, true, false);
+		alignData.horizontalSpan = 2;
+		alignCombo.setLayoutData(alignData);
+		String[] alignments = {
+				"Left",
+				"Center",
+				"Right",
+				"Justify"
+		};
+		for (String s : alignments) {
+			alignCombo.add(s);
+		}
+		alignCombo.select(0);
+		
 
+		
+		alignCombo.addListener(SWT.Selection, new Listener() {
+
+			@Override
+			public void handleEvent(Event event) {
+				String s;
+				s = alignCombo.getText();
+				switch (s) {
+				case "Left":
+					element.align = TextElementAlign.LEFT;
+					break;
+				case "Center":
+					element.align = TextElementAlign.CENTER;
+					break;
+				case "Right":
+					element.align = TextElementAlign.RIGHT;
+					break;
+				case "Justify":
+					element.align = TextElementAlign.JUSTIFY;
+					break;
+				}
+				refreshNoPageList();
+			}
+			
+		});
+
+
+		
 
 		//fontNames = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
 		Combo fontCombo = new Combo(textTool, SWT.DROP_DOWN);
@@ -7040,18 +7146,21 @@ public class Creator {
 				e.text.setBounds(new Rectangle(nameX, nameY, nameExtent.x, nameExtent.y));
 				//e.text.setBounds(new Rectangle(0,0,30,30));
 
+				e.text.text = name;
 				if (e.text.shadow) {
 					int offset = e.text.size >= 72 ? 3 : e.text.size >= 36 ? 2 : 1;
 					gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
 					gc.setAlpha(0x8f);
-					gc.drawText(name, nameX + offset, nameY + offset, SWT.DRAW_TRANSPARENT | SWT.DRAW_DELIMITER);
+					//gc.drawText(name, nameX + offset, nameY + offset, SWT.DRAW_TRANSPARENT | SWT.DRAW_DELIMITER);
+					e.text.draw(gc, nameX + offset, nameY + offset);
 					gc.setAlpha(0xff);
 				}
 
 				gc.setForeground(c);
 
-				gc.drawText(name, nameX, nameY, SWT.DRAW_TRANSPARENT | SWT.DRAW_DELIMITER);
-
+				//gc.drawText(name, nameX, nameY, SWT.DRAW_TRANSPARENT | SWT.DRAW_DELIMITER);
+				e.text.draw(gc, nameX, nameY);
+				
 				if (e.text.underline) {
 					//Determine the line width
 					int width;
@@ -7259,7 +7368,8 @@ public class Creator {
 				int offset = e.size >= 72 ? 3 : e.size >= 36 ? 2 : 1;
 				gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
 				gc.setAlpha(0x8f);
-				gc.drawText(e.text, x + offset, y + offset, true);
+				//gc.drawText(e.text, x + offset, y + offset, true);
+				e.draw(gc, x + offset, y + offset);
 				gc.setAlpha(0xff);
 			}
 
@@ -7273,7 +7383,8 @@ public class Creator {
 			 */
 			e.setBounds(new Rectangle(e.getBounds(pageWidth, pageHeight).x, e.getBounds(pageWidth, pageHeight).y, gc.stringExtent(e.text).x, gc.stringExtent(e.text).y));
 
-			gc.drawText(e.text, x, y, true);
+			//gc.drawText(e.text, x, y, true);
+			e.draw(gc, x, y);
 
 			/*
 			 * Handle underlining (SWT has no native GC underlining)
@@ -7465,8 +7576,8 @@ public class Creator {
 	}
 
 	public static void main(String[] args) {
-		new Creator();
-		//reader.Reader.main(null);
+		//new Creator();
+		reader.Reader.main(null);
 		//ProductKey.main();
 	}
 

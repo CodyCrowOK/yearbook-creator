@@ -44,6 +44,7 @@ import org.eclipse.swt.widgets.Text;
 import writer.Clickable;
 import writer.Config;
 import writer.Creator;
+import writer.ImageBoxElement;
 import writer.UserSettings;
 import writer.Video;
 import writer.Yearbook;
@@ -366,8 +367,10 @@ public class Reader {
 					//Show their video.
 					//Using the system player for now.
 					Clickable element;
-					if (yearbook.page(yearbook.activePage).getElementAtPoint(e.x, e.y, yearbook.settings.width, yearbook.settings.height).isImage()) {
+					if (yearbook.page(yearbook.activePage).getElementAtPoint(e.x, e.y, yearbook.settings.width, yearbook.settings.height).isImage() && !(yearbook.page(yearbook.activePage).getElementAtPoint(e.x, e.y, yearbook.settings.width, yearbook.settings.height) instanceof ImageBoxElement)) {
 						element = ((YearbookClickableImageElement) yearbook.page(yearbook.activePage).getElementAtPoint(e.x, e.y, yearbook.settings.width, yearbook.settings.height));
+					} else if (yearbook.page(yearbook.activePage).getElementAtPoint(e.x, e.y, yearbook.settings.width, yearbook.settings.height).isImage() && (yearbook.page(yearbook.activePage).getElementAtPoint(e.x, e.y, yearbook.settings.width, yearbook.settings.height) instanceof ImageBoxElement)) {
+						element = ((YearbookClickableImageElement) ((ImageBoxElement) yearbook.page(yearbook.activePage).getElementAtPoint(e.x, e.y, yearbook.settings.width, yearbook.settings.height)).imageElement);
 					} else {
 						element = ((YearbookClickableElement) yearbook.page(yearbook.activePage).getElementAtPoint(e.x, e.y, yearbook.settings.width, yearbook.settings.height));
 					}

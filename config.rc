@@ -10,8 +10,8 @@
 #	key: $PRODUCTKEY
 # Response will be 202 on success and 403 on failure.
 
-product_key_url	http://localhost:5000/product_key
+product_key_url	http://192.168.1.126:5000/product_key
 
 # range: Z
 # Returns a JSON array of Z new keys
-generate_product_key_url	http://localhost:5000/generate_keys
+generate_product_key_url	http://192.168.1.126:5000/generate_keys

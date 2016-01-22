@@ -241,5 +241,11 @@ public class ImageBoxElement extends YearbookElement implements Serializable {
 		//Screw it.
 		this.imageElement.scale = z;
 	}
+	
+	@Override
+	public boolean isClickable() {
+		if (!hasImage()) return false;
+		return this.imageElement.isClickable();
+	}
 
 }

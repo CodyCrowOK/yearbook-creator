@@ -23,7 +23,9 @@ public class YearbookImageElement extends YearbookElement implements Serializabl
 	public double scale;
 	
 	public Image getImage(Display display) {
-		if (image == null && image.isDisposed()) {
+		if (image == null) {
+			image = new Image(display, imageData);
+		} else if (image.isDisposed()) {
 			image = new Image(display, imageData);
 		}
 		return image;
