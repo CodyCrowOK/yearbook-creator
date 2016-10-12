@@ -1,4 +1,7 @@
-Digital Express Yearbook Software
+# Yearbook Software
+
+This software can be used for the design and publishing of yearbooks to both
+print and screen.
 
 List of file extensions used by this software:
 .ctc: saved yearbooks
